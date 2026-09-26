@@ -1,0 +1,99 @@
+{
+  "run_id": "FIRST_RUN",
+  "preregistered_utc": "2026-09-26T14:13:26Z",
+  "preregistration_note": "Written and committed before any experiment code was executed. Thresholds below must not be edited after results exist; any change must be logged as a deviation in STATUS.md.",
+  "question": "When only the time grid of the same physical input path changes, which parts of a selective diagonal SSM's output change are grid artifacts, and does a simple time-handling fix (Delta scaled by physical dt + exact ZOH input matrix + time-weighted readout) remove them?",
+  "scope_limits": [
+    "Toy only: scalar input channel, N diagonal stable modes, fixed random parameters, no training.",
+    "No claim about real Mamba/S4/S5 implementations is licensed by this run.",
+    "No train/dev/test split is needed because nothing is fitted; the independent evaluation unit is one seed = (one parameter draw, one input path draw)."
+  ],
+  "budget": {
+    "cpu_threads": 2,
+    "wall_clock_seconds_total": 120,
+    "gpu": false,
+    "installs": false,
+    "downloads": false,
+    "on_budget_exceeded": "abort remaining experiments; mark them NOT_RUN(TIMEOUT) in results; do not report partial aggregates as complete"
+  },
+  "units": {
+    "primary_seeds": [0, 31],
+    "n_units": 32,
+    "unit_definition": "seed -> (lambda_n, gate w/beta, B(u), C(u), input path u(t)); grid variants of the same seed are NOT independent samples",
+    "aggregation": "report per-unit values; aggregate as median / max / min / fraction-meeting-threshold across the 32 units"
+  },
+  "model": {
+    "state_dim_N": 4,
+    "modes_primary": "real",
+    "modes_secondary": "complex",
+    "lambda_real": "-exp(U(log 0.2, log 2.0))",
+    "lambda_imag_secondary": "U(0, 4)",
+    "gate": "g(u) = softplus(w*u + beta), w ~ U(-1.5, 1.5), beta ~ U(-0.5, 0.5); one gate shared across the N modes",
+    "B": "B_n(u) = b0_n + b1_n*u, b0 ~ N(0,1), b1 ~ N(0,0.5^2)",
+    "C": "C_n(u) = c0_n + c1_n*u, c0 ~ N(0,1), c1 ~ N(0,0.5^2)",
+    "continuous_time_model": "dh/dt = g(u(t)) * (lambda * h + B(u(t)) * u(t)),  y(t) = Re(sum_n C_n(u(t)) h_n(t))",
+    "hold_convention": "right-endpoint hold (Mamba/S5 recurrence convention): step k uses u_k = u(t_k) and dt_k = t_k - t_{k-1}",
+    "variants": {
+      "zoh_dt": "Delta = dt*g(u); Abar = exp(Delta*lambda); Bbar = expm1(Delta*lambda)/lambda * B(u)   [exact ZOH, correct dt]",
+      "eulerB_dt": "Delta = dt*g(u); Abar = exp(Delta*lambda); Bbar = Delta*B(u)   [correct dt, Mamba-style simplified B]",
+      "bilinear_dt": "Delta = dt*g(u); Abar = (1+Delta*lambda/2)/(1-Delta*lambda/2); Bbar = Delta/(1-Delta*lambda/2)*B(u)   [correct dt, S4-style bilinear]",
+      "zoh_nodt": "Delta = tau*g(u) (ignores dt); exact ZOH formulas   [intentionally grid-dependent toy]",
+      "eulerB_nodt": "Delta = tau*g(u); Abar = exp(Delta*lambda); Bbar = Delta*B(u)   [Mamba-style discretization recipe in a toy; NOT the Mamba architecture]",
+      "bilinear_nodt": "Delta = tau*g(u); bilinear   [grid-dependent]"
+    },
+    "tau": "mean step of the base grid, so *_nodt == *_dt on the base grid when it is uniform"
+  },
+  "grids": {
+    "T": 8.0,
+    "K_base": 16,
+    "base_primary": "uniform",
+    "base_secondary": "jittered: t_k = k*T/K + U(-0.4,0.4)*T/K for interior k",
+    "m_values": [1, 2, 4, 8],
+    "split": "each selected base interval (t_{k-1}, t_k] is divided into m equal sub-intervals and every sub-step receives the SAME held value u_k (physical right-held path unchanged)",
+    "refine_newobs": "each selected base interval is divided into m equal sub-intervals and each new sub-time s receives a NEW observation u(s) from the continuous path (grids nested; base observations unchanged)",
+    "mask_uniform": "all base intervals",
+    "mask_nonuniform": "only base intervals in the first half of [0,T]"
+  },
+  "input_path": "u(t) = sum_{j=1..3} a_j sin(omega_j t + phi_j), a_j ~ U(0.3,1.0), omega_j ~ U(0.5,3.0), phi_j ~ U(0,2pi)",
+  "references": {
+    "ct_held": "RK4 on the continuous-time model driven by the right-held piecewise-constant path of a grid, 64 RK4 sub-steps per grid interval (independent of the ZOH code)",
+    "ct_true": "RK4 on the continuous-time model driven by the true continuous u(t), 512 RK4 sub-steps per base interval; time integrals by composite Simpson"
+  },
+  "readouts": {
+    "last": "y at t=T",
+    "sample_sum": "sum_k y_k",
+    "sample_mean": "(1/K) sum_k y_k",
+    "time_riemann": "(1/T) sum_k y_k dt_k",
+    "time_trapz": "(1/T) sum_k (y_{k-1}+y_k)/2 dt_k, y_0 = 0",
+    "time_exact": "(1/T) * exact integral of the model's intra-step continuous output under the hold (defined only for zoh_* variants; NOT_APPLICABLE otherwise)",
+    "normalization": "scale-normalized change = |r_m - r_1| / (rms(y at base times, m=1) * (K_1 if sample_sum else 1))"
+  },
+  "experiments": {
+    "FR-E1-SPLIT": "uniform split of all base intervals, held input; compare states/outputs at common base times",
+    "FR-E2-NEWOBS": "uniform nested refinement with new observations; decompose total change = path_change + (artifact_m - artifact_1)",
+    "FR-E3-READOUT": "readouts under (a) nonuniform split and (b) nonuniform new observations",
+    "FR-E4-NUMERICS": "failure cases: expm1 vs naive cancellation; bilinear on stiff modes; Euler-B on coarse steps; float32-emulated composition drift"
+  },
+  "metrics": {
+    "primary_E1": "rel_l2(y at common base times, grid m vs m=1), per unit; aggregate median/max",
+    "primary_E2": "artifact_m = rel_l2(y_D(G_m), y_CTheld(G_m)) at common base times",
+    "secondary": ["state rel_l2", "error to ct_true", "log-log slope over m in {1,2,4,8}", "readout changes"],
+    "rel_l2": "||a-b||_2 / max(||b||_2, 1e-300)"
+  },
+  "hypotheses": {
+    "H1": "FR-E1 zoh_dt: max over units and m in {2,4,8} of rel_l2(y_m, y_1) <= 1e-12 (float64). Engineering check of a known identity.",
+    "H2": "FR-E1 eulerB_dt: artifact vs exact held solution decreases with median log-log slope in [-1.2, -0.8].",
+    "H3": "FR-E1 bilinear_dt: artifact decreases with median log-log slope in [-2.2, -1.8].",
+    "H4": "FR-E1 zoh_nodt and eulerB_nodt: artifact at m=8 >= artifact at m=2 for >= 90% of units, and median artifact at m=8 >= 0.1.",
+    "H5": "FR-E2 zoh_dt: artifact_m <= 1e-8 for all units and m; error to ct_true has median slope in [-1.2, -0.8].",
+    "H6": "FR-E2 zoh_nodt and eulerB_nodt: median artifact at m=8 >= 0.1.",
+    "H7": "FR-E3(a) zoh_dt: time_exact change <= 1e-12 for all units; median sample_sum and sample_mean change >= 1e-2; time_riemann change > 0 and decreasing in m (median slope < 0).",
+    "H8": "FR-E3(b) zoh_dt: median error-to-truth of sample_mean at m=8 >= 5 x median error-to-truth of time_exact at m=8."
+  },
+  "stop_conditions": {
+    "S0_budget": "wall clock > 120 s -> abort (see budget).",
+    "S1_bug": "If H1 or H5-artifact fails, treat as implementation bug: stop interpretation, debug, log the failure; do not tune thresholds.",
+    "S2_research": "If the simple time-handling fix (zoh_dt + time_exact readout) removes the splitting artifact to numerical precision AND the new-observation artifact to reference precision, then this toy provides NO support for a new-architecture claim; record ARCHITECTURE_CLAIM=NOT_SUPPORTED_BY_TOY.",
+    "S3_no_sweep": "No parameter sweep beyond this file. No reruns to change outcomes."
+  }
+}
