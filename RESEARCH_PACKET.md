@@ -1,176 +1,196 @@
-# Research packet: Sampling-Consistent Selective State-Space Models (P1)
+# Research packet: Sampling-grid dependence in selective SSMs (P1)
 
-Last updated: 2026-09-26. The run this packet covers is FIRST_RUN. It was pre-registered in `configs/first_run.json` at commit `e8d127d`, with pre-run amendments A1–A3 at `f88b8b9`, and executed at `85b1ffe`.
+Last updated: 2026-09-26 (second session). Branch: `claude/intelligent-maxwell-t1lcda`.
+
+Runs covered:
+
+- FIRST_RUN: pre-registered at `e8d127d`, amendments A1–A3 at `f88b8b9`, executed at `85b1ffe`.
+- P1-COMP-01: pre-registered at `78bdcf0`, executed at `ca90992`.
+- P1-REAL-01: design fixed; NOT_RUN.
+
+Manuscript v1: `paper/main.tex` (claims map `paper/claims.csv`).
+
+## 0. Revision log (second session)
+
+Five interpretation corrections. The earlier wording is quoted so that the change is visible.
+
+1. **Assumptions of single-layer invariance made explicit (C0).** Exact-ZOH split invariance holds under four conditions:
+   - (i) the held value is repeated on every sub-step;
+   - (ii) every coefficient (g, B, C, λ) depends only on the held value;
+   - (iii) the step is Δ = sub-step length × g;
+   - (iv) exact ZOH formulas are used.
+
+   Anything else feeding a coefficient breaks (ii): token-indexed conv1d, time or position features, state-dependent transitions, or time-axis normalization statistics in training mode. This is stated as Prop. 4.1 in the manuscript.
+2. **Internal resampling is not new information (C8).** Earlier wording: "splitting at the input becomes *new observations* for layer 2". Corrected: layer 2 receives additional *internal* samples of layer 1's output. The resulting change is a reconstruction error of an internal signal; no external observation is added. P1-COMP-01 now checks this in a linear cascade.
+3. **Bilinear: stability, oscillation and stiff-decay accuracy are separated (C3).** Earlier wording: "fails badly on stiff modes". Corrected:
+   - Bilinear is stable: |Ā| < 1 for Re z < 0, at every step.
+   - It is sign-alternating for real z < −2 (oscillatory transients).
+   - It is not L-stable: Ā → −1 instead of e^z → 0, so stiff decay is inaccurate.
+   - Its steady state under a held input is exact.
+
+   See `paper/generated/tab_stiff.tex`. The stable/sign/decay columns there are an EXPLORATORY re-reading of logged values.
+4. **Path/artifact shares replaced by an exact decomposition (C4).** Earlier wording: "artifact share 0.000 / 82–89% of the change is artifact". That column was a ratio of norms, ‖R‖/(‖P‖+‖R‖). Norms are not additive, so it is not a share. Corrected:
+   - The vector identity is exact: T = P + R. Here P = C_m − C_1 is the change of the continuous-time solution on the held path, and R is the change of the discretization artifact.
+   - Hence ‖T‖² = ‖P‖² + ‖R‖² + 2⟨P,R⟩. The three terms are reported as fractions of Σ_units‖T‖², which sum to 1.
+   - The cross term is large and of both signs: per-unit range −1.37 to +0.42. So no per-unit "share" is well defined.
+   - This decomposition is EXPLORATORY (re-aggregation of stored outputs; `results/paper_assets.json`, `paper/generated/tab_newobs.tex`).
+   - The old column is kept in `results/first_run_summary.md` but relabelled "norm ratio (not a share)". Its numbers are unchanged.
+5. **Endpoint sums vs. exact integral (C5).**
+   - `time_riemann` is a right-endpoint time-weighted sum.
+   - `time_trapz` is a trapezoidal endpoint sum.
+   - `time_exact` is the exact integral of the hold-consistent continuous output. It is defined only for exact-ZOH states.
+   - Only `time_exact` is split-invariant. The endpoint sums converge only where the grid is refined.
+
+Also: the stop condition S2 is an **operational decision rule**. It is not a statistical test, an equivalence result, or a novelty argument.
 
 ## 1. Question and scope
 
-**Question.** Change only the time grid of the same physical input path. How much of a selective SSM's output change is a grid artifact, as opposed to genuine new information? Can the artifact be decomposed into parts and removed?
+**Question.** When only the time grid of the same physical input path is changed, where in a selective SSM does the output change enter, and which parts are artifacts?
 
-**Scope of FIRST_RUN.**
+**Scope of the evidence so far.**
 
-- The model is a fixed-parameter toy: one scalar input channel and N=4 diagonal stable modes, with a Mamba-like gate g(u)=softplus(wu+β) shared across modes, a selective B(u) and a selective C(u). There is no training.
-- Every statement in this packet is about that toy. **Nothing here is evidence about trained Mamba, S4 or S5.**
-- There are no train/dev/test splits, because nothing is fitted. The independent unit is one seed, which fixes one parameter draw and one input-path draw. Grid variants of the same seed are not independent samples.
+- The models are fixed-parameter toys: a single-layer selective diagonal model (FIRST_RUN) and a two-layer linear cascade (P1-COMP-01). Nothing is trained.
+- **Nothing here is evidence about trained Mamba, S4, S5 or TIDES.**
+- The independent unit is one seed, which fixes one parameter draw and one input path. Grid variants of the same seed are not independent samples.
+- Scenarios whose results were already seen are EXPLORATORY for any new analysis.
 
 ## 2. Claims ledger
 
-Each claim has one status:
+The full list, with evidence files, is in `paper/claims.csv` (31 claims). Status vocabulary:
 
-- `STANDARD`: known result, not a contribution.
-- `TOY-VERIFIED`: numerically observed in this toy.
-- `UNPROVED`: proof sketch only.
-- `CONJECTURE`: stated but not checked.
+- `STANDARD`: known, not a contribution.
+- `ENGINEERING_PASS`.
+- `TOY_MEASURED`.
+- `EXPLORATORY`.
+- `PROVED (elementary; not independently checked)`.
+- `UNPROVED`.
+- `CONJECTURE`.
+- `CODE_READ`.
+- `PREDICTION`.
 - `NOT_RUN`.
+- `FAIL`.
+- `WEAK_PASS`.
+- `OPERATIONAL_DECISION`.
+- `PRIOR_WORK`.
+- `ABSENCE_OF_EVIDENCE`.
 
-| ID | Claim | Status | Evidence |
+| ID | Claim (short) | Status | Evidence |
 |---|---|---|---|
-| C0 | Exact ZOH with Δ=dt·g(u) is the exact flow of the CT model on the right-held path, so splitting a held interval leaves it unchanged | STANDARD (elementary proof in §4) | H1: max rel. change 6.3e-15 over 32 units × m∈{2,4,8}; exact ZOH vs independent RK4 agree to 1.6e-13 |
-| C1 | Δ not scaled by dt (`*_nodt`) gives a splitting artifact that does not vanish, and grows with m | TOY-VERIFIED, by construction | FR-E1 zoh_nodt median artifact 0.48 / 0.93 / 1.28 at m=2/4/8 (H4 PASS; 1 of 32 units non-monotone for eulerB_nodt: seed 25) |
-| C2 | With the correct dt, the Euler-B input discretization (the one Mamba's reference code uses) gives a first-order splitting artifact | TOY-VERIFIED | median slope −1.03 (H2). Magnitude: median artifact 0.21 at the base step, change vs m=1 0.155 at m=8. The magnitude depends on the toy's Δ·\|λ\| scale; **not measured for real Mamba** |
-| C3 | Bilinear with the correct dt gives a second-order artifact, but fails badly on stiff modes (Ā→−1) | TOY-VERIFIED | slope −2.02 (H3); FR-E4-N2: Ā=−0.977 and artifact 1.06 at λ=−500, m=1 |
-| C4 | When new observations are added, the change of zoh_dt is entirely genuine path change (artifact share 0.000). For `*_nodt`, 82–89% of the change is artifact | TOY-VERIFIED | FR-E2: zoh_dt artifact ≤ 1.7e-13 (H5a); error to CT truth has slope −0.98 (H5b) |
-| C5 | Sample-count readouts create unnecessary change even on a perfectly consistent backbone when the density changes. The time-exact readout does not | TOY-VERIFIED | FR-E3(a), zoh_dt, m=8: sample_mean 0.30 and sample_sum 1.48 (scale-normalized); time_trapz 1.1e-2; time_riemann 2.6e-2; time_exact 1.5e-16 (H7a, H7b). FR-E3(b): sample_mean error to truth rises from 0.06 to 0.28, and is 9.0× the time_exact error (H8) |
-| C6 | The fixes interact. Exact ZOH alone does nothing without dt-scaling, and no single fix is enough | TOY-VERIFIED | §3.2 table |
-| C7 | float32 sets a consistency floor far above float64 | TOY-VERIFIED (emulated float32) | FR-E4-N4: composition drift 1.1e-4 at m=16384 (float64: 5.2e-13) |
-| C8 | In a stack of depth ≥ 2 on the observed grid, splitting at the input becomes *new observations* for layer 2: the finer held sampling of layer 1's continuous output changes layer 2's input path. Exact split invariance then fails at O(dt) even with all single-layer fixes | CONJECTURE (reasoned, NOT_RUN) | — |
-| C9 | A token-indexed conv1d (Mamba `d_conv=4`) is a separate source of grid dependence | CONJECTURE (NOT_RUN in toy) | code fact verified: `nn.Conv1d`, `d_conv=4` |
-| C10 | Any statement about trained Mamba/S4/S5 | NOT_RUN | — |
+| C0 | Exact ZOH with Δ=dt·g is split-invariant **under assumptions (i)–(iv)** | STANDARD + ENGINEERING_PASS | H1 max 6.3e-15; RK4 agreement 1.6e-13 |
+| C1 | Δ=τg gives an artifact that does not vanish, and grows with m | TOY_MEASURED, by construction | FR-E1 medians 0.48 / 0.93 / 1.28 (m=2/4/8); H4 PASS; seed 25 non-monotone for eulerB_nodt |
+| C2 | Euler-B with the correct step has a first-order artifact | TOY_MEASURED | slope −1.03 (H2); median base-step artifact 0.21; magnitude depends on the toy's Δ·\|λ\|; **not measured for real Mamba** |
+| C3 | Bilinear is second order, stable, sign-alternating for z<−2, and inaccurate for stiff decay; its steady state is exact | TOY_MEASURED (+ EXPLORATORY columns) | slope −2.02 (H3); FR-E4-N2 Ā=−0.977 at λ=−500; N3 |
+| C4 | With new observations, the exact-ZOH change equals the change of the CT solution on the new held path | TOY_MEASURED | artifact ≤ 1.65e-13 (H5a); error to truth slope −0.98 (H5b) |
+| C4b | Exact squared-norm decomposition for the other variants | EXPLORATORY | Δ=τg, exact ZOH, m=8: ‖R‖² 1.22, cross −0.25 of Σ‖T‖²; Euler-B dt: ‖R‖² 0.53, cross +0.27 |
+| C5 | Sample-count readouts change under a density change on a split-invariant backbone; the exact held-path integral does not; endpoint sums converge only where the grid is refined | TOY_MEASURED | FR-E3(a), m=8: sample mean 0.30, sample sum 1.5, trapezoid 0.011, right-endpoint 0.026, exact 1.5e-16 (H7a, H7b); H8 ratio 9.0 |
+| C5f | H7c_original | **FAIL** (mis-specified pre-run; amendment A2) | slope +0.42 |
+| C5w | H7c_restated | **WEAK_PASS** | median slope −0.076; 21/32 negative |
+| C6 | Fixes are not additive; each alone leaves at least half; only the three together remove the artifact | TOY_MEASURED | 0.46 → 0.25 / 0.48 / 0.30 → 1.5e-16 |
+| C7 | The float32 floor is about 1e-4 at 16k sub-steps | TOY_MEASURED (emulated) | FR-E4-N4 |
+| C8 | Stacks: the layerwise endpoint hold of an internal signal changes under splitting at first order, with no new external information | STANDARD + TOY_MEASURED (linear cascade) | P1-COMP-01: exact coupled invariant 1.7e-15; layerwise error 0.19 → 0.026 (slope −0.95; −0.93 for a=c) |
+| C8p | Layerwise error bound \|e_k\| ≤ \|bd\| U δ e^{cδ}/c, uniform in T, including a=c | PROVED (elementary; written in paper Prop. 4.2; not independently checked) | — |
+| C9 | A token-indexed conv1d violates assumption (ii) | ANALYTIC_ARGUMENT; magnitude NOT_RUN | code fact: `d_conv=4` |
+| C10 | Any trained-model result | NOT_RUN | P1-REAL-01 |
+| C11 | Official TIDES code facts: step ∝ gap; naive exp−1 in B̄; right-endpoint scan; BatchNorm over batch×time; conv off by default; mean-pooling classifier | CODE_READ (effect NOT_RUN) | configs/p1_real_01.json |
 
-**Engineering vs. science.**
+**Separation of evidence types.**
 
-- *Engineering success.* The implementation is correct to float64 precision: H1, H5a and H7a pass. It matches an independent RK4 reference, and outputs are bit-identical across two runs.
-- *Scientific support.* The toy separates the named artifact sources and shows that the simple fix removes them in a single layer. This **supports the stop condition**, not a new method. Most of the individual facts (C0, C2 order, C3 order, readout bias) are known in principle. What the toy adds is the controlled separation, and the magnitudes it reports are specific to the toy.
+- *Engineering PASS* (implementation correct): H1, H5a, H7a, COMP-H1–H3.
+- *Toy results*: C1–C8.
+- *Real-model results*: none (NOT_RUN).
+- *External utility*: not assessed.
+- *Novelty judgement*: the new-architecture claim is STOPPED. For the measurement/decomposition framing we found no prior controlled refinement study in the sources read; this is ABSENCE_OF_EVIDENCE, not proof.
 
-## 3. FIRST_RUN results (primary config: uniform base grid, real modes, 32 units)
+## 3. FIRST_RUN results (unchanged; primary config: uniform base grid, real modes, 32 units)
 
-Full tables are in `results/first_run_summary.md`. Raw per-unit records are in `results/raw/*.jsonl`. Hypothesis verdicts are in `results/raw/hypotheses.json`.
-
-### 3.1 Pre-registered hypotheses
+Full tables: `results/first_run_summary.md`. Manuscript tables regenerated from raw: `paper/generated/`.
 
 | ID | Verdict | Note |
 |---|---|---|
 | H1 | PASS | max 6.3e-15 ≤ 1e-12 |
-| H2 | PASS | median slope −1.03 ∈ [−1.2, −0.8] |
-| H3 | PASS | median slope −2.02 ∈ [−2.2, −1.8] |
-| H4 | PASS | zoh_nodt 32/32 and eulerB_nodt 31/32 non-decreasing; medians at m=8: 1.28 / 1.44 |
-| H5a | PASS | max artifact 1.65e-13 ≤ 1e-8 |
+| H2 | PASS | median slope −1.03 |
+| H3 | PASS | median slope −2.02 |
+| H4 | PASS | zoh_nodt 32/32 and eulerB_nodt 31/32 non-decreasing |
+| H5a | PASS | max artifact 1.65e-13 |
 | H5b | PASS | median slope −0.98 |
-| H6 | PASS | medians at m=8: 1.26 / 1.46 |
+| H6 | PASS | medians 1.26 / 1.46 |
 | H7a | PASS | max 5.3e-15 |
-| H7b | PASS | holds at each m ∈ {2,4,8} |
-| H7c_original | **FAIL** | as predicted before the run (amendment A2): \|r_m − r_1\| grows toward a limit (slope +0.42) |
-| H7c_restated | PASS, but **weak** | median slope −0.076; only 21/32 units have negative slopes (range −2.3 to +1.9). The unrefined second half is the likely cause, since its coarse Riemann error does not shrink; this cause was not tested separately |
-| H8 | PASS | ratio 9.0 ≥ 5 |
+| H7b | PASS | holds at each m |
+| H7c_original | **FAIL** | mis-specified before the run (A2); slope +0.42 |
+| H7c_restated | PASS, **weak** | median slope −0.076; 21/32 negative; cause (unrefined half) not tested |
+| H8 | PASS | ratio 9.0 |
 
-### 3.2 One-fix-at-a-time decomposition
+## 4. P1-COMP-01 (two-layer linear cascade; STANDARD-PROPERTY CHECK)
 
-Scenario: FR-E3(a), split of the first half only, held path unchanged, m=8. Values are median scale-normalized readout changes.
+- *System.* ḣ1 = −a h1 + b u and ḣ2 = −c h2 + d h1.
+- *Cases.* (a,b,c,d) = (1,1,0.5,1) and (1,1,1,1). The second is a=c, a Jordan block.
+- *Input.* The held input of FIRST_RUN unit 0 on the FIRST_RUN base grid. No new seed or grid.
+- *Splitting.* m ∈ {1,2,4,8}; physical time and the original input are preserved.
+- *Results.* All COMP-H1..H5 PASS for both cases. Wall clock 0.108 s.
+  - The exact coupled solution is invariant to 1.7e-15 and matches RK4 to 6.1e-15.
+  - Layer 1 of the layerwise computation is identical to the exact solution.
+  - The layerwise layer-2 error is 0.19 / 0.10 / 0.052 / 0.026 (a≠c) and 0.20 / 0.11 / 0.055 / 0.028 (a=c).
+- *Interpretation.* Every layer satisfies the single-layer conditions. The change comes only from resampling the internal signal. This is not new information and not a new architecture.
 
-| configuration | change |
-|---|---|
-| Mamba-style toy recipe (Δ=τg, Euler B, sample mean) | 0.462 |
-| + time-weighted readout (trapz) only | 0.245 |
-| + exact ZOH B only | 0.475 |
-| + Δ=dt·g only | 0.305 |
-| + Δ=dt·g + trapz | 0.050 |
-| + Δ=dt·g + exact ZOH + trapz | 0.011 |
-| + Δ=dt·g + exact ZOH + time-exact readout | 1.5e-16 |
+## 5. Proof candidates
 
-The decomposition is **not additive**, so it should not be reported as shares that sum to 100%.
+Numerical agreement is not a proof.
 
-### 3.3 Secondary configurations (descriptive, 8 units each)
+- **P-A (STANDARD; proof in paper Prop. 4.1).** Split invariance under (i)–(iv).
+- **P-cascade (PROVED, elementary; paper Prop. 4.2; not independently checked).**
+  - Statement: the layerwise endpoint-hold error satisfies \|e_k\| ≤ \|bd\| U δ e^{cδ}/c.
+  - Proof steps:
+    - The local term is bounded by \|bd\| U τ², since \|ḣ1\| ≤ 2\|b\|U.
+    - Unroll the recursion with the contraction e^{−cτ}.
+    - Bound the resulting sum by e^{cδ}/c.
+- **P-B (UNPROVED sketch).** The hold error is first order, uniformly in T, under A1–A4 (paper App. C). Missing: Carathéodory treatment.
+- **P-C (UNPROVED sketch).** The Euler-B global error is O(δ), with a constant that grows with Δ\|λ\|.
+- **P-D (CONJECTURE).** Under refinement, the Δ=τg artifact tends to a nonzero quasi-steady-state limit.
+- **P-E (was CONJECTURE).** For the linear cascade it is now P-cascade. For trained selective stacks its magnitude is NOT_RUN.
 
-- Jittered base grid: same qualitative pattern. zoh_dt splitting change ≤ 2.1e-15.
-- Complex modes: bilinear_dt splitting change is larger (median 0.24 at m=8, vs 0.009 for real modes), consistent with frequency warping. This mechanism was not tested separately.
-
-### 3.4 Failure cases and numerical logs (FR-E4)
-
-- **N1.** Naive `(exp(z)-1)/λ` loses precision: relative error 8.0e-4 at z=−1e-14, versus ≤ 8e-17 with `expm1`. In float64 with m ≤ 65536 sub-steps the effect on composition stays small (3.6e-12 vs 1.6e-12).
-- **N2.** Bilinear on stiff modes is not L-stable: Ā ≈ −0.98 and the output oscillates. Euler-B's relative output error reaches 1.7e2 at λ=−500 and dt=0.5, i.e. the output is about 170× too large.
-- **N3.** Euler-B steady-state error under a held input grows with the step: 0.35% at dt=0.01, 18% at dt=0.5, 457% at dt=8. ZOH and bilinear are exact at steady state.
-- **N4.** Emulated float32 drifts with m: 4.3e-6 at m=256, 1.1e-4 at m=16384. This is an emulation in which every primitive is rounded and exp is correctly rounded. It does not reproduce any GPU kernel.
-
-## 4. Proof candidates
-
-Numerical agreement is **not** a proof. Only P-A is a complete (and standard) argument.
-
-**Assumptions used below.**
-
-- (A1) Re λ_n ≤ −μ < 0 for every mode.
-- (A2) g : [−U,U] → [g_min, g_max] with g_min > 0, and g is L_g-Lipschitz.
-- (A3) F(v) := g(v)B(v)v is L_F-Lipschitz on [−U,U], with |F| ≤ F_max.
-- (A4) u : [0,T] → [−U,U] is L_u-Lipschitz.
-- The grid 0=t_0<…<t_K=T has mesh δ. The right-held path is ũ(t)=u(t_k) on (t_{k−1},t_k].
-
-**P-A (STANDARD; elementary proof).**
-
-- *Statement.* On (t_{k−1},t_k] the held CT model is h' = g_k(λh + B_k u_k) with constant coefficients. Variation of constants gives h(t_k) = e^{g_kλ dt_k} h(t_{k−1}) + (e^{g_kλ dt_k} − 1)λ^{-1} B_k u_k, which is exactly the zoh_dt step. Splitting the interval replaces e^{a}·e^{b} by e^{a+b}, and the input terms add up accordingly (semigroup property). Hence the recurrence at the base times is unchanged.
-- *Status.* Textbook fact. Not a contribution.
-
-**P-B (UNPROVED; sketch). Hold error is first order, uniformly in T.**
-
-- *Statement.* Under A1–A4, sup_t |h_ũ(t) − h_u(t)| ≤ (L_g|λ|H + L_F) L_u δ / (g_min μ), where H = F_max/(g_min μ).
-- *Sketch.*
-  - The error satisfies e' = g(ũ)λe + [(g(ũ)−g(u))λh_u + F(ũ)−F(u)].
-  - The bracket is bounded by (L_g|λ|H + L_F)L_u δ.
-  - The propagator satisfies |exp(∫_s^t g(ũ)λ)| ≤ e^{−g_min μ (t−s)}.
-  - Integrating gives the bound. The bound on H follows from the same argument applied to h_u with h(0)=0.
-  - At grid times ũ(t_k)=u(t_k), so the output error is bounded by |C(u_k)|·|e(t_k)|.
-- *Missing.* A written, checked proof, including Carathéodory solutions for the discontinuous ũ.
-- *Numerical consistency.* H5b slope −0.98. This is not a proof.
-
-**P-C (UNPROVED; sketch). Euler-B error is O(δ), uniformly in T, with a constant that grows with Δ|λ|.**
-
-- *Statement.* The local error per step is |ΔB u|·|φ1(Δλ) − 1| ≤ |Bu| Δ²|λ|/2 for Re(Δλ) ≤ 0.
-- *Sketch.* Use e^z − 1 − z = z²∫_0^1(1−s)e^{sz}ds. Sum the local errors against the contraction factor e^{−g_min μ dt}. This gives O(δ)·(δ + 1/(g_min μ)).
-- *Consistency.* FR-E4-N3 shows the steady-state gain factor Δ|λ|/(1 − e^{−Δ|λ|}) exactly.
-
-**P-D (CONJECTURE). The `*_nodt` artifact does not vanish under refinement.**
-
-- *Statement.* With Δ=τg fixed and step δ→0, the recurrence is the exact flow of the time-rescaled system h' = (τ/δ)g(ũ)(λh + B(ũ)ũ). This is a singular perturbation whose solution approaches the memoryless quasi-steady state −B(u)u/λ. The artifact therefore tends to ‖h_CT − h_qs‖ ≠ 0 in general.
-- *Numerical consistency.* FR-E1: zoh_nodt artifact 0 → 1.28 over m = 1 → 8. This is not a proof.
-
-**P-E (CONJECTURE). See C8 (depth ≥ 2).** It is the first candidate for a non-trivial statement, and it is NOT_RUN.
-
-## 5. Stop conditions
+## 6. Stop conditions (preserved)
 
 | Condition | Result |
 |---|---|
-| S0 budget (120 s, 2 CPUs) | not triggered: 20.6 s, affinity {0,1} |
-| S1 implementation bug | not triggered: H1 and H5a pass |
-| S2 research stop | **TRIGGERED at toy level.** The simple time handling (Δ=dt·g, exact ZOH B, time-exact readout) removes the splitting artifact to 1.5e-16 and the new-observation artifact to reference precision (≤1.7e-13) |
-| S3 no sweep | respected. The run was repeated once only to fix a manifest bookkeeping bug; all data outputs were byte-identical (see STATUS.md) |
+| S0 budget (FIRST_RUN 120 s) | not triggered (20.6 s) |
+| S1 implementation bug | not triggered |
+| S2 research stop | **TRIGGERED at toy level. ARCHITECTURE_CLAIM = STOPPED.** Operational rule, not a statistical or equivalence test |
+| S3 no sweep | respected; P1-COMP-01 used no new seed or grid |
 
-**Decision.** The **new-architecture claim is stopped** at toy level, for two reasons:
+TIDES (arXiv 2605.09742) already occupies the design of physical Δ + exact ZOH + selectivity on Re(Λ), B, C. The manuscript is framed as measurement and decomposition only.
 
-1. The simple fix explains the entire single-layer artifact.
-2. TIDES (arXiv 2605.09742) already occupies the design of physical Δ + exact ZOH + selectivity on Λ.
+## 7. Next decision experiment: P1-REAL-01 (DESIGN FIXED, NOT_RUN)
 
-The *measurement and decomposition* question is still open, but only for trained, multi-layer models (C8, C9). Toy failures must not be reported as failures of real Mamba.
+`configs/p1_real_01.json` supersedes the NX1 plan in part. The NX1 30-minute budget for all baselines was never measured and is not confirmed.
 
-## 6. Next decision experiment (DESIGN ONLY, NOT_RUN)
+- *Implementation, fixed before results.* Official TIDES PyTorch @ `4b51adce2060e7209e002a6a2fd6691a2f6fcc5e` (MIT).
+  - Selected because it is official, CPU-capable with a pure-PyTorch scan, and handles per-step physical steps.
+  - Rejected: Mamba (CUDA/Triton kernels; no physical time), S5 (jax 0.3.5 pin; per-step Δ on a separate branch), and the Fading Flash notebook (JAX; absent).
+- *Comparison.* The same trained backbone, fed (a) on the native grid with physical steps and (b) resampled onto the training grid.
+  - Resampling: LOCF (causal, primary) or linear interpolation (non-causal, secondary).
+  - Conditions: splitting, nested new observations, random times.
+- *Protocol.*
+  - Trajectory IDs are split first (512/128/256); grids are built afterwards within each split.
+  - Labels are taken at fixed physical query times over a fixed physical horizon.
+  - Normalization uses train-split statistics only.
+- *Metrics.* Discrepancy, task loss and inference cost, with bootstrap CIs.
+  - Equivalence is claimed only if the CI lies within ±5%.
+  - Non-significance is not equivalence.
+- *Approval items A-R1..A-R4.*
+  - A-R1: install torch (CPU).
+  - A-R2: fetch the pinned TIDES code.
+  - A-R3: a ≤300 s timing smoke.
+  - A-R4: a training cap to be set after the smoke.
 
-`configs/next_experiment.json` (NX1-STEM-BACKBONE) defines the experiment:
-
-- *Factors.* Stem {linear interpolation (exact first-order hold), exact ZOH} × backbone {observed grid, fixed time grid}.
-- *Required baselines.*
-  - S5 (per-step Δt ZOH)
-  - S4D-ZOH on the resampled fixed grid
-  - **resampling + the same selective backbone**
-  - the Mamba-style recipe
-  - Mamba-style + Δt as an input channel
-  - the simple-fix selective model
-  - a TIDES-like model
-- *Data.* Synthetic CT teachers. Trajectory IDs are split first (512/128/256), and grids are built afterwards within each split.
-- *Resources.* It is blocked on approval to install a CPU tensor library. Budget: 30 min on 2 CPU threads.
-- *Stop rules.* If either simple fix reaches ≤1e-3 splitting inconsistency at m=8 with accuracy within 5% of the best model, any architecture claim is dropped for good. If no trained model shows inconsistency above the float32 floor, the question itself is dropped.
-
-## 7. Sources, licenses, versions
+## 8. Sources, licenses, versions
 
 | Item | Kind | Source / version | License | Use |
 |---|---|---|---|---|
-| `src/scssm`, `scripts`, `tests` | code | this repo, commits e8d127d..85b1ffe; CPython 3.11.15, stdlib only | repo license NOT SPECIFIED (owner decision) | executed |
-| Input paths, parameters | data | synthetic, generated from integer seeds 0–31 (primary) and 0–7 (secondary); seed 999 used only for a timing smoke test whose metrics were not inspected | n/a | executed |
-| state-spaces/mamba | external code | `main` @ e9594ce1c732d97440f0332fdc43170a2294dbfa (fetched 2026-09-26); `selective_scan_interface.py` sha256 a570f4f1…, `mamba_simple.py` sha256 a17e4c51… | Apache-2.0 (LICENSE header read) | read only, to check the discretization; not vendored, not executed |
-| Papers in RELATED_WORK.md | literature | arXiv versions current at fetch time (not pinned) | not checked | read (see access levels) |
-| Pretrained models | — | none | — | — |
+| `src/scssm`, `scripts`, `tests` | code | this repo; CPython 3.11.15; stdlib only | repo license NOT SPECIFIED (owner decision) | executed |
+| Toy data | data | synthetic from integer seeds: FIRST_RUN 0–31 (primary), 0–7 (secondary), 999 (timing smoke only); P1-COMP-01 reuses unit 0; P1-REAL-01 would use 1,000,000+id and 2,000,000+id | n/a | executed (P1-REAL-01: not) |
+| state-spaces/mamba | external code | `main` @ e9594ce1c732d97440f0332fdc43170a2294dbfa; files read: `selective_scan_interface.py`, `mamba_simple.py`, `modules/mamba3.py` (imports) | Apache-2.0 (LICENSE read) | read only |
+| TaylanSoydan/TIDES | external code | HEAD @ 4b51adce2060e7209e002a6a2fd6691a2f6fcc5e (shallow clone in scratchpad, not vendored) | MIT (LICENSE read) | read only; pinned for P1-REAL-01 |
+| lindermanlab/S5 | external code | HEAD @ 3c18fdb6b06414da35e77b94b9cd855f6a95ef17; `pendulum` branch @ 52cc7e22d6963459ad99a8674e4d3cfb0a480008 (not cloned) | MIT (LICENSE read) | read only |
+| ICML 2026 style kit | template | https://media.icml.cc/Conferences/ICML2026/Styles/icml2026.zip, sha256 8b29290f…, fetched 2026-09-26; not vendored | distributed by ICML for authors (license text not checked) | referenced by `paper/main.tex`; not compiled |
+| Papers | literature | arXiv abs-page metadata in `paper/bib_provenance.json` (the arXiv API returned HTTP 406 via the proxy) | not checked | cited; see RELATED_WORK.md |
+| Pretrained models / checkpoints | — | none | — | — |

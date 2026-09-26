@@ -1,86 +1,128 @@
-# STATUS — P1 Sampling-Consistent Selective SSMs
+# STATUS — P1 Sampling-grid dependence in selective SSMs
 
-Last updated: 2026-09-26 (UTC). Branch: `claude/intelligent-maxwell-t1lcda`.
+Last updated: 2026-09-26 (UTC), session 2. Branch: `claude/intelligent-maxwell-t1lcda`.
 
-## State at start of this session
+## Standing decisions (preserved)
 
-The repository was empty: no commits, no remote refs.
+- **ARCHITECTURE_CLAIM = STOPPED.** Stop condition S2 was triggered at toy level in FIRST_RUN, and TIDES (arXiv 2605.09742) is prior art for physical Δ + exact ZOH + selectivity on Re(Λ), B, C. S2 is an operational rule, not a statistical, equivalence or novelty test.
+- **H7c_original = FAIL.** It was mis-specified before the run (amendment A2).
+- **H7c_restated = WEAK_PASS.** Median slope −0.076; only 21 of 32 units negative.
+- **Trained-model results (Mamba, S4, S5, TIDES) = NOT_RUN.**
+- EXPLORATORY analyses are labelled as such: the FR-E2 exact decomposition and the stiffness columns.
 
-- These files did not exist: CLAUDE.md, STATUS.md, RESEARCH_PACKET.md, configs, results.
-- No earlier STOP or ARCHIVE decisions or Work IDs existed, so none were changed or mapped.
-- numpy, torch, scipy and pytest were not installed. No installs were approved, so all code is CPython 3.11 stdlib only (`unittest` instead of pytest).
+## Session 2: what was done
 
-## FIRST_RUN: DONE (then stopped, as instructed)
+State at start:
 
-| Step | Commit | Note |
+- HEAD was `306a772`, in sync with the remote.
+- No CLAUDE.md exists.
+- No LaTeX compiler, numpy, torch or matplotlib is installed, and installing them is not approved.
+
+| Step | Commit | Result |
 |---|---|---|
-| Pre-registration | e8d127d | `configs/first_run.json`: hypotheses H1–H8, metrics, units, budget, stop conditions |
-| Implementation + pre-run amendments A1–A3 | f88b8b9 | amendments recorded **before** any experiment ran (reasons are in the config) |
-| Runner fix | 85b1ffe | the git-dirty check now runs before the output files are created |
-| Execution | at 85b1ffe | 20.6 s wall clock of 120 s; CPU affinity {0,1}; clean tree |
+| P1-COMP-01 pre-registration | 78bdcf0 | `configs/p1_comp_01.json` |
+| P1-COMP-01 code + tests | ca90992 | `src/scssm/cascade.py`, `tests/test_cascade.py` |
+| P1-COMP-01 run | 13f8927 | all COMP-H1..H5 PASS; 0.108 s; clean tree |
+| P1-REAL-01 design, adapter and protocol | 8f12ebf | `configs/p1_real_01.json`, `src/scssm/real/`, `scripts/run_p1_real_01.py`; torch stages NOT_RUN |
+| Paper assets, manuscript v1, claims map, doc corrections | (this commit) | see below |
 
-### Deviations and incidents (all logged)
+**Interpretation corrections.** The details are in RESEARCH_PACKET.md §0.
 
-1. **Timing smoke test before the real run.** It used seed 999, which is not a pre-registered seed. Only timings were printed; metrics were not inspected.
-2. **Run 1 was correct but its manifest was wrong.** Run 1 completed, but the manifest reported `git_dirty_at_start=true`. The runner itself had created `results/raw/run.log` before running `git status`.
-   - The runner was fixed and the run repeated once.
-   - All 10 data files (9 `.jsonl` plus `hypotheses.json`) are **byte-identical** between run 1 and run 2 (sha256 compared). Only `run.log` timings differ.
-   - An intermediate attempt was killed by a shell pipe (`| head`) after its first experiment. Its partial outputs were deleted before the final run.
-3. **H7c was mis-specified before the run.** Amendment A2 identified the problem before running. The original clause is still evaluated verbatim and FAILS, as predicted. The restated clause passes only weakly (see below).
+1. The single-layer invariance assumptions (i)–(iv) are now explicit.
+2. Internal resampling between layers is no longer called new information.
+3. For bilinear, stability, oscillation and stiff-decay accuracy are separated.
+4. The norm-ratio "share" is replaced by the exact decomposition T = P + R with its cross term. This is a re-aggregation of existing raw records; the old column is relabelled, not deleted, and its numbers are unchanged.
+5. Endpoint time-weighted sums are distinguished from the exact held-path integral.
 
-### Results: engineering vs. science (details in RESEARCH_PACKET.md §2–3)
+**Source checks (self).**
 
-**Engineering: PASS.**
+- TIDES paper: §1–3.2, §4, §5.3, §6–8, App. A–C.
+- TIDES code @ 4b51adc (MIT).
+- Mamba-3: §3.1 and the §4 headings.
+- The official Mamba repo @ e9594ce: `mamba3.py` imports Triton.
+- S5: Eq. 6, §6.2, §6.3, B.1.3 and F.3.
+- S5 code @ 3c18fdb: jax 0.3.5 pinned; the pendulum code is on a separate branch.
+- Keyword checks of S4, LSSL, S4D, Mamba, Mamba-2, Liquid-S4, Cirone et al., NCDE, Log-NCDE, S4ND, event-camera SSMs and LinOSS.
 
-- Exact ZOH is invariant under splitting: max 6.3e-15.
-- It matches an independent RK4 reference: 1.6e-13.
-- The time-exact readout is invariant: 5.3e-15.
-- Outputs are deterministic across the two runs.
+**Implementation fixed before any result.** The official TIDES PyTorch at commit `4b51adce2060e7209e002a6a2fd6691a2f6fcc5e`, for the native-grid vs. training-grid-resampling comparison.
 
-**Pre-registered hypotheses (primary config, 32 units).**
+## Compute and cost ledger (all CPU, 2 threads; no GPU, no paid API, no external data)
 
-- H1, H2, H3, H4, H5a, H5b, H6, H7a, H7b, H8: PASS.
-- H7c_original: FAIL (mis-specified).
-- H7c_restated: PASS but weak. Median slope −0.076; only 21 of 32 units have a negative slope.
+| Item | Wall clock | Note |
+|---|---|---|
+| FIRST_RUN timing smoke (seed 999) | ≈2.3 s | session 1; metrics not inspected |
+| FIRST_RUN run 1 | 21.3 s | session 1; manifest bookkeeping bug |
+| FIRST_RUN partial run (killed by pipe) | ≈0.9 s | session 1; outputs deleted |
+| FIRST_RUN run 2 (reported) | 20.6 s | session 1; data outputs byte-identical to run 1 |
+| P1-COMP-01 | 0.108 s | session 2 |
+| P1-REAL-01 `--stage plan` | 0.001 s | protocol checks only, no model |
+| Asset/summary/bib/check scripts, unit tests | < 5 s total | aggregation and tests; no experiment re-run |
+| Network reads | — | arXiv HTML and abs pages, GitHub raw files and shallow clones (scratchpad, read only), ICML 2026 style kit (scratchpad, not vendored); the arXiv API returned HTTP 406 |
 
-**Scientific reading (toy only).**
+## Manuscript v1
 
-- The grid-induced unnecessary change separates into five parts:
-  - Δ not scaled by dt: does not vanish.
-  - Euler-B discretization: O(dt).
-  - Bilinear discretization: O(dt²), and not L-stable.
-  - Sample-count readouts: do not vanish under a density change.
-  - Riemann vs. exact time weighting.
-- When new observations are added, the change of exact ZOH is 100% genuine path change.
-- The fixes are not additive, and only the combination removes the artifact.
-
-**Stop condition S2: TRIGGERED at toy level. ARCHITECTURE_CLAIM = STOPPED.**
-
-- In a single layer, the simple fix (Δ=dt·g, exact ZOH B, time-exact readout) explains the entire artifact.
-- TIDES (arXiv 2605.09742, 2026) already occupies the design of physical Δ + exact ZOH + selectivity on Λ.
-- The *measurement and decomposition* question remains open only for trained, multi-layer models. That work is NOT_RUN.
+- **Path.** `paper/main.tex`. Tables, figure and number macros are generated in `paper/generated/` by `scripts/make_paper_assets.py` from `results/raw`. The bibliography is `paper/references.bib`, built by `scripts/make_bib.py` from arXiv metadata. The claims map is `paper/claims.csv` (31 claims).
+- **Template.**
+  - TARGET_YEAR = 2027 and TEMPLATE_YEAR = 2026. No official ICML 2027 style page exists: `icml.cc/Conferences/2027*` returns 404, and icml.cc lists conferences only up to 2026.
+  - The official `icml2026.sty` is used unmodified, in review/anonymous mode. It is **not vendored**; its source URL and sha256 are in the `main.tex` header.
+  - SUBMISSION_READY = false.
+- **Completed sections.** Abstract, Introduction, Related Work, Problem Setup, Analysis (Prop. 4.1 standard; Prop. 4.2 standard with proof), Controlled Results, Trained-models protocol (NOT RUN), Limitations, Conclusion, Impact Statement, and Appendix A–E.
+- **Remaining TODOs.** Four `\todo{P1-REAL-01: ...}` markers: abstract, §5.6, conclusion, and appendix E.
+- **Compile status: COMPILE_NOT_RUN.** No pdflatex, latexmk or tectonic is available.
+  - The static check (`scripts/check_paper.py` → `results/paper_check.json`) found:
+    - 0 undefined citations;
+    - 0 undefined references;
+    - 0 undefined number macros;
+    - balanced environments and braces;
+    - no identifying strings in `main.tex`;
+    - a main body of about 3,660 words.
+  - Page count, overfull boxes, table and equation clipping, and float placement are **UNVERIFIED**.
+- `paper/skeleton.tex` (session 1) is kept and marked superseded.
 
 ## NOT_RUN / unverified
 
-- Any trained model, including real Mamba, S4, S5 and TIDES. Toy failures are **not** evidence about real Mamba.
-- The depth ≥ 2 effect (C8): CONJECTURE.
-- The token conv1d effect (C9): CONJECTURE.
-- Interpolation (first-order hold) stem and fixed-time-grid backbone (NX1): design only.
-- Proofs P-B and P-C: UNPROVED sketches. P-D and P-E: CONJECTURE.
-- Real float32 or bfloat16 kernels. Only float32 emulation was run.
-- Literature: most per-paper details were read by the literature sub-agent only. The main author re-checked the TIDES abstract plus a keyword search of its full text, the Mamba-3 abstract, and the Mamba reference code with its license (see RELATED_WORK.md).
+- Every trained-model result, and the P1-REAL-01 predictions R-P1..R-P4.
+- The magnitude of the token conv1d (C9) and of normalization over the time axis.
+- Stacks deeper than the two-layer linear cascade.
+- Proof sketches P-B and P-C are UNPROVED; P-D is a CONJECTURE. Prop. 4.2 is proved in the paper (elementary) but not independently checked.
+- Real float32 and bf16 kernels; only an emulation was run.
+- S7, Δt-Mamba3D, SeRpEnt and SS-NO were read by the literature agent only, and are not cited in the manuscript.
 
-## Next (needs a decision from the owner)
+## Next decision (needs the owner's approval)
 
-NX1-STEM-BACKBONE (`configs/next_experiment.json`) is the one decision experiment. It **needs approval** to install a CPU tensor library, and a budget of 30 min on 2 CPU threads.
+The single next decision experiment is **P1-REAL-01** (`configs/p1_real_01.json`): train official TIDES once on one small synthetic task, then compare native-grid and training-grid-resampled evaluation on the same test trajectories. It needs these unapproved resources:
+
+- **A-R1:** install torch (CPU, ≥ 2.4), numpy and scipy.
+- **A-R2:** clone TIDES at the pinned commit into `third_party/TIDES`.
+- **A-R3:** a timing smoke of ≤ 300 s.
+- **A-R4:** a training wall-clock cap, set after the smoke.
 
 ## File map
 
-- `configs/first_run.json`: pre-registration and amendments.
-- `configs/next_experiment.json`: NX1 design (NOT_RUN).
-- `src/scssm/`: model, grids, RK4 references, metrics, experiments, hypothesis evaluation.
-- `tests/test_model.py`: 13 unittest checks (numerical checks, not proofs). Run with `python3 -m unittest discover -s tests -t .`.
-- `scripts/run_first_run.py`: budgeted runner. `scripts/summarize_first_run.py`: builds the tables from the raw records.
-- `results/raw/`: per-unit records, `hypotheses.json`, `run.log`. `results/first_run_summary.{md,json}`: tables.
-- `run_manifest.json`: git head, config and code sha256, environment, per-experiment status, output sha256.
-- `RESEARCH_PACKET.md`, `RELATED_WORK.md`, `paper/skeleton.tex` (English skeleton with `\todo{ID}`).
+- `configs/`:
+  - `first_run.json`: FIRST_RUN pre-registration and amendments.
+  - `p1_comp_01.json`.
+  - `p1_real_01.json`.
+  - `next_experiment.json`: NX1, kept, with an append-only status note.
+- `src/scssm/`:
+  - model, grids, reference, metrics, experiments, hypotheses;
+  - `cascade.py` (P1-COMP-01);
+  - `real/protocol.py` (stdlib, tested);
+  - `real/tides_adapter.py` (torch; not executed).
+- `scripts/`:
+  - `run_first_run.py`;
+  - `summarize_first_run.py`;
+  - `run_p1_comp_01.py`;
+  - `run_p1_real_01.py`;
+  - `make_paper_assets.py`;
+  - `make_bib.py`;
+  - `check_paper.py`.
+- `tests/`: 23 unittest checks (numerical checks, not proofs). Run with `python3 -m unittest discover -s tests -t .`.
+- `results/raw/`: FIRST_RUN and P1-COMP-01 raw records, hypothesis verdicts and logs, and the P1-REAL-01 plan check.
+- `results/`:
+  - `first_run_summary.{md,json}`;
+  - `paper_assets.json`;
+  - `paper_check.json`.
+- `run_manifest.json`: FIRST_RUN fields unchanged, plus `subsequent_runs` (P1-COMP-01).
+- `paper/`: `main.tex`, `generated/`, `references.bib`, `bib_provenance.json`, `claims.csv`, `skeleton.tex` (superseded).
+- `RESEARCH_PACKET.md`, `RELATED_WORK.md`.

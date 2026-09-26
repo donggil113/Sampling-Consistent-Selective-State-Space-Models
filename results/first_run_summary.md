@@ -70,7 +70,9 @@ exact ZOH vs independent RK4 on the base held path: max rel_l2(y) = 8.66e-13
 
 Nested refinement with new observations. artifact = rel_l2(model(G_m), CT model on held path of G_m); path = change of the CT held-path solution itself (genuine new information); err = rel_l2 to CT truth on the continuous path. Medians over units.
 
-| variant | m | total change | path change | artifact | nd artifact delta / (nd path + nd artifact delta) | err to truth |
+NOTE (corrected 2026-09-26): the ratio column is a ratio of NORMS, ||R|| / (||P|| + ||R||). Norms are not additive (||T||^2 = ||P||^2 + ||R||^2 + 2<P,R>), so it is NOT a share of the change; the exact decomposition is in paper/generated/tab_newobs.tex (scripts/make_paper_assets.py).
+
+| variant | m | total change | path change | artifact | norm ratio (not a share) | err to truth |
 |---|---|---|---|---|---|---|
 | zoh_dt | 1 | 0 | 0 | 4.26e-14 [1.64e-13] | n/a | 2.26e-01 |
 | zoh_dt | 2 | 1.07e-01 | 1.07e-01 | 3.42e-14 [1.65e-13] | 0.000 | 1.16e-01 |
@@ -103,7 +105,9 @@ CT held-path reference error to truth (input-reconstruction error only), median:
 
 Nested refinement with new observations. artifact = rel_l2(model(G_m), CT model on held path of G_m); path = change of the CT held-path solution itself (genuine new information); err = rel_l2 to CT truth on the continuous path. Medians over units.
 
-| variant | m | total change | path change | artifact | nd artifact delta / (nd path + nd artifact delta) | err to truth |
+NOTE (corrected 2026-09-26): the ratio column is a ratio of NORMS, ||R|| / (||P|| + ||R||). Norms are not additive (||T||^2 = ||P||^2 + ||R||^2 + 2<P,R>), so it is NOT a share of the change; the exact decomposition is in paper/generated/tab_newobs.tex (scripts/make_paper_assets.py).
+
+| variant | m | total change | path change | artifact | norm ratio (not a share) | err to truth |
 |---|---|---|---|---|---|---|
 | zoh_dt | 1 | 0 | 0 | 3.04e-14 [1.50e-13] | n/a | 2.27e-01 |
 | zoh_dt | 2 | 1.21e-01 | 1.21e-01 | 2.30e-14 [1.16e-13] | 0.000 | 1.06e-01 |
@@ -136,7 +140,9 @@ CT held-path reference error to truth (input-reconstruction error only), median:
 
 Nested refinement with new observations. artifact = rel_l2(model(G_m), CT model on held path of G_m); path = change of the CT held-path solution itself (genuine new information); err = rel_l2 to CT truth on the continuous path. Medians over units.
 
-| variant | m | total change | path change | artifact | nd artifact delta / (nd path + nd artifact delta) | err to truth |
+NOTE (corrected 2026-09-26): the ratio column is a ratio of NORMS, ||R|| / (||P|| + ||R||). Norms are not additive (||T||^2 = ||P||^2 + ||R||^2 + 2<P,R>), so it is NOT a share of the change; the exact decomposition is in paper/generated/tab_newobs.tex (scripts/make_paper_assets.py).
+
+| variant | m | total change | path change | artifact | norm ratio (not a share) | err to truth |
 |---|---|---|---|---|---|---|
 | zoh_dt | 1 | 0 | 0 | 1.37e-13 [8.66e-13] | n/a | 2.88e-01 |
 | zoh_dt | 2 | 1.40e-01 | 1.40e-01 | 1.37e-13 [8.74e-13] | 0.000 | 1.52e-01 |
@@ -239,7 +245,7 @@ Scale-normalized error to the continuous-time truth (time average for sample_mea
 | eulerB_nodt | 5.48e-02 -> 2.63e-01 | 1.57e-01 -> 5.71e-01 | 1.95e-01 -> 2.62e-01 | 1.50e-01 -> 2.60e-01 | NOT_APPLICABLE | 3.55e+00 |
 | bilinear_nodt | 1.14e-01 -> 1.81e-01 | 1.01e-01 -> 3.89e-01 | 6.65e-02 -> 3.65e-01 | 6.26e-02 -> 3.59e-01 | NOT_APPLICABLE | 3.11e+00 |
 
-### Decomposition by one-fix-at-a-time (FR-E3(a) split first half, m=8, uniform-real, median over 32 units)
+### One-fix-at-a-time comparison (non-additive; 'time_trapz' is a trapezoidal endpoint sum, 'time_exact' the exact held-path integral) (FR-E3(a) split first half, m=8, uniform-real, median over 32 units)
 
 | configuration | variant | readout | median scale-normalized change |
 |---|---|---|---|

@@ -1,0 +1,35 @@
+{
+  "compile_status": "COMPILE_NOT_RUN (no pdflatex/latexmk/tectonic in the container)",
+  "missing_inputs": [],
+  "undefined_citations": [],
+  "unused_bib_entries": [
+    "soydan2024s7",
+    "zhou2025dtmamba3d"
+  ],
+  "undefined_refs": [],
+  "unreferenced_labels": [
+    "app:code",
+    "app:repro",
+    "sec:conclusion",
+    "sec:exp-newobs",
+    "sec:exp-split",
+    "sec:exp-stiff",
+    "sec:intro",
+    "sec:readout-analysis",
+    "sec:related",
+    "sec:single"
+  ],
+  "undefined_number_macros": [],
+  "environment_imbalance": {},
+  "brace_balance": 0,
+  "anonymity_hits_in_main_tex": [],
+  "todo_count": 4,
+  "todos": [
+    "P1-REAL-01: trained official TIDES, native grid vs.\\ training-grid resampling",
+    "P1-REAL-01: trained-model discrepancy, task loss and inference cost for native vs.\\ resampled evaluation; requires approval to install a CPU tensor library, fetch the pinned code, and a measured training budget",
+    "P1-REAL-01: answer for one trained official implementation",
+    "P1-REAL-01: add trained-model results and their compute record"
+  ],
+  "main_body_word_estimate": 3687,
+  "main_body_page_estimate": "UNVERIFIED (compile required); ICML limit is 8 pages excluding references and appendix"
+}

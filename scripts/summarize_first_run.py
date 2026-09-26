@@ -77,7 +77,10 @@ def e2_table(recs, refs, tag):
     rows = [f"### FR-E2-NEWOBS [{tag}] (n_units={len({r['seed'] for r in recs})})", "",
             "Nested refinement with new observations. artifact = rel_l2(model(G_m), CT model on held path of G_m); "
             "path = change of the CT held-path solution itself (genuine new information); err = rel_l2 to CT truth on the continuous path. Medians over units.", "",
-            "| variant | m | total change | path change | artifact | nd artifact delta / (nd path + nd artifact delta) | err to truth |",
+            "NOTE (corrected 2026-09-26): the ratio column is a ratio of NORMS, ||R|| / (||P|| + ||R||). Norms are not additive "
+            "(||T||^2 = ||P||^2 + ||R||^2 + 2<P,R>), so it is NOT a share of the change; the exact decomposition is in "
+            "paper/generated/tab_newobs.tex (scripts/make_paper_assets.py).", "",
+            "| variant | m | total change | path change | artifact | norm ratio (not a share) | err to truth |",
             "|---|---|---|---|---|---|---|"]
     out = {}
     for v in VARIANTS:
@@ -193,7 +196,7 @@ def factorial(e3):
         ("+ Delta=dt*g + exact ZOH + time trapz", "zoh_dt", "time_trapz"),
         ("all fixes: Delta=dt*g + exact ZOH + time-exact readout", "zoh_dt", "time_exact"),
     ]
-    rows = ["### Decomposition by one-fix-at-a-time (FR-E3(a) split first half, m=8, uniform-real, median over 32 units)", "",
+    rows = ["### One-fix-at-a-time comparison (non-additive; 'time_trapz' is a trapezoidal endpoint sum, 'time_exact' the exact held-path integral) (FR-E3(a) split first half, m=8, uniform-real, median over 32 units)", "",
             "| configuration | variant | readout | median scale-normalized change |", "|---|---|---|---|"]
     out = []
     for name, v, n in combos:

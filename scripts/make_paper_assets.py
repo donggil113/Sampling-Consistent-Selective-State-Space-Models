@@ -317,6 +317,9 @@ variant & $m$ & median $\|T\|/\|y_1\|$ & $\|P\|^2$ & $\|R\|^2$ & $2\langle P,R\r
 \end{table}
 """)
     macros["EtwoZohArt"] = sci(art_zoh)
+    decs = [d for k, d in A["E2"]["decomposition"].items() if not k.startswith("zoh_dt@")]
+    macros["EtwoCrossMin"] = f"{min(d['cross_frac_min'] for d in decs):+.2f}"
+    macros["EtwoCrossMax"] = f"{max(d['cross_frac_max'] for d in decs):+.2f}"
     dn = A["E2"]["decomposition"]["zoh_nodt@8"]
     macros["EtwoNodtArtFrac"] = f"{dn['pooled_artifact_frac']:.2f}"
     macros["EtwoNodtCrossFrac"] = f"{dn['pooled_cross_frac']:+.2f}"
@@ -463,6 +466,15 @@ Values are listed in \cref{tab:split,tab:coupling}.}
 \label{fig:convergence}
 \end{figure}
 """)
+
+    # ------------------------------------------------------------------ hypothesis evidence used in the text
+    hv = {h["id"]: h for h in hyp["hypotheses"]}
+    macros["HsevenOrigSlope"] = f"{hv['H7c_original']['evidence']['median_slope_change_time_riemann_m2_m8']:+.2f}"
+    macros["HfourEulerFrac"] = f"{round(hv['H4']['evidence']['eulerB_nodt']['frac_nondecreasing_m2_to_m8'] * 32)}"
+    macros["NunitsPrimary"] = str(len(seeds))
+    fr_man = json.load(open(os.path.join(ROOT, "run_manifest.json")))
+    macros["FirstRunSeconds"] = f"{fr_man['wall_clock_seconds']:.1f}"
+    macros["CompSeconds"] = f"{fr_man['subsequent_runs'][0]['wall_clock_seconds']:.2f}"
 
     # ------------------------------------------------------------------ macros + json
     lines = [f"\\newcommand{{\\{k}}}{{\\ensuremath{{{v}}}}}" for k, v in sorted(macros.items())]
