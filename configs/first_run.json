@@ -90,6 +90,29 @@
     "H7": "FR-E3(a) zoh_dt: time_exact change <= 1e-12 for all units; median sample_sum and sample_mean change >= 1e-2; time_riemann change > 0 and decreasing in m (median slope < 0).",
     "H8": "FR-E3(b) zoh_dt: median error-to-truth of sample_mean at m=8 >= 5 x median error-to-truth of time_exact at m=8."
   },
+  "amendments": [
+    {
+      "id": "A1",
+      "utc": "2026-09-26T14:25:00Z",
+      "status": "PRE_RUN (no experiment had been executed)",
+      "change": "ct_held reference: RK4 sub-steps per grid interval = max(64, even ceil(dt_k * g(u_k) * max|lambda| / 0.002)) instead of a flat 64; RK4 for the held (autonomous linear) ODE is implemented through the classical RK4 stability polynomials R(z)=1+z+z^2/2+z^3/6+z^4/24 and P(z)=1+z/2+z^2/6+z^3/24, which is algebraically identical to classical RK4.",
+      "reason": "A pre-run error estimate T*mu*(h*mu)^4/120 with mu=g*|lambda| up to ~10 and h=0.5/64 gives up to ~2.5e-5, i.e. the reference itself could violate the 1e-8 threshold of H5. H5 thresholds are unchanged."
+    },
+    {
+      "id": "A2",
+      "utc": "2026-09-26T14:25:00Z",
+      "status": "PRE_RUN (no experiment had been executed)",
+      "change": "Add H7c_restated: FR-E3(a) zoh_dt: |time_riemann_m - time_exact_m| (scale-normalized) decreases in m, median log-log slope over m in {1,2,4,8} < 0. The original H7 third clause is kept and evaluated verbatim as H7c_original.",
+      "reason": "|r_m - r_1| for a readout that converges to a limit different from r_1 increases toward a constant, so the original clause is mis-specified; the intended claim is convergence of the Riemann readout to the hold-exact time average."
+    },
+    {
+      "id": "A3",
+      "utc": "2026-09-26T14:25:00Z",
+      "status": "PRE_RUN (no experiment had been executed)",
+      "change": "Secondary configurations (jittered base grid; complex modes) use seeds 0..7 and are reported descriptively only; no hypothesis is evaluated on them.",
+      "reason": "Secondary configurations were unspecified; fixing them now prevents post-hoc selection."
+    }
+  ],
   "stop_conditions": {
     "S0_budget": "wall clock > 120 s -> abort (see budget).",
     "S1_bug": "If H1 or H5-artifact fails, treat as implementation bug: stop interpretation, debug, log the failure; do not tune thresholds.",
