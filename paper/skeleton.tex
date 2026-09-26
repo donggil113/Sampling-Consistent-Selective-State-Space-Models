@@ -1,0 +1,76 @@
+% Manuscript SKELETON (English). Status: outline only; not a submission draft.
+% Every \todo{ID} marks a claim or number that requires experiment ID to be run.
+% Framing constraint (RESEARCH_PACKET.md §5): the new-architecture claim is STOPPED.
+% This skeleton is framed as a measurement/decomposition study.
+\documentclass{article}
+\usepackage{amsmath,amssymb,booktabs,xcolor}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\known}[1]{\textcolor{gray}{[KNOWN: #1]}}
+
+\title{Where Do Time-Grid Artifacts in Selective State-Space Models Come From?\\
+\large A Controlled Decomposition (working title)}
+\author{Anonymous}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Selective state-space models compute their step size from the input rather than
+from elapsed time. We ask how much of their output change under a pure change of
+time grid (same physical input path) is an artifact, and which simple time-handling
+choices remove it. \todo{NX1-STEM-BACKBONE: headline result on trained models}.
+In a controlled single-layer toy, the combination of a dt-scaled step, an exact
+zero-order-hold input matrix and a time-exact readout removes the splitting
+artifact to float64 precision (FR-E1-SPLIT, FR-E3-READOUT); no new architecture is
+proposed.
+\end{abstract}
+
+\section{Introduction}
+\begin{itemize}
+  \item Problem: resampling the same path changes selective-SSM outputs. \todo{NX1-STEM-BACKBONE: magnitude in trained models}
+  \item Not claimed as new: physical $\Delta t$ inputs, ZOH, flow composition \known{LSSL, S4, S5, S4ND, Cirone et al.\ 2024},
+        Euler-$B$ in Mamba code \known{Mamba code; Mamba-3}, physical-$\Delta$ selective design \known{TIDES, arXiv 2605.09742}.
+  \item Contribution candidates (all pending):
+    (i) separating \emph{interval splitting} from \emph{new observations};
+    (ii) a one-fix-at-a-time decomposition (step scaling, $B$ discretization, readout, conv1d, inter-layer hold) \todo{NX1-STEM-BACKBONE};
+    (iii) the depth effect, where splitting at the input turns into new observations at deeper layers \todo{NX1-H3, currently CONJECTURE}.
+\end{itemize}
+
+\section{Related Work}
+Summarize RELATED\_WORK.md. The closest prior work is TIDES; the closest work on discretization order is Mamba-3.
+Re-verify every agent-only entry before citing it.
+
+\section{Setup}
+\subsection{Continuous-time selective model and hold conventions}
+$\dot h = g(u)(\lambda h + B(u)u)$, $y = \mathrm{Re}\,C(u)^\top h$; right-endpoint hold.
+\subsection{Two grid changes}
+Splitting (held path unchanged) vs.\ new observations (path changed); nested grids; common evaluation times.
+\subsection{Readouts}
+Sample-count (sum, mean) vs.\ time-weighted (Riemann, trapezoid, time-exact).
+
+\section{Toy analysis (single layer, fixed parameters)}
+\begin{itemize}
+  \item Splitting: exact ZOH is invariant (standard); Euler-$B$ first order; bilinear second order but not L-stable; $\Delta$ without $dt$ is non-convergent. Source: FR-E1-SPLIT, FR-E4-NUMERICS.
+  \item New observations: with exact ZOH, the whole change is genuine path change; with $\Delta$ without $dt$, 82--89\% is artifact. Source: FR-E2-NEWOBS.
+  \item Readouts under density change; the fixes do not combine additively. Source: FR-E3-READOUT.
+  \item Numerical floor in float32 (emulated). Source: FR-E4-NUMERICS (N4).
+  \item Caveat: toy magnitudes depend on the $\Delta|\lambda|$ scale and say nothing about trained Mamba.
+\end{itemize}
+
+\section{Error accumulation (proof candidates)}
+State P-B and P-C with assumptions A1--A4 as \textbf{unproved} until the proofs are written out and checked.
+\todo{PROOF-PB: written and checked proof} \todo{PROOF-PC: written and checked proof}
+
+\section{Trained multi-layer models}
+Stem $\{$interpolation, exact ZOH$\}$ $\times$ backbone $\{$observed grid, fixed time grid$\}$, with the baselines
+S5, S4D-ZOH, resampling + same backbone, Mamba-style, Mamba-style + $\Delta t$ channel, simple fix, TIDES-like.
+Trajectory split first, then regridding.
+\todo{NX1-STEM-BACKBONE: Table (splitting consistency, accuracy, new-observation error)}
+\todo{NX1-H3: depth effect}
+
+\section{Limitations}
+Synthetic data only \todo{NX1-STEM-BACKBONE}; the toy has one input channel and no training; float32 results are emulated.
+
+\section{Conclusion}
+\todo{depends on NX1-STEM-BACKBONE; if a simple fix suffices, conclude with the recipe and state that no new architecture is needed}
+
+\end{document}

@@ -1,0 +1,25 @@
+[   0.003s] git HEAD 85b1ffefae25ae2e400f2d9ad7d97537a02d14c8 dirty=False 
+[   0.003s] cpu affinity [0, 1]; python 3.11.15; budget 120s
+[   0.798s] COMPLETED FR-E1-SPLIT__uniform-real: 800 records in 0.78s
+[   7.555s] COMPLETED FR-E2-NEWOBS__uniform-real: 896 records in 6.74s
+[  13.347s] COMPLETED FR-E3-READOUT__uniform-real: 1536 records in 5.76s
+[  15.128s] COMPLETED FR-E4-NUMERICS__scalar: 92 records in 1.78s
+[  15.314s] COMPLETED FR-E1-SPLIT__jittered-real: 200 records in 0.18s
+[  15.579s] COMPLETED FR-E1-SPLIT__uniform-complex: 200 records in 0.26s
+[  17.326s] COMPLETED FR-E2-NEWOBS__jittered-real: 224 records in 1.74s
+[  19.221s] COMPLETED FR-E2-NEWOBS__uniform-complex: 224 records in 1.89s
+[  20.570s] COMPLETED FR-E3-READOUT__jittered-real: 384 records in 1.34s
+[  20.581s] H1: PASS  {"max_change_y": 6.2934104053509096e-15, "max_change_h": 1.5574704487616483e-15, "threshold": 1e-12, "n_records": 96}
+[  20.581s] H2: PASS  {"median_slope": -1.0312029284464255, "range": [-1.2, -0.8], "min_slope": -1.0867139267569346, "max_slope": -0.9906139730366451, "n_units": 32}
+[  20.581s] H3: PASS  {"median_slope": -2.017894199054938, "range": [-2.2, -1.8], "min_slope": -2.1022923342265654, "max_slope": -2.0009731037206806, "n_units": 32}
+[  20.581s] H4: PASS  {"zoh_nodt": {"frac_nondecreasing_m2_to_m8": 1.0, "median_artifact_m8": 1.2750088696836088, "ok": true}, "eulerB_nodt": {"frac_nondecreasing_m2_to_m8": 0.96875, "median_artifact_m8": 1.4389877718869633, "ok": true}}
+[  20.581s] H5a: PASS  {"max_artifact": 1.6523500553860587e-13, "threshold": 1e-08}
+[  20.581s] H5b: PASS  {"median_slope_err_to_truth": -0.9835781768995315, "range": [-1.2, -0.8], "min_slope": -1.026868622980476, "max_slope": -0.8911431011398997}
+[  20.581s] H6: PASS  {"zoh_nodt": {"median_artifact_m8": 1.257118102958275}, "eulerB_nodt": {"median_artifact_m8": 1.4592564380891697}}
+[  20.581s] H7a: PASS  {"max_change_time_exact": 5.322444534984747e-15, "threshold": 1e-12}
+[  20.581s] H7b: PASS  {"m2": {"median_change_sample_sum": 0.21139431626954225, "median_change_sample_mean": 0.12905358602782951}, "m4": {"median_change_sample_sum": 0.6344871498052436, "median_change_sample_mean": 0.2333867505918567}, "m8": {"median_change_sample_sum": 1.4808247914664134, "median_change_sample_mean": 0.30323985046359336}, "operationalization": "threshold 1e-2 required at every m in {2,4,8}"}
+[  20.581s] H7c_original: FAIL  {"median_slope_change_time_riemann_m2_m8": 0.41926006798438964, "all_medians_positive": true}
+[  20.581s] H7c_restated: PASS  {"median_slope_riemann_minus_exact": -0.0764749067972558}
+[  20.581s] H8: PASS  {"median_err_sample_mean_m8": 0.28386900735852577, "median_err_time_exact_m8": 0.03160995623849193, "ratio": 8.980366983642138}
+[  20.581s] S2: TRIGGERED: simple time handling (Delta=dt*g, exact ZOH, time-exact readout) removes the toy's splitting artifact to float64 precision and its new-observation artifact to reference precision -> ARCHITECTURE_CLAIM=NOT_SUPPORTED_BY_TOY
+[  20.581s] total wall clock 20.58s (budget 120s)
