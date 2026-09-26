@@ -172,5 +172,33 @@
     "results/raw/FR-E4-NUMERICS__scalar.jsonl": "a46bc8428ecc1b25ca9dfead44a7ded635786c06055e2d43b079a4c031f9b7a9",
     "results/raw/hypotheses.json": "0f7b889ada8cea21f6effbbfde28fc3cebb3e162afe15d256753f5cb36909386",
     "results/raw/run.log": "1a33ec639f0bfa9e77096ec2e097245edb2e21229bf407f98fb491a705bdee96"
-  }
+  },
+  "subsequent_runs": [
+    {
+      "run_id": "P1-COMP-01",
+      "started_utc": "2026-09-26T21:25:35Z",
+      "wall_clock_seconds": 0.108,
+      "within_budget": true,
+      "git_head": "ca909923d1f41e7ac0469d7100d6df9022396925",
+      "git_dirty_at_start": false,
+      "git_status_at_start": [],
+      "config": {
+        "path": "configs/p1_comp_01.json",
+        "sha256": "10e26c482d1ea68d00538dd43277927d6d317374f12bdf7465a80af1508d92ca"
+      },
+      "code_sha256": {
+        "src/scssm/cascade.py": "a95e0121ba9f6d150d7b03ae8439f41714196139e7af694b3183e7e2f1bf34b2",
+        "src/scssm/model.py": "4edeb263626104d1be68ef357201e484d757318f07298d3c7d8f6586a87749d1",
+        "scripts/run_p1_comp_01.py": "2f0e55a27727728abcb63e4e8bac3ef61d9d8b60234ddd6002a41577e30264d0"
+      },
+      "cpu_affinity": [
+        0,
+        1
+      ],
+      "outputs_sha256": {
+        "results/raw/P1-COMP-01.jsonl": "f116339de8ba897e553aeb17fe6dc12ab22113705d9b52ba64fdbd3375c315d1",
+        "results/raw/P1-COMP-01__hypotheses.json": "cff54f79bf53758ddcdd66812f017d4b2948674755dd9d4f099d16c82b50ea25"
+      }
+    }
+  ]
 }
