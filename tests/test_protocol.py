@@ -49,5 +49,18 @@ class TestProtocol(unittest.TestCase):
             self.assertAlmostEqual(s, 1.0, places=12)
 
 
+
+class TestResamplerRestriction(unittest.TestCase):
+    def test_locf_uses_only_observed_values(self):
+        # a grid whose values are NOT samples of any path: the resampler must return only them
+        from scssm.grids import Grid
+        times = (0.0, 0.7, 1.9, 3.3, 8.0)
+        values = (11.0, -3.0, 5.5, 42.0)
+        g = Grid(times, values, tuple(range(len(times))))
+        target = [0.25 * k for k in range(33)]
+        vals, _ = P.resample_locf(g, target)
+        self.assertTrue(set(vals) <= set(values))
+
+
 if __name__ == "__main__":
     unittest.main()
