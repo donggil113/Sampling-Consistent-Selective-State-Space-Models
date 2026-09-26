@@ -50,6 +50,8 @@ def main():
     lo, hi = cfg["units"]["primary_seeds"]
     primary = list(range(lo, hi + 1))
     secondary = list(range(0, 8))
+    # check the tree BEFORE this script creates any output file
+    dirty = git("status", "--porcelain", "--untracked-files=all")
     os.makedirs(RAW, exist_ok=True)
     log_path = os.path.join(RAW, "run.log")
     logf = open(log_path, "w")
@@ -61,8 +63,7 @@ def main():
         logf.write(line + "\n")
         logf.flush()
 
-    dirty = git("status", "--porcelain")
-    log(f"git HEAD {git('rev-parse', 'HEAD')} dirty={bool(dirty)}")
+    log(f"git HEAD {git('rev-parse', 'HEAD')} dirty={bool(dirty)} {dirty.splitlines() if dirty else ''}")
     log(f"cpu affinity {affinity}; python {sys.version.split()[0]}; budget {budget}s")
 
     plan = [
@@ -124,6 +125,7 @@ def main():
         "within_budget": wall <= budget,
         "git_head": git("rev-parse", "HEAD"),
         "git_dirty_at_start": bool(dirty),
+        "git_status_at_start": dirty.splitlines(),
         "config": {"path": "configs/first_run.json", "sha256": sha256(CFG_PATH)},
         "code_sha256": {os.path.relpath(p, ROOT): sha256(p) for p in sorted(
             [os.path.join(ROOT, "src", "scssm", x) for x in os.listdir(os.path.join(ROOT, "src", "scssm")) if x.endswith(".py")]
