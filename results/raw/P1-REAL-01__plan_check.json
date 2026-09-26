@@ -1,0 +1,17 @@
+{
+  "status": "PLAN_ONLY: protocol checks, no model was run",
+  "checks": {
+    "n_train": 512,
+    "n_dev": 128,
+    "n_test": 256,
+    "id_overlap": 0,
+    "base_times_common": true,
+    "split_values_repeat_held": true,
+    "locf_on_split_equals_C0": true,
+    "locf_irregular_early_targets": 0,
+    "step_scale_training_grid": [
+      1.0
+    ],
+    "seconds": 0.001
+  }
+}

@@ -24,8 +24,14 @@
     ]
   },
   "factors": {
-    "stem": ["linear interpolation of the observations (exact first-order-hold integration)", "exact ZOH of the held observations"],
-    "backbone": ["observed grid (per-step dt_k)", "fixed time grid (uniform delta_fixed, independent of observations)"]
+    "stem": [
+      "linear interpolation of the observations (exact first-order-hold integration)",
+      "exact ZOH of the held observations"
+    ],
+    "backbone": [
+      "observed grid (per-step dt_k)",
+      "fixed time grid (uniform delta_fixed, independent of observations)"
+    ]
   },
   "required_baselines": [
     "S5: MIMO LTI, exact ZOH with per-step dt (strongest direct LTI baseline)",
@@ -39,7 +45,11 @@
   "metrics": {
     "primary_consistency": "rel_l2 of outputs at common times under pure splitting, m=8 vs m=1, per test trajectory",
     "primary_accuracy": "rel_l2 to the continuous-time teacher at the training density, per test trajectory",
-    "secondary": ["error to teacher under new observations, m in {2,4,8}", "time-average readout error under density change", "per-component ablation: conv1d on/off, readout sample-mean vs time-exact"],
+    "secondary": [
+      "error to teacher under new observations, m in {2,4,8}",
+      "time-average readout error under density change",
+      "per-component ablation: conv1d on/off, readout sample-mean vs time-exact"
+    ],
     "aggregation": "mean over test trajectories with a bootstrap 95% CI over trajectories; 3 training seeds reported separately (seeds are not independent data units)",
     "numerical_floor": "float32 composition drift measured in FR-E4-N4 (emulated): about 1e-7 to 1e-4 relative for 16 to 16384 sub-steps; consistency differences below 1e-4 are treated as numerically indistinguishable in float32"
   },
@@ -58,5 +68,11 @@
     "S-arch": "If NX1-H2 holds for either simple fix, stop any new-architecture claim; at most an analysis note remains.",
     "S-null": "If no model, including the Mamba-style recipe, shows splitting inconsistency above the float32 floor after training, stop the project question (the effect is not practically relevant in this setting).",
     "S-budget": "Wall clock > 30 min -> abort, NOT_RUN(TIMEOUT)."
+  },
+  "status_update_2026-09-26": {
+    "note": "Append-only update; the original design above is kept unchanged.",
+    "budget_claim": "The 30-minute CPU budget for training all baselines was never measured and is NOT confirmed.",
+    "first_real_model_step": "Replaced as the next step by configs/p1_real_01.json (one official implementation, TIDES @ 4b51adc, native-grid vs training-grid resampling, one small task).",
+    "depth_hypothesis": "NX1-H3 wording ('new observations' for layer 2) is corrected: layer 2 receives additional INTERNAL samples of layer 1's output; no external information is added (see P1-COMP-01)."
   }
 }

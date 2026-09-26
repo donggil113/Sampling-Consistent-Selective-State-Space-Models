@@ -1,0 +1,105 @@
+{
+  "run_id": "P1-REAL-01",
+  "status": "DESIGN_FIXED / NOT_RUN",
+  "drafted_utc": "2026-09-26",
+  "supersedes_in_part": "configs/next_experiment.json (NX1-STEM-BACKBONE). NX1's plan to train all baselines within 30 CPU minutes was never measured and is not confirmed; NX1 remains on file unchanged as a design record.",
+  "question": "Does one trained official selective SSM give the same outputs when the same test trajectory is (a) fed on its native observation grid with physical step sizes and (b) resampled onto the training grid, and what does each cost in task loss and inference time?",
+  "implementation_fixed_before_results": {
+    "name": "TIDES (official PyTorch)",
+    "repo": "https://github.com/TaylanSoydan/TIDES",
+    "commit": "4b51adce2060e7209e002a6a2fd6691a2f6fcc5e",
+    "license": "MIT (LICENSE file read 2026-09-26)",
+    "entry_point": "tides.TIDES(d_input, d_hidden, ssm_size, ssm_blocks, num_blocks, ...).forward(x, step_scale)",
+    "code_facts_verified_by_reading": [
+      "step = step_scale * exp(log_step): step size proportional to the physical gap (per-mode timescale)",
+      "discretize_zoh: B_bar = (1/Lambda)*(Lambda_bar - 1)*B (naive exp - 1, no expm1)",
+      "scan x_k = Lambda_bar_k x_{k-1} + B_bar_k u_k with step_scale_from_indices giving the gap before k (right-endpoint convention in code; paper Eq. 2 is written left-endpoint)",
+      "optional causal conv1d over tokens (conv_kernel_size, default 0)",
+      "BatchNorm1d(affine=False) over batch and time per channel before each SSM",
+      "TIDESClassifier pools by h.mean(dim=1), a sample-count mean",
+      "pure-PyTorch associative scan; scripts fall back to CPU when CUDA is absent"
+    ],
+    "selection_criteria": [
+      "official authors' implementation",
+      "runs on CPU without custom CUDA/Triton kernels",
+      "permissive license",
+      "per-step physical step sizes supported natively, so native-grid evaluation needs no model change",
+      "installable on the container's Python 3.11"
+    ],
+    "rejected_alternatives": {
+      "state-spaces/mamba @ e9594ce (Mamba-1/2/3, Apache-2.0)": "Mamba-1 CPU use needs monkeypatching selective_scan_fn to selective_scan_ref; Mamba-3 module imports Triton kernels; no physical-time input",
+      "lindermanlab/S5 @ 3c18fdb (MIT)": "pinned jax==0.3.5/flax==0.5.2 (2022); per-step dt experiment lives on a separate 'pendulum' branch @ 52cc7e2",
+      "TIDES Fading Flash notebook": "JAX; not present as a notebook in the cloned tree"
+    },
+    "checkpoints": "none released; no approved checkpoint exists in this project -> training required"
+  },
+  "task": {
+    "name": "CT-teacher regression (one small synthetic task)",
+    "teacher": "FIRST_RUN continuous-time selective toy with the parameters of FIRST_RUN unit 0 (fixed)",
+    "inputs": "sine-sum path per trajectory, seed = 1_000_000 + trajectory_id (disjoint from all earlier seeds)",
+    "labels": "teacher output y(t) on the continuous path at the training-grid times t_k = k*T/K (physical query times; identical across all test conditions)",
+    "horizon": "[0, T], T=8 (physical time), sequence-to-sequence, causal",
+    "normalization": "input and label mean/std from the TRAIN split on the training grid; reused unchanged for every grid and mode",
+    "split": {"order": "split trajectory IDs FIRST, then build grids per split", "train": [0, 511], "dev": [512, 639], "test": [640, 895]},
+    "training_grid": {"T": 8.0, "K": 32, "kind": "uniform"},
+    "label_reference": "scssm.reference.ct_true with 128 RK4 sub-steps per training interval"
+  },
+  "test_conditions": {
+    "C0": "training grid",
+    "S2/S4/S8": "pure splitting of the training grid (held values repeated, physical path unchanged)",
+    "N2/N4/N8": "nested refinement with new external observations",
+    "J0.5/J1/J2": "random observation times, 0.5x/1x/2x the training count, rng seed 2_000_000 + trajectory_id"
+  },
+  "modes": {
+    "native": "feed the condition's grid with step_scale = dt_k / dt_train; read outputs at training times (for J: last output at or before each training time)",
+    "resampled_locf": "PRIMARY simplest alternative: last observation carried forward onto the training grid (causal), step_scale = 1",
+    "resampled_linear": "SECONDARY: linear interpolation onto the training grid (NON-causal, uses the next observation); labelled as such"
+  },
+  "model": {
+    "d_hidden": 16, "ssm_size": 16, "ssm_blocks": 1, "num_blocks": 2,
+    "lambda_re_mode": "input_dependent", "lambda_im_mode": "lti", "bc_mode": "input_dependent",
+    "discretization": "zoh", "bidir": false, "conv_kernel_size": 0, "drop_rate": 0.0,
+    "head": "Linear(d_hidden, 1) per time step"
+  },
+  "training": {"optimizer": "Adam", "lr": 0.003, "batch_size": 32, "steps": 2000, "seed": 0, "log_every": 100,
+               "note": "single fixed setting, no sweep; dev split used only to report dev loss, not to tune"},
+  "metrics": {
+    "discrepancy": "rel_l2 over the 33 training-grid times between a condition's output and native C0 output, per test trajectory",
+    "task_loss": "MSE to the teacher labels at training-grid times, original units, per test trajectory",
+    "inference_cost": "median of 3 wall-clock timings per condition batch on 2 CPU threads, and tokens processed (sequence length)",
+    "aggregation": "mean over the 256 test trajectories with a 95% percentile bootstrap CI (2000 resamples, seed 0); paired native-minus-resampled differences per trajectory",
+    "equivalence_rule": "Say 'no practical difference' only if the 95% CI of the paired MSE difference lies inside +-5% of the resampled_locf mean MSE; otherwise report the direction or 'inconclusive'. A non-significant difference is NOT equivalence.",
+    "float32_floor": "differences below 1e-4 relative are treated as numerically indistinguishable (FR-E4-N4 emulation)"
+  },
+  "predictions_before_results": {
+    "R-P1": "native split discrepancy at S8 exceeds the float32 floor, because block 2 receives extra internal samples of block 1's output (P1-COMP-01 mechanism)",
+    "R-P2": "resampled_locf split discrepancy at S2/S4/S8 is exactly 0 up to float32, by construction (S grids contain the training times)",
+    "R-P3": "on nested N grids resampled_locf equals C0 by construction (it discards the new observations); the native-vs-C0 task-loss difference is two-sided (no direction predicted)",
+    "R-P4": "native inference cost grows with the number of tokens; resampled cost is constant in m"
+  },
+  "budget": {
+    "cpu_threads": 2, "gpu": false,
+    "timing_smoke_wall_clock_seconds": 300,
+    "train_wall_clock_seconds": "UNSET until the timing smoke is measured and a cap is approved",
+    "note": "no training budget is asserted without a measured timing smoke"
+  },
+  "approval_items_required": [
+    "A-R1: install torch (CPU wheel, >= 2.4, as required by TIDES requirements.txt) plus numpy and scipy into the container",
+    "A-R2: clone the official TIDES repository at the pinned commit into third_party/TIDES (code download; not committed to this repo)",
+    "A-R3: run the timing smoke (<= 300 s CPU) and record its cost",
+    "A-R4: approve a training wall-clock cap for one training run of the model above on the task above"
+  ],
+  "commands": [
+    "git clone https://github.com/TaylanSoydan/TIDES third_party/TIDES && git -C third_party/TIDES checkout 4b51adce2060e7209e002a6a2fd6691a2f6fcc5e",
+    "python3 -m pip install 'torch>=2.4' --index-url https://download.pytorch.org/whl/cpu && python3 -m pip install numpy scipy",
+    "python3 scripts/run_p1_real_01.py --stage plan",
+    "python3 scripts/run_p1_real_01.py --stage smoke",
+    "python3 scripts/run_p1_real_01.py --stage train --max-seconds <approved cap>",
+    "python3 scripts/run_p1_real_01.py --stage eval"
+  ],
+  "stop_conditions": {
+    "S-budget": "any stage exceeding its cap aborts with NOT_RUN(TIMEOUT); partial metrics are not reported",
+    "S-untrained": "if training did not complete, any evaluation output must be labelled UNTRAINED and cannot be reported as a trained-model result",
+    "S-arch": "the new-architecture claim stays STOPPED regardless of the outcome"
+  }
+}
