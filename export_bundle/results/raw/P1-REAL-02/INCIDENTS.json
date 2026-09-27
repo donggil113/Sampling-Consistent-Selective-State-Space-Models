@@ -1,0 +1,14 @@
+{
+  "incidents": [
+    {
+      "id": "I-1",
+      "utc": "2026-09-27T05:21:34Z",
+      "stage": "eval --dev (development row, seed-0 pilot checkpoint on the new test set)",
+      "status": "INVALID (crashed; no output file was written)",
+      "wall_seconds": 29.9,
+      "cause": "FileNotFoundError: results/raw/P1-REAL-02/dev_seed0/eval.jsonl -- stage_eval did not create out_dir for the development row (training-seed dirs already existed from training)",
+      "fix": "os.makedirs(out_dir, exist_ok=True) before writing; code change only in output handling",
+      "rerun_scope": "only the development row; training seeds 1-4 evaluations were unaffected and are not rerun"
+    }
+  ]
+}

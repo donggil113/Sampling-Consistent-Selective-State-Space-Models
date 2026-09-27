@@ -1,0 +1,92 @@
+{"exp": "FR-E4-NUMERICS", "case": "N1_cancellation", "z": -0.01, "rel_err_naive": 5.357716939178816e-15, "rel_err_expm1": 4.685886384203303e-17}
+{"exp": "FR-E4-NUMERICS", "case": "N1_cancellation", "z": -0.0001, "rel_err_naive": 1.3451309142763482e-14, "rel_err_expm1": 3.3636396980304874e-17}
+{"exp": "FR-E4-NUMERICS", "case": "N1_cancellation", "z": -1e-06, "rel_err_naive": 1.5861255958076973e-11, "rel_err_expm1": 7.918463516851206e-17}
+{"exp": "FR-E4-NUMERICS", "case": "N1_cancellation", "z": -1e-08, "rel_err_naive": 1.077471013898732e-09, "rel_err_expm1": 6.445753878518301e-17}
+{"exp": "FR-E4-NUMERICS", "case": "N1_cancellation", "z": -1e-10, "rel_err_naive": 8.279037096679603e-08, "rel_err_expm1": 3.3896799889579235e-17}
+{"exp": "FR-E4-NUMERICS", "case": "N1_cancellation", "z": -1e-12, "rel_err_naive": 2.212171962149499e-05, "rel_err_expm1": 2.421793993635782e-17}
+{"exp": "FR-E4-NUMERICS", "case": "N1_cancellation", "z": -1e-14, "rel_err_naive": 0.0007992778373541164, "rel_err_expm1": 4.870979341449248e-17}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "expm1", "m": 1, "rel_err_h1": 0.0}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "naive", "m": 1, "rel_err_h1": 0.0}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "expm1", "m": 4, "rel_err_h1": 2.220446049250313e-16}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "naive", "m": 4, "rel_err_h1": 2.220446049250313e-16}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "expm1", "m": 16, "rel_err_h1": 2.220446049250313e-16}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "naive", "m": 16, "rel_err_h1": 7.771561172376096e-16}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "expm1", "m": 64, "rel_err_h1": 4.440892098500626e-16}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "naive", "m": 64, "rel_err_h1": 1.3322676295501878e-15}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "expm1", "m": 256, "rel_err_h1": 1.7763568394002505e-15}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "naive", "m": 256, "rel_err_h1": 2.4424906541753444e-15}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "expm1", "m": 1024, "rel_err_h1": 4.440892098500626e-15}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "naive", "m": 1024, "rel_err_h1": 1.532107773982716e-14}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "expm1", "m": 4096, "rel_err_h1": 1.1257661469699087e-13}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "naive", "m": 4096, "rel_err_h1": 2.1471713296250527e-13}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "expm1", "m": 16384, "rel_err_h1": 5.154765503334602e-13}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "naive", "m": 16384, "rel_err_h1": 7.58726415028832e-13}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "expm1", "m": 65536, "rel_err_h1": 1.6319168238965176e-12}
+{"exp": "FR-E4-NUMERICS", "case": "N1b_split_drift_fp64", "formula": "naive", "m": 65536, "rel_err_h1": 3.6208813725124855e-12}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -5.0, "variant": "bilinear_dt", "m": 1, "abar": 0.07156214794577972, "artifact_y": 0.09846814990608294}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -5.0, "variant": "eulerB_dt", "m": 1, "abar": 0.1767766952966369, "artifact_y": 1.104979221918745}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -5.0, "variant": "bilinear_dt", "m": 2, "abar": 0.39546210863736075, "artifact_y": 0.01969585794548711}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -5.0, "variant": "eulerB_dt", "m": 2, "abar": 0.42044820762685725, "artifact_y": 0.4950069814331289}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -5.0, "variant": "bilinear_dt", "m": 4, "abar": 0.6439142172578993, "artifact_y": 0.004723071457611141}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -5.0, "variant": "eulerB_dt", "m": 4, "abar": 0.6484197773255048, "artifact_y": 0.23219953771703677}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -5.0, "variant": "bilinear_dt", "m": 8, "abar": 0.8045586358451321, "artifact_y": 0.0011691488876829923}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -5.0, "variant": "eulerB_dt", "m": 8, "abar": 0.8052451659746271, "artifact_y": 0.11221112948992543}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -5.0, "variant": "bilinear_dt", "m": 16, "abar": 0.8972593759951589, "artifact_y": 0.00029157423532609304}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -5.0, "variant": "eulerB_dt", "m": 16, "abar": 0.8973545375015536, "artifact_y": 0.05512941659871902}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -5.0, "variant": "bilinear_dt", "m": 32, "abar": 0.9472754496979784, "artifact_y": 7.284919843333993e-05}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -5.0, "variant": "eulerB_dt", "m": 32, "abar": 0.9472879907934828, "artifact_y": 0.02732042083780946}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -50.0, "variant": "bilinear_dt", "m": 1, "abar": -0.7930536332239855, "artifact_y": 0.5378076557894158}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -50.0, "variant": "eulerB_dt", "m": 1, "abar": 2.98023223876953e-08, "artifact_y": 16.32868003043354}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -50.0, "variant": "bilinear_dt", "m": 2, "abar": -0.624918176732443, "artifact_y": 0.34861412653043755}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -50.0, "variant": "eulerB_dt", "m": 2, "abar": 0.0001726334915006219, "artifact_y": 7.665835770485145}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -50.0, "variant": "bilinear_dt", "m": 4, "abar": -0.3683050081170977, "artifact_y": 0.014736278123698774}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -50.0, "variant": "eulerB_dt", "m": 4, "abar": 0.013139006488339289, "artifact_y": 3.3898481214502163}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -50.0, "variant": "bilinear_dt", "m": 8, "abar": -0.039865951288006, "artifact_y": 2.36895207082443e-08}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -50.0, "variant": "eulerB_dt", "m": 8, "abar": 0.1146255054005839, "artifact_y": 1.4465183405016258}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -50.0, "variant": "bilinear_dt", "m": 16, "abar": 0.29741968831413573, "artifact_y": 2.0713918485448968e-08}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -50.0, "variant": "eulerB_dt", "m": 16, "abar": 0.33856388673422316, "artifact_y": 0.6374105494142088}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -50.0, "variant": "bilinear_dt", "m": 32, "abar": 0.5738605466718305, "artifact_y": 8.48201168596645e-09}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -50.0, "variant": "eulerB_dt", "m": 32, "abar": 0.5818624293887887, "artifact_y": 0.2950791148015958}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -500.0, "variant": "bilinear_dt", "m": 1, "abar": -0.9771802548115187, "artifact_y": 1.0558924176045257}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -500.0, "variant": "eulerB_dt", "m": 1, "abar": 5.527147875260539e-76, "artifact_y": 172.2867951399863}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -500.0, "variant": "bilinear_dt", "m": 2, "abar": -0.9548753758356161, "artifact_y": 0.8069311285186538}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -500.0, "variant": "eulerB_dt", "m": 2, "abar": 2.3509887016445954e-38, "artifact_y": 85.64339756999317}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -500.0, "variant": "bilinear_dt", "m": 4, "abar": -0.9117420549707159, "artifact_y": 0.6172528536481431}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -500.0, "variant": "eulerB_dt", "m": 4, "abar": 1.5332934166833807e-19, "artifact_y": 42.32169878499657}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -500.0, "variant": "bilinear_dt", "m": 8, "abar": -0.8309443615634439, "artifact_y": 0.19571972493074583}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -500.0, "variant": "eulerB_dt", "m": 8, "abar": 3.9157290721950884e-10, "artifact_y": 20.660849400980094}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -500.0, "variant": "bilinear_dt", "m": 16, "abar": -0.6882410290620105, "artifact_y": 0.002016905137768244}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -500.0, "variant": "eulerB_dt", "m": 16, "abar": 1.9788201212326217e-05, "artifact_y": 9.830639015113233}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -500.0, "variant": "bilinear_dt", "m": 32, "abar": -0.46056838129367056, "artifact_y": 1.3360083064026746e-11}
+{"exp": "FR-E4-NUMERICS", "case": "N2_stiff", "lambda": -500.0, "variant": "eulerB_dt", "m": 32, "abar": 0.004448393104518329, "artifact_y": 4.439408977512795}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 0.01, "variant": "zoh_dt", "steady_state": 0.999999999999992, "rel_err": 7.993605777301127e-15}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 0.01, "variant": "eulerB_dt", "steady_state": 1.0034697396746965, "rel_err": 0.003469739674696548}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 0.01, "variant": "bilinear_dt", "steady_state": 1.0, "rel_err": 0.0}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 0.1, "variant": "zoh_dt", "steady_state": 0.9999999999999992, "rel_err": 7.771561172376096e-16}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 0.1, "variant": "eulerB_dt", "steady_state": 1.035057704482832, "rel_err": 0.035057704482831964}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 0.1, "variant": "bilinear_dt", "steady_state": 1.0, "rel_err": 0.0}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 0.5, "variant": "zoh_dt", "steady_state": 1.0, "rel_err": 0.0}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 0.5, "variant": "eulerB_dt", "steady_state": 1.1832762522942188, "rel_err": 0.18327625229421884}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 0.5, "variant": "bilinear_dt", "steady_state": 0.9999999999999999, "rel_err": 1.1102230246251565e-16}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 2.0, "variant": "zoh_dt", "steady_state": 1.0, "rel_err": 0.0}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 2.0, "variant": "eulerB_dt", "steady_state": 1.8483924814931874, "rel_err": 0.8483924814931874}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 2.0, "variant": "bilinear_dt", "steady_state": 0.9999999999999999, "rel_err": 1.1102230246251565e-16}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 8.0, "variant": "zoh_dt", "steady_state": 1.0, "rel_err": 0.0}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 8.0, "variant": "eulerB_dt", "steady_state": 5.566923238379482, "rel_err": 4.566923238379482}
+{"exp": "FR-E4-NUMERICS", "case": "N3_coarse_steady_state", "dt": 8.0, "variant": "bilinear_dt", "steady_state": 0.9999943571784577, "rel_err": 5.642821542251042e-06}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "expm1", "m": 1, "rel_err_h1": 0.0}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "naive", "m": 1, "rel_err_h1": 0.0}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "expm1", "m": 4, "rel_err_h1": 0.0}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "naive", "m": 4, "rel_err_h1": 5.960464477539063e-08}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "expm1", "m": 16, "rel_err_h1": 1.1920928955078125e-07}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "naive", "m": 16, "rel_err_h1": 2.384185791015625e-07}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "expm1", "m": 64, "rel_err_h1": 5.960464477539063e-08}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "naive", "m": 64, "rel_err_h1": 0.0}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "expm1", "m": 256, "rel_err_h1": 4.291534423828125e-06}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "naive", "m": 256, "rel_err_h1": 5.0067901611328125e-06}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "expm1", "m": 1024, "rel_err_h1": 1.823902130126953e-05}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "naive", "m": 1024, "rel_err_h1": 1.9550323486328125e-05}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "expm1", "m": 4096, "rel_err_h1": 2.1338462829589844e-05}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "naive", "m": 4096, "rel_err_h1": 2.765655517578125e-05}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "expm1", "m": 16384, "rel_err_h1": 0.00011074542999267578}
+{"exp": "FR-E4-NUMERICS", "case": "N4_split_drift_fp32_emulated", "formula": "naive", "m": 16384, "rel_err_h1": 0.00022673606872558594}

@@ -1,0 +1,24 @@
+{
+  "pdf": "paper/main.pdf",
+  "pages_total": 12,
+  "conclusion_page": 6,
+  "impact_statement_page": 7,
+  "references_page": 7,
+  "appendix_start_page": 8,
+  "icml_limit": "8 pages of main body; references, impact statement and appendix do not count",
+  "overfull_boxes": 0,
+  "underfull_boxes": 6,
+  "undefined_references_or_citations": 0,
+  "multiply_defined_labels": 0,
+  "unresolved_question_marks_in_text": 0,
+  "metadata": {
+    "Title": "Where Sampling-Grid Dependence Enters Selective State-Space Models",
+    "Author": "Anonymous Authors",
+    "Subject": "Proceedings of the International Conference on Machine Learning 2026",
+    "Keywords": "state-space models, selective SSM, discretization, irregular sampling, zero-order hold",
+    "Creator": "LaTeX with hyperref",
+    "Producer": "pdfTeX-1.40.25"
+  },
+  "anonymity_hits_in_pdf_text": [],
+  "anonymity_hits_in_metadata": []
+}

@@ -1,0 +1,97 @@
+{
+  "hypotheses": [
+    {
+      "id": "COMP-H1",
+      "case": "distinct",
+      "status": "PASS",
+      "evidence": {
+        "max_coupled_invariance": 1.6639288779182477e-15
+      }
+    },
+    {
+      "id": "COMP-H2",
+      "case": "distinct",
+      "status": "PASS",
+      "evidence": {
+        "max_coupled_vs_rk4": 6.0620885753137735e-15
+      }
+    },
+    {
+      "id": "COMP-H3",
+      "case": "distinct",
+      "status": "PASS",
+      "evidence": {
+        "max_layer1_identity": 0.0
+      }
+    },
+    {
+      "id": "COMP-H4",
+      "case": "distinct",
+      "status": "PASS",
+      "evidence": {
+        "slope": -0.9493324877674603,
+        "errors": {
+          "1": 0.18847363892145685,
+          "2": 0.10011896362893875,
+          "4": 0.05162333158862923,
+          "8": 0.026214940254325372
+        }
+      }
+    },
+    {
+      "id": "COMP-H5",
+      "case": "distinct",
+      "status": "PASS",
+      "evidence": {
+        "layerwise_error_m1": 0.18847363892145685
+      }
+    },
+    {
+      "id": "COMP-H1",
+      "case": "equal",
+      "status": "PASS",
+      "evidence": {
+        "max_coupled_invariance": 7.104916997936565e-16
+      }
+    },
+    {
+      "id": "COMP-H2",
+      "case": "equal",
+      "status": "PASS",
+      "evidence": {
+        "max_coupled_vs_rk4": 2.7899886436429144e-15
+      }
+    },
+    {
+      "id": "COMP-H3",
+      "case": "equal",
+      "status": "PASS",
+      "evidence": {
+        "max_layer1_identity": 0.0
+      }
+    },
+    {
+      "id": "COMP-H4",
+      "case": "equal",
+      "status": "PASS",
+      "evidence": {
+        "slope": -0.9339463415966863,
+        "errors": {
+          "1": 0.1966501082963907,
+          "2": 0.10632952288647034,
+          "4": 0.055355583420773465,
+          "8": 0.028251322987212998
+        }
+      }
+    },
+    {
+      "id": "COMP-H5",
+      "case": "equal",
+      "status": "PASS",
+      "evidence": {
+        "layerwise_error_m1": 0.1966501082963907
+      }
+    }
+  ],
+  "kind": "STANDARD-PROPERTY CHECK"
+}

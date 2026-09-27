@@ -1,0 +1,33 @@
+{
+  "compile_status": "static check only; the PDF is built by scripts/build_paper.sh (see paper/build/main.log)",
+  "missing_inputs": [],
+  "undefined_citations": [],
+  "unused_bib_entries": [
+    "soydan2024s7",
+    "zhou2025dtmamba3d"
+  ],
+  "undefined_refs": [],
+  "unreferenced_labels": [
+    "app:numerics",
+    "app:real",
+    "app:repro",
+    "sec:analysis",
+    "sec:conclusion",
+    "sec:intro",
+    "sec:limits",
+    "sec:related",
+    "sec:single",
+    "tab:newobs",
+    "tab:readout",
+    "tab:real",
+    "tab:stiff"
+  ],
+  "undefined_number_macros": [],
+  "environment_imbalance": {},
+  "brace_balance": 0,
+  "anonymity_hits_in_main_tex": [],
+  "todo_count": 0,
+  "todos": [],
+  "main_body_word_estimate": 3512,
+  "main_body_page_estimate": "UNVERIFIED (compile required); ICML limit is 8 pages excluding references and appendix"
+}

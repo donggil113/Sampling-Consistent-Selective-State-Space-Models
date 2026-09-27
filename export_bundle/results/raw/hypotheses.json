@@ -1,0 +1,155 @@
+{
+  "hypotheses": [
+    {
+      "id": "H1",
+      "status": "PASS",
+      "kind": "engineering check of a known identity",
+      "evidence": {
+        "max_change_y": 6.2934104053509096e-15,
+        "max_change_h": 1.5574704487616483e-15,
+        "threshold": 1e-12,
+        "n_records": 96
+      }
+    },
+    {
+      "id": "H2",
+      "status": "PASS",
+      "kind": "known convergence order (numerical check, not a proof)",
+      "evidence": {
+        "median_slope": -1.0312029284464255,
+        "range": [
+          -1.2,
+          -0.8
+        ],
+        "min_slope": -1.0867139267569346,
+        "max_slope": -0.9906139730366451,
+        "n_units": 32
+      }
+    },
+    {
+      "id": "H3",
+      "status": "PASS",
+      "kind": "known convergence order (numerical check, not a proof)",
+      "evidence": {
+        "median_slope": -2.017894199054938,
+        "range": [
+          -2.2,
+          -1.8
+        ],
+        "min_slope": -2.1022923342265654,
+        "max_slope": -2.0009731037206806,
+        "n_units": 32
+      }
+    },
+    {
+      "id": "H4",
+      "status": "PASS",
+      "kind": "toy constructed to be grid-dependent (demonstration, not discovery)",
+      "evidence": {
+        "zoh_nodt": {
+          "frac_nondecreasing_m2_to_m8": 1.0,
+          "median_artifact_m8": 1.2750088696836088,
+          "ok": true
+        },
+        "eulerB_nodt": {
+          "frac_nondecreasing_m2_to_m8": 0.96875,
+          "median_artifact_m8": 1.4389877718869633,
+          "ok": true
+        }
+      }
+    },
+    {
+      "id": "H5a",
+      "status": "PASS",
+      "kind": "engineering check (exact ZOH vs independent RK4 on held path)",
+      "evidence": {
+        "max_artifact": 1.6523500553860587e-13,
+        "threshold": 1e-08
+      }
+    },
+    {
+      "id": "H5b",
+      "status": "PASS",
+      "kind": "known first-order hold convergence (numerical check)",
+      "evidence": {
+        "median_slope_err_to_truth": -0.9835781768995315,
+        "range": [
+          -1.2,
+          -0.8
+        ],
+        "min_slope": -1.026868622980476,
+        "max_slope": -0.8911431011398997
+      }
+    },
+    {
+      "id": "H6",
+      "status": "PASS",
+      "kind": "toy constructed to be grid-dependent (demonstration)",
+      "evidence": {
+        "zoh_nodt": {
+          "median_artifact_m8": 1.257118102958275
+        },
+        "eulerB_nodt": {
+          "median_artifact_m8": 1.4592564380891697
+        }
+      }
+    },
+    {
+      "id": "H7a",
+      "status": "PASS",
+      "kind": "engineering check (additivity of exact integral)",
+      "evidence": {
+        "max_change_time_exact": 5.322444534984747e-15,
+        "threshold": 1e-12
+      }
+    },
+    {
+      "id": "H7b",
+      "status": "PASS",
+      "kind": "readout property (known in principle)",
+      "evidence": {
+        "m2": {
+          "median_change_sample_sum": 0.21139431626954225,
+          "median_change_sample_mean": 0.12905358602782951
+        },
+        "m4": {
+          "median_change_sample_sum": 0.6344871498052436,
+          "median_change_sample_mean": 0.2333867505918567
+        },
+        "m8": {
+          "median_change_sample_sum": 1.4808247914664134,
+          "median_change_sample_mean": 0.30323985046359336
+        },
+        "operationalization": "threshold 1e-2 required at every m in {2,4,8}"
+      }
+    },
+    {
+      "id": "H7c_original",
+      "status": "FAIL",
+      "kind": "MIS-SPECIFIED pre-run (see amendment A2); evaluated verbatim",
+      "evidence": {
+        "median_slope_change_time_riemann_m2_m8": 0.41926006798438964,
+        "all_medians_positive": true
+      }
+    },
+    {
+      "id": "H7c_restated",
+      "status": "PASS",
+      "kind": "known Riemann-sum convergence (numerical check)",
+      "evidence": {
+        "median_slope_riemann_minus_exact": -0.0764749067972558
+      }
+    },
+    {
+      "id": "H8",
+      "status": "PASS",
+      "kind": "readout property under density change",
+      "evidence": {
+        "median_err_sample_mean_m8": 0.28386900735852577,
+        "median_err_time_exact_m8": 0.03160995623849193,
+        "ratio": 8.980366983642138
+      }
+    }
+  ],
+  "stop_condition_S2": "TRIGGERED: simple time handling (Delta=dt*g, exact ZOH, time-exact readout) removes the toy's splitting artifact to float64 precision and its new-observation artifact to reference precision -> ARCHITECTURE_CLAIM=NOT_SUPPORTED_BY_TOY"
+}
