@@ -1,0 +1,38 @@
+{
+  "run_id": "P1-REAL-02-H8DECOMP",
+  "status": "FIXED BEFORE EXECUTION (derived analysis of existing P1-REAL-02 checkpoints; no training, no new data, no timing)",
+  "created_utc": "2026-09-27",
+  "authorization": {
+    "user_instruction_quoted": "기존 저장 출력이 있으면 그것만 재집계한다. 없으면 '출력 미보존'을 기록하고 승인된 작은 frozen forward 한 번에만 추출한다. checkpoint를 재학습하지 않는다.",
+    "interpretation": "The round-5 instruction (section B) prescribes one small frozen forward when per-token outputs were not stored. It uses only the already-installed CPU environment and the existing checkpoints; it is not a download, GPU use, paid API or global modification."
+  },
+  "outputs_not_preserved": "P1-REAL-02 eval.jsonl stores per-trajectory p_mean, p_time, p_res, p_C0, losses and discrepancies, but not the per-token native outputs on C0 or H8, so A, B and the token-level terms cannot be re-aggregated from stored raw.",
+  "extraction": {
+    "checkpoints": "results/raw/P1-REAL-02/seed{1,2,3,4}/checkpoint.pt (training seeds) and results/raw/P1-REAL-01__checkpoint.pt (development seed 0, reported separately); sha256 verified against train.json",
+    "conditions": ["C0", "H8"],
+    "test_set": "results/raw/P1-REAL-02/testset_cache.json (ids 10000-10255, sha256 verified)",
+    "passes": "exactly one native forward per checkpoint and condition, torch.inference_mode(), model.eval(), float32, 2 threads, batch of 256",
+    "consistency_check": "recomputed per-trajectory p_mean(H8), p_time(H8) and p_C0 must equal the stored eval.jsonl values to within 1e-9 absolute (the stored values came from the same deterministic forward); otherwise the derived analysis is INVALID and no decomposition is reported",
+    "stored": "per-token native outputs (label units) for C0 and H8 are written gzip-compressed so that later analyses can re-aggregate without a forward"
+  },
+  "definitions": {
+    "b_k": "C0 native output at base interval k = 1..32 (label units)",
+    "A_B": "A_i = mean of b_k over k = 1..16 (first half of [0,T]); B_i = mean over k = 17..32",
+    "tokens": "H8 has 144 tokens: base intervals 1..16 are split into 8 sub-steps each (128 tokens), intervals 17..32 are unsplit (16 tokens)",
+    "b_j": "inherited baseline of H8 token j = b_k for the base interval k containing it",
+    "z_j": "H8 native output of token j",
+    "weights": "a_j = 1/144 (token mean); w_j = dt_j / T (right-endpoint time weight); sum_j w_j b_j = p(C0) exactly",
+    "W": "W_i = sum_j (a_j - w_j) b_j; algebraic identity: W_i = (7/18)(A_i - B_i) (weighted-average identity, not a new theorem)",
+    "M": "M_i = sum_j a_j (z_j - b_j), split into M_end (tokens that end a base interval) and M_intra (the other 112 tokens)",
+    "Q": "Q_i = sum_j w_j (z_j - b_j), split into Q_end and Q_intra in the same way",
+    "identities_checked": "p_mean(H8) - p(C0) = W + M; p_time(H8) - p(C0) = Q; W = (7/18)(A - B); max absolute residual reported",
+    "interpretation_limits": "W is what token-mean pooling gives if every H8 token repeated the C0 output of its base interval: a density-weighting effect of the readout that any per-token model would show. z_j - b_j at end tokens is the change of the model output at base times (refinement discrepancy); at intra tokens it also contains the output's evolution within an interval on the same held path, which is not an artifact. These signed terms are NOT an additive decomposition of the absolute-value estimand D_s and are not reported as shares of it."
+  },
+  "summaries": {
+    "per_seed": "means with paired percentile bootstrap 95% CI over the 256 test trajectories (2000 draws, seed 0, the same draws as P1-REAL-02) for W, M, M_end, M_intra, Q, Q_end, Q_intra and p_mean-p_C0; mean absolute values of W, M, Q and p_mean-p_C0; fraction of trajectories with sign(W) = sign(p_mean - p_C0); mean |p_C0 + W - ybar| (token-mean error of the replicated baseline) next to the stored token-mean and time-weighted pooled errors",
+    "across_seeds": "per-seed values with min and max only; crossed design, no pooled interval",
+    "multiplicity": "descriptive derived analysis; no hypothesis test, no margin"
+  },
+  "budget": {"cpu_threads": 2, "gpu": false, "wall_clock_seconds_total": 300},
+  "outputs": {"dir": "results/raw/P1-REAL-02/h8_decomposition/", "files": "{row}_tokens.json.gz, {row}_terms.jsonl, summary.json"}
+}
