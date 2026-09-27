@@ -589,5 +589,738 @@
    "COMP-H4:equal": "PASS",
    "COMP-H5:equal": "PASS"
   }
+ },
+ "REAL": {
+  "summary": {
+   "status": "CONDITIONAL PILOT (seed 0; R-A6)",
+   "checkpoint_sha256": "e4784897f5d507f0fa2bc29b2fb8d5fd7e7d81f8ad6498ce3a6f3fe9331bb455",
+   "selected_step": 1500,
+   "n_test": 256,
+   "conditions": {
+    "C0": {
+     "mse_native_mean": 0.016705585092372837,
+     "mse_native_ci": [
+      0.013904086166915144,
+      0.01996262319833334
+     ],
+     "mse_resampled_mean": 0.016705585092372837,
+     "mse_resampled_ci": [
+      0.013904086166915144,
+      0.01996262319833334
+     ],
+     "paired_diff_mean": 0.0,
+     "paired_diff_ci": [
+      0.0,
+      0.0
+     ],
+     "margin_delta": 0.0008352792546186419,
+     "equivalence_verdict": "NO PRACTICAL DIFFERENCE (CI inside +-5% margin)",
+     "disc_native_mean": 0.0,
+     "disc_native_ci": [
+      0.0,
+      0.0
+     ],
+     "disc_native_max": 0.0,
+     "disc_resampled_mean": 0.0,
+     "disc_resampled_max": 0.0,
+     "runtime_native": {
+      "seconds_batch": 0.05305976100009957,
+      "tokens_per_sequence": 32
+     },
+     "runtime_resampled": {
+      "seconds_batch": 0.052152043999967646,
+      "tokens_per_sequence": 32
+     },
+     "pool_native_mean_abs_err_mean": 0.0634726749737327,
+     "pool_native_mean_abs_err_ci": [
+      0.05689607178041195,
+      0.06995343096737677
+     ],
+     "pool_native_mean_abs_change_mean": 0.0,
+     "pool_native_mean_abs_change_ci": [
+      0.0,
+      0.0
+     ],
+     "pool_native_time_abs_err_mean": 0.0634726749737327,
+     "pool_native_time_abs_err_ci": [
+      0.05689607178041195,
+      0.06995343096737677
+     ],
+     "pool_native_time_abs_change_mean": 0.0,
+     "pool_native_time_abs_change_ci": [
+      0.0,
+      0.0
+     ],
+     "pool_resampled_mean_abs_err_mean": 0.0634726749737327,
+     "pool_resampled_mean_abs_err_ci": [
+      0.05689607178041195,
+      0.06995343096737677
+     ],
+     "pool_resampled_mean_abs_change_mean": 0.0,
+     "pool_resampled_mean_abs_change_ci": [
+      0.0,
+      0.0
+     ],
+     "pool_mean_minus_time_change_mean": 0.0,
+     "pool_mean_minus_time_change_ci": [
+      0.0,
+      0.0
+     ]
+    },
+    "S2": {
+     "mse_native_mean": 0.01619737579522358,
+     "mse_native_ci": [
+      0.013395167865756149,
+      0.01944796891363771
+     ],
+     "mse_resampled_mean": 0.016705585092372837,
+     "mse_resampled_ci": [
+      0.013904086166915144,
+      0.01996262319833334
+     ],
+     "paired_diff_mean": -0.0005082092971492792,
+     "paired_diff_ci": [
+      -0.0007307154870834915,
+      -0.000268437919850874
+     ],
+     "margin_delta": 0.0008352792546186419,
+     "equivalence_verdict": "NO PRACTICAL DIFFERENCE (CI inside +-5% margin)",
+     "disc_native_mean": 0.0060759496416289294,
+     "disc_native_ci": [
+      0.005799136096348398,
+      0.006366598768240439
+     ],
+     "disc_native_max": 0.016381658034285287,
+     "disc_resampled_mean": 0.0,
+     "disc_resampled_max": 0.0,
+     "runtime_native": {
+      "seconds_batch": 0.15830895700003111,
+      "tokens_per_sequence": 64
+     },
+     "runtime_resampled": {
+      "seconds_batch": 0.0511330749999388,
+      "tokens_per_sequence": 32
+     },
+     "pool_native_mean_abs_err_mean": 0.06538231296651177,
+     "pool_native_mean_abs_err_ci": [
+      0.0582684449054183,
+      0.07233922393209953
+     ],
+     "pool_native_mean_abs_change_mean": 0.017806529010949937,
+     "pool_native_mean_abs_change_ci": [
+      0.015657581995013714,
+      0.02012785113129769
+     ],
+     "pool_native_time_abs_err_mean": 0.06538231296651177,
+     "pool_native_time_abs_err_ci": [
+      0.0582684449054183,
+      0.07233922393209953
+     ],
+     "pool_native_time_abs_change_mean": 0.017806529010949937,
+     "pool_native_time_abs_change_ci": [
+      0.015657581995013714,
+      0.02012785113129769
+     ],
+     "pool_resampled_mean_abs_err_mean": 0.0634726749737327,
+     "pool_resampled_mean_abs_err_ci": [
+      0.05689607178041195,
+      0.06995343096737677
+     ],
+     "pool_resampled_mean_abs_change_mean": 0.0,
+     "pool_resampled_mean_abs_change_ci": [
+      0.0,
+      0.0
+     ],
+     "pool_mean_minus_time_change_mean": 0.0,
+     "pool_mean_minus_time_change_ci": [
+      0.0,
+      0.0
+     ]
+    },
+    "S4": {
+     "mse_native_mean": 0.01605235002473827,
+     "mse_native_ci": [
+      0.013263848999472498,
+      0.019344829164113442
+     ],
+     "mse_resampled_mean": 0.016705585092372837,
+     "mse_resampled_ci": [
+      0.013904086166915144,
+      0.01996262319833334
+     ],
+     "paired_diff_mean": -0.0006532350676345709,
+     "paired_diff_ci": [
+      -0.0009881028616918418,
+      -0.00029239946280738084
+     ],
+     "margin_delta": 0.0008352792546186419,
+     "equivalence_verdict": "NATIVE BETTER (CI < 0); not shown beyond margin",
+     "disc_native_mean": 0.009182500831620626,
+     "disc_native_ci": [
+      0.008761421827682537,
+      0.009621249684351253
+     ],
+     "disc_native_max": 0.025019829446267437,
+     "disc_resampled_mean": 0.0,
+     "disc_resampled_max": 0.0,
+     "runtime_native": {
+      "seconds_batch": 0.36529755999993085,
+      "tokens_per_sequence": 128
+     },
+     "runtime_resampled": {
+      "seconds_batch": 0.05235444300001291,
+      "tokens_per_sequence": 32
+     },
+     "pool_native_mean_abs_err_mean": 0.06804371124084936,
+     "pool_native_mean_abs_err_ci": [
+      0.060468897645531185,
+      0.07536643520518323
+     ],
+     "pool_native_mean_abs_change_mean": 0.02706501773699748,
+     "pool_native_mean_abs_change_ci": [
+      0.023790504213546212,
+      0.03055329069480612
+     ],
+     "pool_native_time_abs_err_mean": 0.06804371124084936,
+     "pool_native_time_abs_err_ci": [
+      0.060468897645531185,
+      0.07536643520518323
+     ],
+     "pool_native_time_abs_change_mean": 0.02706501773699748,
+     "pool_native_time_abs_change_ci": [
+      0.023790504213546212,
+      0.03055329069480612
+     ],
+     "pool_resampled_mean_abs_err_mean": 0.0634726749737327,
+     "pool_resampled_mean_abs_err_ci": [
+      0.05689607178041195,
+      0.06995343096737677
+     ],
+     "pool_resampled_mean_abs_change_mean": 0.0,
+     "pool_resampled_mean_abs_change_ci": [
+      0.0,
+      0.0
+     ],
+     "pool_mean_minus_time_change_mean": 0.0,
+     "pool_mean_minus_time_change_ci": [
+      0.0,
+      0.0
+     ]
+    },
+    "S8": {
+     "mse_native_mean": 0.01601305396112962,
+     "mse_native_ci": [
+      0.013233327137512086,
+      0.019304000261333044
+     ],
+     "mse_resampled_mean": 0.016705585092372837,
+     "mse_resampled_ci": [
+      0.013904086166915144,
+      0.01996262319833334
+     ],
+     "paired_diff_mean": -0.0006925311312432354,
+     "paired_diff_ci": [
+      -0.0010844465608863551,
+      -0.0002693435286394568
+     ],
+     "margin_delta": 0.0008352792546186419,
+     "equivalence_verdict": "NATIVE BETTER (CI < 0); not shown beyond margin",
+     "disc_native_mean": 0.01075791175108227,
+     "disc_native_ci": [
+      0.010261336896485916,
+      0.01127547512886906
+     ],
+     "disc_native_max": 0.029447661523802043,
+     "disc_resampled_mean": 0.0,
+     "disc_resampled_max": 0.0,
+     "runtime_native": {
+      "seconds_batch": 1.0728411339999866,
+      "tokens_per_sequence": 256
+     },
+     "runtime_resampled": {
+      "seconds_batch": 0.05406937299994752,
+      "tokens_per_sequence": 32
+     },
+     "pool_native_mean_abs_err_mean": 0.06968077273336416,
+     "pool_native_mean_abs_err_ci": [
+      0.06198625925098103,
+      0.07732358980433435
+     ],
+     "pool_native_mean_abs_change_mean": 0.03177688719088989,
+     "pool_native_mean_abs_change_ci": [
+      0.027942096511604685,
+      0.035865257682834426
+     ],
+     "pool_native_time_abs_err_mean": 0.06968077273336416,
+     "pool_native_time_abs_err_ci": [
+      0.06198625925098103,
+      0.07732358980433435
+     ],
+     "pool_native_time_abs_change_mean": 0.03177688719088989,
+     "pool_native_time_abs_change_ci": [
+      0.027942096511604685,
+      0.035865257682834426
+     ],
+     "pool_resampled_mean_abs_err_mean": 0.0634726749737327,
+     "pool_resampled_mean_abs_err_ci": [
+      0.05689607178041195,
+      0.06995343096737677
+     ],
+     "pool_resampled_mean_abs_change_mean": 0.0,
+     "pool_resampled_mean_abs_change_ci": [
+      0.0,
+      0.0
+     ],
+     "pool_mean_minus_time_change_mean": 0.0,
+     "pool_mean_minus_time_change_ci": [
+      0.0,
+      0.0
+     ]
+    },
+    "H8": {
+     "mse_native_mean": 0.015623844377367191,
+     "mse_native_ci": [
+      0.012920190838615698,
+      0.018694800060978695
+     ],
+     "mse_resampled_mean": 0.016705585092372837,
+     "mse_resampled_ci": [
+      0.013904086166915144,
+      0.01996262319833334
+     ],
+     "paired_diff_mean": -0.0010817407150056587,
+     "paired_diff_ci": [
+      -0.0013990844110970853,
+      -0.0007563660069123599
+     ],
+     "margin_delta": 0.0008352792546186419,
+     "equivalence_verdict": "NATIVE BETTER (CI < 0); not shown beyond margin",
+     "disc_native_mean": 0.007837100127006178,
+     "disc_native_ci": [
+      0.0073818565132093995,
+      0.008315485047923708
+     ],
+     "disc_native_max": 0.03180339470606605,
+     "disc_resampled_mean": 0.0,
+     "disc_resampled_max": 0.0,
+     "runtime_native": {
+      "seconds_batch": 0.34482233300002463,
+      "tokens_per_sequence": 144
+     },
+     "runtime_resampled": {
+      "seconds_batch": 0.047998226999993676,
+      "tokens_per_sequence": 32
+     },
+     "pool_native_mean_abs_err_mean": 0.5612814205717079,
+     "pool_native_mean_abs_err_ci": [
+      0.5009305269380706,
+      0.6196239957082433
+     ],
+     "pool_native_mean_abs_change_mean": 0.5546225813877487,
+     "pool_native_mean_abs_change_ci": [
+      0.49459046141168994,
+      0.6163621391834202
+     ],
+     "pool_native_time_abs_err_mean": 0.06751903740490008,
+     "pool_native_time_abs_err_ci": [
+      0.06054932496719165,
+      0.07444935661626167
+     ],
+     "pool_native_time_abs_change_mean": 0.016082357337488196,
+     "pool_native_time_abs_change_ci": [
+      0.01406927846995102,
+      0.018307977816500304
+     ],
+     "pool_resampled_mean_abs_err_mean": 0.0634726749737327,
+     "pool_resampled_mean_abs_err_ci": [
+      0.05689607178041195,
+      0.06995343096737677
+     ],
+     "pool_resampled_mean_abs_change_mean": 0.0,
+     "pool_resampled_mean_abs_change_ci": [
+      0.0,
+      0.0
+     ],
+     "pool_mean_minus_time_change_mean": 0.538540224050261,
+     "pool_mean_minus_time_change_ci": [
+      0.4782298870937074,
+      0.6001785339617114
+     ]
+    },
+    "J1": {
+     "mse_native_mean": 1.1399333432270775,
+     "mse_native_ci": [
+      0.8664064951460547,
+      1.4393751304495737
+     ],
+     "mse_resampled_mean": 1.2183879682911942,
+     "mse_resampled_ci": [
+      0.9615333679379711,
+      1.4942321647700585
+     ],
+     "paired_diff_mean": -0.07845462506411655,
+     "paired_diff_ci": [
+      -0.2119894262889816,
+      0.06228081347618832
+     ],
+     "margin_delta": 0.06091939841455971,
+     "equivalence_verdict": "INCONCLUSIVE (CI includes 0 and exceeds the margin)",
+     "disc_native_mean": 0.3455655921230044,
+     "disc_native_ci": [
+      0.32294928791876215,
+      0.3678907788874114
+     ],
+     "disc_native_max": 1.6341062803514546,
+     "disc_resampled_mean": 0.39028110371955826,
+     "disc_resampled_max": 1.6927663226271055,
+     "runtime_native": {
+      "seconds_batch": 0.04861657899994043,
+      "tokens_per_sequence": 32
+     },
+     "runtime_resampled": {
+      "seconds_batch": 0.0533020849999275,
+      "tokens_per_sequence": 32
+     },
+     "pool_native_mean_abs_err_mean": 0.3724005695511575,
+     "pool_native_mean_abs_err_ci": [
+      0.3216583482525474,
+      0.4259554064209912
+     ],
+     "pool_native_mean_abs_change_mean": 0.3558187085265073,
+     "pool_native_mean_abs_change_ci": [
+      0.3050317709596466,
+      0.40887024754497653
+     ],
+     "pool_native_time_abs_err_mean": 0.27971645506125115,
+     "pool_native_time_abs_err_ci": [
+      0.24543768981343736,
+      0.3156419727188248
+     ],
+     "pool_native_time_abs_change_mean": 0.25903049880524204,
+     "pool_native_time_abs_change_ci": [
+      0.22616285916819437,
+      0.29353787807994364
+     ],
+     "pool_resampled_mean_abs_err_mean": 0.28761470786508603,
+     "pool_resampled_mean_abs_err_ci": [
+      0.2511180382048407,
+      0.32412565408181077
+     ],
+     "pool_resampled_mean_abs_change_mean": 0.3003873107116045,
+     "pool_resampled_mean_abs_change_ci": [
+      0.2650460337308107,
+      0.33613397621698027
+     ],
+     "pool_mean_minus_time_change_mean": 0.0967882097212653,
+     "pool_mean_minus_time_change_ci": [
+      0.05980178729190366,
+      0.1373247470503169
+     ]
+    }
+   },
+   "predictions": {
+    "R-P1": {
+     "statement": "native split discrepancy at S8 exceeds 1e-4",
+     "mean": 0.01075791175108227,
+     "ci": [
+      0.010261336896485916,
+      0.01127547512886906
+     ],
+     "status": "SUPPORTED"
+    },
+    "R-P2": {
+     "statement": "resampled split discrepancy at S2/S4/S8 <= 1e-6",
+     "max": 0.0,
+     "status": "SUPPORTED"
+    },
+    "R-P4": {
+     "statement": "native runtime grows with tokens; resampled constant in m",
+     "native_seconds": {
+      "C0": 0.05305976100009957,
+      "S2": 0.15830895700003111,
+      "S4": 0.36529755999993085,
+      "S8": 1.0728411339999866
+     },
+     "resampled_seconds": {
+      "C0": 0.052152043999967646,
+      "S2": 0.0511330749999388,
+      "S4": 0.05235444300001291,
+      "S8": 0.05406937299994752
+     },
+     "status": "DESCRIPTIVE (single timing run per cell; median of 3 calls)"
+    },
+    "R-P5": {
+     "statement": "on H8, sample-mean pooled change exceeds time-weighted pooled change",
+     "mean": 0.538540224050261,
+     "ci": [
+      0.4782298870937074,
+      0.6001785339617114
+     ],
+     "status": "SUPPORTED"
+    }
+   },
+   "eval_seconds": 24.46
+  },
+  "train": {
+   "selected_step": 1500,
+   "selected_dev_mse": 0.011856307065660186,
+   "y_stats": [
+    -1.5974852947346299,
+    2.353312798674186
+   ],
+   "train_loop_seconds": 57.65,
+   "total_seconds": 97.4
+  },
+  "layer": {
+   "status": "EXPLORATORY post-hoc diagnostic on the frozen seed-0 checkpoint",
+   "conditions": {
+    "S2": {
+     "float32": {
+      "encoder": {
+       "mean": 0.0,
+       "max": 0.0
+      },
+      "block1": {
+       "mean": 5.584690370596945e-06,
+       "max": 2.0628653146559373e-05
+      },
+      "block2": {
+       "mean": 0.00407137768343091,
+       "max": 0.008899345062673092
+      },
+      "output": {
+       "mean": 0.006801977753639221,
+       "max": 0.024783369153738022
+      }
+     },
+     "float64": {
+      "encoder": {
+       "mean": 0.0,
+       "max": 0.0
+      },
+      "block1": {
+       "mean": 5.070369702499577e-15,
+       "max": 2.442209779338355e-14
+      },
+      "block2": {
+       "mean": 0.004071425380048051,
+       "max": 0.008899269374814806
+      },
+      "output": {
+       "mean": 0.006802626355283205,
+       "max": 0.024793446182032566
+      }
+     }
+    },
+    "S4": {
+     "float32": {
+      "encoder": {
+       "mean": 0.0,
+       "max": 0.0
+      },
+      "block1": {
+       "mean": 6.0131305872346275e-06,
+       "max": 2.4367234800592996e-05
+      },
+      "block2": {
+       "mean": 0.006137658376246691,
+       "max": 0.013327723369002342
+      },
+      "output": {
+       "mean": 0.01026771031320095,
+       "max": 0.037112049758434296
+      }
+     },
+     "float64": {
+      "encoder": {
+       "mean": 0.0,
+       "max": 0.0
+      },
+      "block1": {
+       "mean": 1.0542730504347713e-14,
+       "max": 4.018844569644606e-14
+      },
+      "block2": {
+       "mean": 0.006137880213468497,
+       "max": 0.013328482271629239
+      },
+      "output": {
+       "mean": 0.010267665695698435,
+       "max": 0.0371117671973937
+      }
+     }
+    },
+    "S8": {
+     "float32": {
+      "encoder": {
+       "mean": 0.0,
+       "max": 0.0
+      },
+      "block1": {
+       "mean": 7.17754755896749e-06,
+       "max": 2.7793112167273648e-05
+      },
+      "block2": {
+       "mean": 0.007181532680988312,
+       "max": 0.015552523545920849
+      },
+      "output": {
+       "mean": 0.012022599577903748,
+       "max": 0.0432748906314373
+      }
+     },
+     "float64": {
+      "encoder": {
+       "mean": 0.0,
+       "max": 0.0
+      },
+      "block1": {
+       "mean": 1.7868821810087642e-14,
+       "max": 7.706048203633588e-14
+      },
+      "block2": {
+       "mean": 0.007180963064454191,
+       "max": 0.015549491241704847
+      },
+      "output": {
+       "mean": 0.012020861906613502,
+       "max": 0.043285359956005756
+      }
+     }
+    },
+    "H8": {
+     "float32": {
+      "encoder": {
+       "mean": 0.0,
+       "max": 0.0
+      },
+      "block1": {
+       "mean": 5.7685979300003964e-06,
+       "max": 2.8274906071601436e-05
+      },
+      "block2": {
+       "mean": 0.00545069295912981,
+       "max": 0.011863106861710548
+      },
+      "output": {
+       "mean": 0.00911572016775608,
+       "max": 0.03202908858656883
+      }
+     },
+     "float64": {
+      "encoder": {
+       "mean": 0.0,
+       "max": 0.0
+      },
+      "block1": {
+       "mean": 1.4199216645290522e-14,
+       "max": 7.688250257840503e-14
+      },
+      "block2": {
+       "mean": 0.00544999979147726,
+       "max": 0.01186164711420388
+      },
+      "output": {
+       "mean": 0.009113299456180614,
+       "max": 0.0320446048356318
+      }
+     }
+    }
+   }
+  },
+  "convention": {
+   "irregular": {
+    "times": [
+     0.2,
+     0.5,
+     0.7,
+     1.4,
+     1.5,
+     2.2,
+     3.0
+    ],
+    "impulse_index": 2,
+    "max_abs_code_minus_right": 6.505213034913027e-19,
+    "max_abs_code_minus_paper": 0.003911859535183939,
+    "code_state_part_at_impulse": 0.0016054797073448146,
+    "paper_state_part_at_impulse": 0.0,
+    "y_code": [
+     0.0,
+     0.0,
+     1.5426015543838585,
+     0.0012614497015179635,
+     0.0012173249082815152,
+     0.0009476834787172783,
+     0.000730465920112908
+    ],
+    "y_right": [
+     0.0,
+     0.0,
+     1.5426015543838585,
+     0.0012614497015179629,
+     0.001217324908281515,
+     0.000947683478717278,
+     0.0007304659201129075
+    ],
+    "y_paper": [
+     0.0,
+     0.0,
+     1.5409960746765137,
+     0.005173309236701903,
+     0.004999184968748592,
+     0.003904698095578795,
+     0.0029511340185000064
+    ],
+    "max_abs_code_state_k_minus_paper_state_k_plus_1": 0.0037377352672306285
+   },
+   "uniform": {
+    "times": [
+     0.25,
+     0.5,
+     0.75,
+     1.0,
+     1.25,
+     1.5,
+     1.75,
+     2.0
+    ],
+    "impulse_index": 2,
+    "max_abs_code_minus_right": 4.336808689942018e-19,
+    "max_abs_code_minus_paper": 0.0019903866616384214,
+    "code_state_part_at_impulse": 0.0019903866616384214,
+    "paper_state_part_at_impulse": 0.0,
+    "y_code": [
+     0.0,
+     0.0,
+     1.542986461338152,
+     0.0018292949937413244,
+     0.0016774296403848864,
+     0.0015354457077654392,
+     0.0014039373786946811,
+     0.001283435808602535
+    ],
+    "y_right": [
+     0.0,
+     0.0,
+     1.542986461338152,
+     0.0018292949937413247,
+     0.0016774296403848866,
+     0.0015354457077654394,
+     0.0014039373786946816,
+     0.0012834358086025355
+    ],
+    "y_paper": [
+     0.0,
+     0.0,
+     1.5409960746765137,
+     0.0019903866616384205,
+     0.0018292949937413247,
+     0.0016774296403848866,
+     0.0015354457077654394,
+     0.0014039373786946816
+    ],
+    "max_abs_code_state_k_minus_paper_state_k_plus_1": 8.673617379884035e-19
+   }
+  }
  }
 }

@@ -49,7 +49,7 @@ def main():
                 refs.update(k.strip() for k in g.split(","))
     numbers = read(os.path.join(PAPER, "generated", "numbers.tex"))
     defined = set(re.findall(r"\\newcommand\{\\(\w+)\}", numbers + main_tex))
-    used_macros = set(re.findall(r"\\(E(?:one|two|three)\w+|Fac\w+|Comp\w+|N(?:one|two|three|four)\w+|H(?:four|seven)\w+|Nunits\w+|FirstRun\w+)", full))
+    used_macros = set(re.findall(r"\\(E(?:one|two|three)\w+|Fac\w+|Comp\w+|N(?:one|two|three|four)\w+|H(?:four|seven)\w+|Nunits\w+|FirstRun\w+|Real\w+|Conv\w+|Adapter\w+)", full))
     envs_open = re.findall(r"\\begin\{(\w+\*?)\}", full)
     envs_close = re.findall(r"\\end\{(\w+\*?)\}", full)
     env_balance = {e: envs_open.count(e) - envs_close.count(e) for e in set(envs_open + envs_close)
@@ -66,7 +66,7 @@ def main():
                  if w.lower() in main_tex.lower()]
     todos = re.findall(r"\\todo\{([^}]*)\}", main_tex)
     report = {
-        "compile_status": "COMPILE_NOT_RUN (no pdflatex/latexmk/tectonic in the container)",
+        "compile_status": "static check only; the PDF is built by scripts/build_paper.sh (see paper/build/main.log)",
         "missing_inputs": missing_inputs,
         "undefined_citations": sorted(cites - bib_keys),
         "unused_bib_entries": sorted(bib_keys - cites),

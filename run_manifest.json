@@ -199,6 +199,56 @@
         "results/raw/P1-COMP-01.jsonl": "f116339de8ba897e553aeb17fe6dc12ab22113705d9b52ba64fdbd3375c315d1",
         "results/raw/P1-COMP-01__hypotheses.json": "cff54f79bf53758ddcdd66812f017d4b2948674755dd9d4f099d16c82b50ea25"
       }
+    },
+    {
+      "run_id": "P1-REAL-01",
+      "status": "COMPLETED (seed-0 conditional pilot)",
+      "git_head_train": "2869c7422409e7e5cfb33949339f6b889c5dde64",
+      "git_head_eval": "6a2f793318140dbd4c0ec430bf68406fcc3e1a1f",
+      "config": {
+        "path": "configs/p1_real_01.json",
+        "sha256": "5869d0df2da6d89cdedf37f4cfeb830aa80ac9b1f562cc2b5b1af355b83755a5"
+      },
+      "implementation": {
+        "repo": "https://github.com/TaylanSoydan/TIDES",
+        "commit": "4b51adce2060e7209e002a6a2fd6691a2f6fcc5e",
+        "license": "MIT",
+        "location": "third_party/TIDES (gitignored, not vendored)"
+      },
+      "environment": {
+        "python": "3.11.15",
+        "torch": "2.14.0+cpu",
+        "numpy": "2.4.6",
+        "scipy": "1.17.1",
+        "threads": 2,
+        "device": "cpu",
+        "dtype": "float32 (float64 only in the exploratory layer diagnostic)"
+      },
+      "installs": {
+        "pip": "torch (CPU index), numpy, scipy: 35 s",
+        "apt": "texlive-latex-base/recommended/extra, fonts-recommended, pictures, science, latexmk, poppler-utils: 66 s"
+      },
+      "wall_clock_seconds": {
+        "adapter_check": 4,
+        "convention_check": 2,
+        "train_total": 97.4,
+        "train_loop": 57.65,
+        "eval": 24.46,
+        "layer_diagnostic": 11
+      },
+      "checkpoint": {
+        "path": "results/raw/P1-REAL-01__checkpoint.pt",
+        "sha256": "e4784897f5d507f0fa2bc29b2fb8d5fd7e7d81f8ad6498ce3a6f3fe9331bb455",
+        "selected_step": 1500
+      },
+      "outputs_sha256": {
+        "results/raw/P1-REAL-01.jsonl": "6ed7e527b2adfd7c674b07a8799f0414b244146572fa72d21d052742b4199da1",
+        "results/raw/P1-REAL-01__summary.json": "e32fb2e7cd49140dedc06b99dfd13856fc621c74e8be066b065cc25ed6943c82",
+        "results/raw/P1-REAL-01__train.json": "5af3341cd852cd85a754b7edcfdafb257f4018e930f99a0a8eb2c451cffc2c50",
+        "results/raw/P1-REAL-01__layer_diagnostic.json": "cc6183595b863062885841585ed96bc12d5d2f5a9f086ecb57aee3fb1de06f2b",
+        "results/raw/P1-REAL-01__convention_check.json": "2af9ce07ca4e7f7d9510296b4b64f447c93f8efb6558b2f4d8ef964c189c52e1",
+        "results/raw/P1-REAL-01__adapter_check.json": "7649536f811108b48b86fa7cf0da76fd4df1215745d6826fac00696f710955e4"
+      }
     }
   ]
 }

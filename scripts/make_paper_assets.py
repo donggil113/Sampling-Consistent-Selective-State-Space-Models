@@ -55,6 +55,10 @@ def sci(x, digits=2):
     return rf"{s}\times10^{{{e}}}"
 
 
+def sci3(x):
+    return sci(x, 3)
+
+
 def cell(x, digits=2):
     return f"${sci(x, digits)}$"
 
@@ -408,7 +412,10 @@ $m$ & fp64 \texttt{expm1} & fp32 \texttt{expm1} & fp32 naive \\
     # ------------------------------------------------------------------ hypothesis verdicts (appendix; not a results table)
     hyp = json.load(open(os.path.join(ROOT, "results", "raw", "hypotheses.json")))
     chyp = json.load(open(os.path.join(ROOT, "results", "raw", "P1-COMP-01__hypotheses.json")))
-    rows = [f"FIRST\\_RUN & {h['id'].replace('_', chr(92) + '_')} & {h['status']} \\\\" for h in hyp["hypotheses"]]
+    def verdict(h):
+        return "PASS (weak; see text)" if h["id"] == "H7c_restated" and h["status"] == "PASS" else h["status"]
+
+    rows = [f"FIRST\\_RUN & {h['id'].replace('_', chr(92) + '_')} & {verdict(h)} \\\\" for h in hyp["hypotheses"]]
     rows += [f"P1-COMP-01 & {h['id']} ({h['case']}) & {h['status']} \\\\" for h in chyp["hypotheses"]]
     A["hypotheses"] = {"FIRST_RUN": {h["id"]: h["status"] for h in hyp["hypotheses"]},
                        "P1-COMP-01": {f"{h['id']}:{h['case']}": h["status"] for h in chyp["hypotheses"]}}
@@ -441,19 +448,21 @@ run & check & verdict \\
 \centering
 \definecolor{seriesA}{HTML}{2A78D6}\definecolor{seriesB}{HTML}{EB6834}\definecolor{seriesC}{HTML}{1BAF7A}
 \begin{tikzpicture}
-\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.3cm},
-  width=0.54\columnwidth, height=0.5\columnwidth, xmode=log, ymode=log, log basis x=2,
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=0.85cm},
+  width=0.47\columnwidth, height=0.47\columnwidth, xmode=log, ymode=log, log basis x=2,
   xtick={1,2,4,8}, xticklabels={1,2,4,8}, xlabel={sub-steps $m$}, tick label style={font=\scriptsize},
   label style={font=\scriptsize}, title style={font=\scriptsize}, grid=major, grid style={gray!20, line width=0.3pt},
   axis line style={gray!60}, legend style={font=\tiny, draw=none, fill=none}, legend cell align=left]
-\nextgroupplot[title={(a) single layer, FR-E1}, ylabel={relative error}, legend pos=south west, ymin=5e-5, ymax=5]
+\nextgroupplot[title={(a) single layer, FR-E1}, ylabel={relative error}, ymin=5e-5, ymax=5,
+  legend style={at={(0.5,-0.33)}, anchor=north}]
 \addplot[seriesA, line width=1pt, mark=*, mark size=1.6pt] coordinates {""" + coords(s_eu) + r"""};
 \addlegendentry{Euler-$B$, $\Delta{=}dt\,g$}
 \addplot[seriesB, line width=1pt, dashed, mark=square*, mark size=1.6pt] coordinates {""" + coords(s_bi) + r"""};
 \addlegendentry{bilinear, $\Delta{=}dt\,g$}
 \addplot[seriesC, line width=1pt, dotted, mark=triangle*, mark size=2pt] coordinates {""" + coords(s_nd) + r"""};
 \addlegendentry{exact ZOH, $\Delta{=}\tau g$}
-\nextgroupplot[title={(b) two-layer cascade, P1-COMP-01}, legend pos=south west, ymin=5e-3, ymax=0.5]
+\nextgroupplot[title={(b) two-layer cascade, P1-COMP-01}, ymin=5e-3, ymax=0.5,
+  legend style={at={(0.5,-0.33)}, anchor=north}]
 \addplot[seriesA, line width=1pt, mark=*, mark size=1.6pt] coordinates {""" + coords(s_cd) + r"""};
 \addlegendentry{$a{=}1,\,c{=}0.5$}
 \addplot[seriesB, line width=1pt, dashed, mark=square*, mark size=1.6pt] coordinates {""" + coords(s_ce) + r"""};
@@ -475,6 +484,140 @@ Values are listed in \cref{tab:split,tab:coupling}.}
     fr_man = json.load(open(os.path.join(ROOT, "run_manifest.json")))
     macros["FirstRunSeconds"] = f"{fr_man['wall_clock_seconds']:.1f}"
     macros["CompSeconds"] = f"{fr_man['subsequent_runs'][0]['wall_clock_seconds']:.2f}"
+
+    # ------------------------------------------------------------------ P1-REAL-01 (trained official TIDES; seed-0 pilot)
+    rdir = os.path.join(ROOT, "results", "raw")
+    summ = json.load(open(os.path.join(rdir, "P1-REAL-01__summary.json")))
+    trn = json.load(open(os.path.join(rdir, "P1-REAL-01__train.json")))
+    lay = json.load(open(os.path.join(rdir, "P1-REAL-01__layer_diagnostic.json")))
+    conv = json.load(open(os.path.join(rdir, "P1-REAL-01__convention_check.json")))
+    adap = json.load(open(os.path.join(rdir, "P1-REAL-01__adapter_check.json")))
+    C = summ["conditions"]
+    A["REAL"] = {"summary": summ, "train": {k: trn[k] for k in ("selected_step", "selected_dev_mse", "y_stats",
+                                                               "train_loop_seconds", "total_seconds")}}
+
+    def ci(c):
+        return f"$[{sci(c[0])},\,{sci(c[1])}]$"
+
+    short = {
+        "NO PRACTICAL DIFFERENCE (CI inside +-5% margin)": r"within $\pm5\%$",
+        "NATIVE BETTER (CI < 0); not shown beyond margin": r"native lower, CI not beyond margin",
+        "NATIVE BETTER (CI < 0)": r"native lower, beyond margin",
+        "NATIVE WORSE (CI > 0); not shown beyond margin": r"native higher; not beyond margin",
+        "NATIVE WORSE (CI > 0)": r"native higher, beyond margin",
+        "INCONCLUSIVE (CI includes 0 and exceeds the margin)": "inconclusive",
+    }
+    rows = []
+    for n, lab in (("C0", "C0 (training grid)"), ("S2", "S2"), ("S4", "S4"), ("S8", "S8"), ("H8", "H8 (first half $\\times8$)"),
+                   ("J1", "J1 (random times)$^\\dagger$")):
+        c = C[n]
+        verdict = "identical inputs (check)" if n == "C0" else short[c["equivalence_verdict"]]
+        rows.append(f"{lab} & {cell(c['disc_native_mean'])} & {cell(c['disc_resampled_mean'])} & {cell(c['mse_native_mean'], 3)} & "
+                    f"{cell(c['mse_resampled_mean'], 3)} & {cell(c['paired_diff_mean'])} {ci(c['paired_diff_ci'])} & {verdict} & "
+                    f"${c['runtime_native']['seconds_batch']:.2f}$ / ${c['runtime_resampled']['seconds_batch']:.2f}$ \\\\")
+    write("tab_real.tex", r"""\begin{table*}[t]
+\caption{Trained official TIDES, seed-0 \emph{conditional pilot} (P1-REAL-01; one checkpoint selected on the calibration split, 256 test trajectories, paired).
+``disc.'': mean relative $\ell_2$ change of the per-step outputs at the 32 training-grid times against the same arm on C0.
+MSE: per-trajectory mean squared error to the teacher at those times (original units; label s.d.\ """ + f"{trn['y_stats'][1]:.2f}" + r""").
+$\Delta$MSE: mean paired difference native $-$ resampled with a 95\% bootstrap CI; the margin is $\pm5\%$ of the resampled mean MSE of the same condition.
+Runtime: seconds for one batch of all 256 sequences (median of 3 calls, 2 CPU threads).
+S$m$ and H8 keep the held path; $^\dagger$J1 is a secondary non-refinement condition whose held path differs by construction.}
+\label{tab:real}
+\centering\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccccc}
+\toprule
+condition & disc.\ native & disc.\ resampled & MSE native & MSE resampled & $\Delta$MSE [95\% CI] & margin rule & runtime nat./res.\ (s) \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}}
+\end{table*}
+""")
+    rows = []
+    for n in ("C0", "S8", "H8", "J1"):
+        c = C[n]
+        rows.append(f"{n} & {cell(c['pool_native_mean_abs_err_mean'])} & {cell(c['pool_native_time_abs_err_mean'])} & "
+                    f"{cell(c['pool_resampled_mean_abs_err_mean'])} & {cell(c['pool_native_mean_abs_change_mean'])} & "
+                    f"{cell(c['pool_native_time_abs_change_mean'])} & {cell(c['pool_resampled_mean_abs_change_mean'])} \\\\")
+    pl = [json.loads(l)["pooled_label"] for l in open(os.path.join(rdir, "P1-REAL-01.jsonl")) if '"condition": "C0"' in l]
+    pl_abs = sum(abs(x) for x in pl) / len(pl)
+    write("tab_pool.tex", r"""\begin{table}[t]
+\caption{Pooled readout of the same trained checkpoint (P1-REAL-01 pilot). Label: exact time average of the teacher output over $[0,T]$ (mean absolute value """ + f"{pl_abs:.2f}" + r""").
+``mean'': sample-count mean over tokens (as in the TIDES classifier head); ``time'': right-endpoint time-weighted sum over the same native outputs (pooling-only ablation).
+Mean absolute error to the label and mean absolute change against C0, over 256 test trajectories.}
+\label{tab:pool}
+\centering\small
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{3}{c}{error to pooled label} & \multicolumn{3}{c}{change vs.\ C0} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+cond. & native mean & native time & resampled & native mean & native time & resampled \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}}
+\end{table}
+""")
+    rows = []
+    for n in ("S2", "S4", "S8", "H8"):
+        d = lay["conditions"][n]
+        rows.append(f"{n} & " + " & ".join(cell(d[dt][k]["mean"]) for k in ("block1", "block2", "output") for dt in ("float32", "float64")) + " \\\\")
+    write("tab_layers.tex", r"""\begin{table}[t]
+\caption{Where the splitting change appears in the trained checkpoint (EXPLORATORY, added after the results were seen). Mean relative $\ell_2$ change against C0 at the training-grid times of the
+features after each block and of the (normalized) output, with the frozen weights evaluated in float32 and cast to float64. The encoder output is unchanged (0) in all cases.}
+\label{tab:layers}
+\centering\small
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{2}{c}{block 1} & \multicolumn{2}{c}{block 2} & \multicolumn{2}{c}{output} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+cond. & fp32 & fp64 & fp32 & fp64 & fp32 & fp64 \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}}
+\end{table}
+""")
+    macros["RealStep"] = str(trn["selected_step"])
+    macros["RealDevMSE"] = sci(trn["selected_dev_mse"])
+    macros["RealTrainSec"] = f"{trn['total_seconds']:.0f}"
+    macros["RealLabelSD"] = f"{trn['y_stats'][1]:.2f}"
+    macros["RealDiscSeight"] = sci(C["S8"]["disc_native_mean"])
+    macros["RealDiscStwo"] = sci(C["S2"]["disc_native_mean"])
+    macros["RealDiscSeightCIlo"] = sci(C["S8"]["disc_native_ci"][0])
+    macros["RealDiscSeightCIhi"] = sci(C["S8"]["disc_native_ci"][1])
+    macros["RealMSEczero"] = sci3(C["C0"]["mse_native_mean"])
+    macros["RealMSEseight"] = sci3(C["S8"]["mse_native_mean"])
+    macros["RealMSEheight"] = sci3(C["H8"]["mse_native_mean"])
+    for n in ("S2", "S8", "H8"):
+        c = C[n]
+        macros[f"RealRelDiff{n.replace('2', 'two').replace('8', 'eight')}"] = f"{100 * c['paired_diff_mean'] / c['mse_resampled_mean']:+.1f}"
+    macros["RealRunNatSeight"] = f"{C['S8']['runtime_native']['seconds_batch']:.2f}"
+    macros["RealRunResSeight"] = f"{C['S8']['runtime_resampled']['seconds_batch']:.3f}"
+    macros["RealRunNatCzero"] = f"{C['C0']['runtime_native']['seconds_batch']:.3f}"
+    macros["RealPoolMeanHeight"] = sci(C["H8"]["pool_native_mean_abs_err_mean"])
+    macros["RealPoolTimeHeight"] = sci(C["H8"]["pool_native_time_abs_err_mean"])
+    macros["RealPoolResHeight"] = sci(C["H8"]["pool_resampled_mean_abs_err_mean"])
+    macros["RealPoolCzero"] = sci(C["C0"]["pool_native_mean_abs_err_mean"])
+    macros["RealPoolLabelAbs"] = f"{pl_abs:.2f}"
+    macros["RealLayerOneFp"] = sci(max(lay["conditions"][n]["float32"]["block1"]["mean"] for n in ("S2", "S4", "S8", "H8")))
+    macros["RealLayerOneDp"] = sci(max(lay["conditions"][n]["float64"]["block1"]["mean"] for n in ("S2", "S4", "S8", "H8")))
+    macros["RealLayerTwoMin"] = sci(min(lay["conditions"][n]["float64"]["block2"]["mean"] for n in ("S2", "S4", "S8", "H8")))
+    macros["RealLayerTwoMax"] = sci(max(lay["conditions"][n]["float64"]["block2"]["mean"] for n in ("S2", "S4", "S8", "H8")))
+    macros["RealJoneMSE"] = sci(C["J1"]["mse_native_mean"])
+    macros["RealEvalSec"] = f"{summ['eval_seconds']:.0f}"
+    macros["ConvCodeRight"] = sci(max(conv[g]["max_abs_code_minus_right"] for g in ("irregular", "uniform")))
+    macros["ConvShiftUniform"] = sci(conv["uniform"]["max_abs_code_state_k_minus_paper_state_k_plus_1"])
+    macros["ConvShiftIrregular"] = sci(conv["irregular"]["max_abs_code_state_k_minus_paper_state_k_plus_1"])
+    macros["AdapterStep"] = f"{adap['train_seconds_per_step_batch32']:.3f}"
+    macros["AdapterParams"] = f"{adap['n_parameters']:,}".replace(",", "{,}")
+    dev_curve = [c["dev_mse"] for c in trn["curve"] if c["step"] > 0]
+    macros["RealDevMax"] = sci(max(dev_curve))
+    A["REAL"]["layer"] = lay
+    A["REAL"]["convention"] = {k: v for k, v in conv.items() if k != "status"}
 
     # ------------------------------------------------------------------ macros + json
     lines = [f"\\newcommand{{\\{k}}}{{\\ensuremath{{{v}}}}}" for k, v in sorted(macros.items())]

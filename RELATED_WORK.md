@@ -1,6 +1,6 @@
 # Related work: time-grid consistency of (selective) SSMs
 
-First check: 2026-09-26 (session 1). Updated: 2026-09-26 (session 2).
+First check: 2026-09-26 (session 1). Updated: 2026-09-26 (session 2) and 2026-09-27 (session 3).
 
 Access levels:
 
@@ -65,6 +65,14 @@ Bibliographic metadata (title, authors, year) comes from arXiv abs-page `citatio
   - Fading Flash (§4, App. C) uses L=40 with a global Δ; training Δ ∈ [0.5, 1.5]; test Δ ∈ {0.1, …, 2.0}.
   - Random drop (§5.3) is run on EigenWorms and reports accuracy. Compute: about 5,000 A100 GPU-hours.
   - A full-text keyword search found 0 hits for "refine", "upsampl", "sub-step" and "splitting".
+- **Paper vs. code convention (session 3, executed).**
+  - The paper's Eq. 2/9 holds u_k forward on [t_k, t_{k+1}), and the state in y_k excludes u_k.
+  - The code holds u_k backward on (t_{k−1}, t_k]: the collate builds steps as [t_0, diff(t)], and the state in y_k includes u_k.
+  - Check with untrained weights and a fixed impulse input:
+    - the code equals the backward-hold recurrence (6.5e-19);
+    - on uniform grids, a one-index shift of the state reproduces the paper form (8.7e-19);
+    - on irregular grids the residual is 3.7e-3, so the pairing genuinely differs.
+  - See `results/raw/P1-REAL-01__convention_check.json`.
 - **Code** @ 4b51adc, MIT.
   - The step is `step_scale * exp(log_step)`.
   - The scan uses the gap *before* step k, i.e. the right-endpoint convention.
@@ -79,6 +87,6 @@ In the sources above we found no report of the following. This is absence of evi
 
 1. A controlled refinement of the *same* held path for selective SSMs that separates splitting from new observations and decomposes the change exactly, with explicit denominators and the cross term.
 2. Readouts (sample-count vs. time-weighted vs. exact integral) and inter-layer resampling treated as entry points of grid dependence.
-3. A measurement of these entry points in a trained official implementation. This is P1-REAL-01, NOT_RUN.
+3. A measurement of these entry points in a trained official implementation. P1-REAL-01 now provides a single-seed pilot for TIDES only.
 
 Consequence: the contribution is framed as *measurement and decomposition* only. The new-architecture claim is STOPPED.

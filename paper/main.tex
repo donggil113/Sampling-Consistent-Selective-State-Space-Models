@@ -1,17 +1,12 @@
-%%%%%%%% Manuscript v1 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TARGET_YEAR     = 2027   (ICML 2027; official 2027 style NOT published as of 2026-09-26)
-% TEMPLATE_YEAR   = 2026   (official ICML 2026 style kit, review/anonymous mode, unmodified)
+%%%%%%%% Manuscript v2 (v1: git commit 8fb0368) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TARGET_YEAR      = 2027  (ICML 2027; no official 2027 style published as of 2026-09-26)
+% TEMPLATE_YEAR    = 2026  (official ICML 2026 style kit, review/anonymous mode, unmodified)
 % SUBMISSION_READY = false
-% COMPILE_STATUS  = COMPILE_NOT_RUN (no LaTeX toolchain in the build container)
-%
-% Required, NOT vendored in this repository: icml2026.sty, icml2026.bst, fancyhdr.sty,
-% algorithm.sty, algorithmic.sty from https://media.icml.cc/Conferences/ICML2026/Styles/icml2026.zip
-% (sha256 8b29290f5828e176debb57ea9cc00252502973d55ea561a2f18a7f0a326bfc6c, fetched 2026-09-26).
-% Copy them into paper/ before compiling. Do not edit margins, fonts or the style file.
-%
-% All numbers in the text come from paper/generated/numbers.tex, and all tables/figures
+% Build: scripts/build_paper.sh (copies the official kit, sha256-checked, into paper/build/;
+%        the style files are not vendored in the repository).
+% All numbers in the text come from paper/generated/numbers.tex; all tables and the figure
 % from paper/generated/*.tex, produced by scripts/make_paper_assets.py from results/raw.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \documentclass{article}
 
@@ -58,8 +53,6 @@
 \twocolumn[
   \icmltitle{Where Sampling-Grid Dependence Enters Selective State-Space Models}
 
-  \icmlsetsymbol{equal}{*}
-
   \begin{icmlauthorlist}
     \icmlauthor{Anonymous Authors}{anon}
   \end{icmlauthorlist}
@@ -76,43 +69,38 @@
 \printAffiliationsAndNotice{}
 
 \begin{abstract}
-Selective state-space models (SSMs) compute their discretization step from the input, so the same physical signal observed on a different time grid can yield a different output.
-We ask where this grid dependence enters and how much of it is an artifact rather than new information.
-In fixed-parameter continuous-time toys we separate \emph{interval splitting}, which leaves the held input path unchanged, from the \emph{addition of new observations}, and we measure four entry points: a step size that ignores elapsed time, the discretization of the input matrix, sample-count readouts, and the resampling of internal signals between layers.
-A step proportional to elapsed time, an exact zero-order-hold input matrix and an exact time-integral readout together remove the single-layer splitting artifact to float64 precision, whereas no single fix does; in a two-layer linear cascade, holding the layer-1 endpoint at layer~2 leaves a first-order error (\CompErrOne{} at the base step, \CompErrEight{} after eight-fold splitting) although no external information is added.
-We propose no new architecture, and evaluations of trained models are pending (\todo{P1-REAL-01: trained official TIDES, native grid vs.\ training-grid resampling}).
+A sequence model can change its output when only the time grid of the same physical input changes.
+We ask where this dependence enters a selective state-space model (SSM) and which of it is an artifact rather than new information.
+In fixed-parameter toys we separate interval splitting, which keeps the held input path, from new observations, and find four entry points: a step that counts samples, an inexact input-matrix discretization, sample-count readouts, and the resampling of internal signals between layers; a physical step, exact zero-order hold and an exact time integral remove the single-layer artifact only together.
+We then train the official implementation of a selective SSM whose step is already physical (TIDES) once on a small synthetic regression task and evaluate the same checkpoint on the same test trajectories: splitting the held input eight-fold changes its outputs by $\RealDiscSeight$ (relative $\ell_2$) while resampling to the training grid changes nothing by construction, the change is absent from the first block ($\RealLayerOneDp$ in float64) and appears in the second, and under a density change a sample-count pooled readout errs by $\RealPoolMeanHeight$ where time-weighted pooling of the same outputs errs by $\RealPoolTimeHeight$.
+These are single-seed pilot measurements on synthetic data; we propose no new architecture.
 \end{abstract}
 
 %=====================================================================================
 \section{Introduction}
 \label{sec:intro}
 
-Continuous-time state-space layers are usually applied to sequences by discretizing a linear ODE over each interval between observations.
-When the step size is the physical elapsed time, the discrete recurrence inherits the semantics of the continuous system, which is what allows S4, LSSL and S5 to change the sampling rate at test time or to consume irregular timestamps~\citep{gu2021s4,gu2021lssl,smith2022s5}.
-Selective SSMs such as Mamba instead compute the step $\Delta$ from the current token~\citep{gu2023mamba,dao2024mamba2}.
-The step then acts as a content gate, and a change of the time grid can change the output even when the underlying signal is the same.
-Recent work makes this point directly and proposes an architecture that keeps $\Delta$ physical while moving selectivity to the state matrix~\citep{soydan2026tides}.
+Continuous-time state-space layers are applied to sequences by discretizing a linear ODE over each interval between observations.
+When the step is the physical elapsed time, the recurrence inherits the semantics of the continuous system, which lets S4, LSSL and S5 change the sampling rate at test time or consume irregular timestamps~\citep{gu2021s4,gu2021lssl,smith2022s5}.
+Selective SSMs such as Mamba compute the step from the current token~\citep{gu2023mamba,dao2024mamba2}, so it acts as a content gate; TIDES restores a physical step and moves selectivity to the state matrix~\citep{soydan2026tides}.
 
-This paper does not propose another architecture.
-It asks a narrower measurement question: \emph{when only the time grid of the same physical input path is changed, where in a selective SSM does the output change enter, and which of those changes are artifacts?}
-Answering it requires separating two operations that are often conflated.
+We do not propose another architecture.
+We ask a measurement question: \emph{when only the time grid of the same physical input path changes, where does the output change enter, and which of it is an artifact?}
+This requires separating two operations.
 \emph{Splitting} a held interval into $m$ sub-steps that repeat the held value leaves the physical input path unchanged, so any output change is an artifact.
-\emph{Adding new observations} of the same continuous signal changes the reconstructed input path, so part of the output change is genuine new information.
+\emph{Adding observations} of the same signal changes the reconstructed path, so part of the change is genuine information.
 
-\paragraph{What is already known and not claimed here.}
-Using the physical $\Delta t$ in the discretization, exact zero-order-hold (ZOH) formulas, and the flow-composition law behind split invariance are standard~\citep{gu2021lssl,smith2022s5}.
-That the released Mamba code approximates the input matrix by $\bar B=\Delta B$ (``exponential-Euler'') rather than the ZOH formula stated in the paper is documented by \citet{lahoti2026mamba3}.
-That a continuous-time reading of selective SSMs requires $\Delta\propto dt$ is shown by \citet{cirone2024theoretical}.
-Keeping $\Delta$ physical and placing selectivity on the decay rate is the design of \citet{soydan2026tides}.
-We use these facts; we do not count them as contributions.
+\paragraph{Known and not claimed.}
+The physical $\Delta t$ in the discretization, exact zero-order-hold (ZOH) formulas and flow composition are standard~\citep{gu2021lssl,smith2022s5}; that the released Mamba code uses $\bar B=\Delta B$ (``exponential-Euler'') is documented by \citet{lahoti2026mamba3}; that a continuous-time reading of selective SSMs needs $\Delta\propto dt$ is shown by \citet{cirone2024theoretical}; and keeping $\Delta$ physical with selectivity on the decay rate is the design of \citet{soydan2026tides}.
 
 \paragraph{Contributions.}
-All contributions are measurements or analyses in controlled toys; none is an architecture.
+None is an architecture.
 \begin{enumerate}
-  \item A measurement protocol that separates splitting from new observations and decomposes the output change exactly into a path term and an artifact term, with explicit denominators (\cref{sec:setup}).
-  \item Controlled single-layer measurements of four entry points (step scaling, input-matrix discretization, stiffness, readout), including the interaction of fixes: each fix alone leaves at least half of the change (\cref{sec:exp}).
-  \item An explicit statement and check of inter-layer coupling: with the physical step and exact ZOH in every layer, a layerwise computation that holds internal endpoint values still changes under splitting, at first order in the step, without any new external information (\cref{sec:coupling,sec:exp-coupling}).
-  \item A pre-specified evaluation protocol for one official implementation (TIDES), fixed before any trained-model result exists (\cref{sec:exp-real}); its results are \notrun.
+  \item A protocol that separates splitting from new observations, with an exact path/artifact decomposition and explicit denominators (\cref{sec:setup}).
+  \item Controlled toy measurements of four entry points and of the interaction of fixes: each fix alone leaves at least half of the change (\cref{sec:toy}).
+  \item The inter-layer mechanism stated with explicit assumptions: with a physical step and exact ZOH in every layer, a stack that holds internal endpoint values still changes under splitting, at first order in the step, without new external information (\cref{sec:coupling}).
+  \item A check that the TIDES paper equations and the released code use different interval pairings (\cref{sec:convention}).
+  \item A single-seed pilot on a trained official TIDES checkpoint: native-grid vs.\ training-grid-resampled evaluation and a pooling-only ablation on the same test trajectories, with discrepancy, task loss and runtime, and an exploratory localization of the change to the second block (\cref{sec:real}).
 \end{enumerate}
 
 %=====================================================================================
@@ -120,282 +108,241 @@ All contributions are measurements or analyses in controlled toys; none is an ar
 \label{sec:related}
 
 \paragraph{Discretization in structured SSMs.}
-S4 discretizes with the bilinear transform and reports a test-time change of the sampling resolution obtained by changing its internal step size~\citep{gu2021s4}.
-LSSL notes that irregularly spaced data can be handled by discretizing the same state matrix with a different timescale~\citep{gu2021lssl}.
-S4D gives both bilinear and ZOH formulas for diagonal models~\citep{gu2022s4d}.
-S5 uses ZOH, $\bar\Lambda=e^{\Lambda\Delta}$, $\bar B=\Lambda^{-1}(\bar\Lambda-I)\tilde B$, rescales $\Delta$ globally by the ratio of sampling rates for zero-shot 8\,kHz evaluation of a 16\,kHz Speech Commands model, and supplies a different $\Delta_t$ at each step for an irregularly sampled pendulum regression task, with ablations that drop the interval or append it as an input feature~\citep{smith2022s5}.
-S4ND studies resolution change for images and notes that only the relative rate matters~\citep{nguyen2022s4nd}; event-camera SSMs study inference at a different frequency~\citep{zubic2024event}.
-These works concern linear time-invariant (LTI) layers.
+S4 uses the bilinear transform and reports a test-time resolution change obtained by changing its internal step~\citep{gu2021s4}; LSSL handles irregular data by discretizing with a different timescale~\citep{gu2021lssl}; S4D gives bilinear and ZOH rules~\citep{gu2022s4d}.
+S5 uses ZOH, $\bar\Lambda=e^{\Lambda\Delta}$, $\bar B=\Lambda^{-1}(\bar\Lambda-I)\tilde B$, rescales $\Delta$ globally for zero-shot 8\,kHz evaluation of a 16\,kHz model, and supplies a per-step $\Delta_t$ for an irregular pendulum task, with ablations that drop the interval or append it as a feature~\citep{smith2022s5}.
+S4ND notes that only the relative rate matters~\citep{nguyen2022s4nd}; event-camera SSMs evaluate at different frequencies~\citep{zubic2024event}.
+These are LTI layers.
 
-\paragraph{Selective SSMs and their discretization.}
-Mamba makes $\Delta$, $B$ and $C$ functions of the input and states the ZOH rule~\citep{gu2023mamba}; Mamba-2 keeps the parameterization and discretization of Mamba~\citep{dao2024mamba2}.
-Mamba-3 derives the ZOH form for time-varying systems with right-endpoint holding, formalizes the released rule $h_t=e^{\Delta_tA_t}h_{t-1}+\Delta_tB_tx_t$ as exponential-Euler, and proposes an exponential-trapezoidal rule with a data-dependent endpoint weight that is second order only if the weight is $\tfrac12+O(\Delta_t)$; its ablations prefer not enforcing that constraint~\citep{lahoti2026mamba3}.
-Its evaluation concerns language modeling and related tasks, not sampling grids.
-Liquid-S4 makes the transition input-dependent and discusses zero-shot 8\,kHz transfer~\citep{hasani2022liquid}.
+\paragraph{Selective SSMs.}
+Mamba makes $\Delta,B,C$ input-dependent and states the ZOH rule~\citep{gu2023mamba}; Mamba-2 keeps its discretization~\citep{dao2024mamba2}.
+Mamba-3 derives right-endpoint ZOH for time-varying systems, names the released rule exponential-Euler, and proposes an exponential-trapezoidal rule that is second order only if its data-dependent weight is $\tfrac12+O(\Delta_t)$~\citep{lahoti2026mamba3}; its evaluation concerns language modeling and related tasks.
+Liquid-S4 makes the transition input-dependent~\citep{hasani2022liquid}.
 
 \paragraph{Physical time in selective SSMs.}
-TIDES keeps $\tilde\Delta\equiv\Delta$ physical, makes the real part of the eigenvalues and $B,C$ input-dependent, and uses the ZOH input matrix $\bar B_k=\Lambda_k^{-1}(\bar\Lambda_k-I)B_k$~\citep{soydan2026tides}.
-Its Fading Flash diagnostic changes a global step $\Delta$ for sequences of fixed length and shows that a Mamba surrogate with $\Delta$ as an input channel fails outside the training range; its random-drop study removes observations while preserving timestamps and reports classification accuracy.
-In the sections we read (method, Fading Flash, random drop, and the discretization and diagnostic appendices), it neither refines the grid of a fixed physical path nor decomposes output changes.
-It is the closest prior work, and we treat its architecture as prior art, not as a baseline to beat.
+TIDES keeps $\tilde\Delta\equiv\Delta$, makes $\mathrm{Re}\,\Lambda$, $B$ and $C$ input-dependent, and uses $\bar B_k=\Lambda_k^{-1}(\bar\Lambda_k-I)B_k$~\citep{soydan2026tides}.
+Its Fading Flash diagnostic rescales a global step for fixed-length sequences and shows that a Mamba surrogate with $\Delta$ as an input channel fails outside the training range; its random-drop study removes observations and reports accuracy.
+In the sections we read it neither refines a fixed held path nor decomposes output changes.
+It is the closest prior work; we evaluate its official code, not a re-implementation, and we treat its architecture as prior art.
 
-\paragraph{Continuous-time sequence models.}
-Neural CDEs are driven by a continuous interpolation of the observations (natural cubic splines in the original work) and target irregular time series~\citep{kidger2020ncde}; Log-NCDEs build on NCDEs, which are robust to irregular sampling and decouple the number of network evaluations from the number of observations~\citep{walker2024logncde}.
-\citet{cirone2024theoretical} interpret selective SSMs as linear CDEs in a limit where a scalar $\delta$ plays the role of $dt$.
-Oscillatory SSMs study implicit and implicit--explicit time integration of a second-order system~\citep{rusch2024linoss}.
-
-\paragraph{Remaining difference.}
-In the sources above we did not find a controlled refinement of the \emph{same} held path for selective SSMs that separates splitting from new observations, decomposes the change into entry points, and treats readouts and inter-layer resampling as entry points.
-This is absence of evidence in the sources we read, not proof of novelty.
+\paragraph{Continuous-time models.}
+Neural CDEs are driven by an interpolation of the observations~\citep{kidger2020ncde}; Log-NCDEs build on NCDEs, which are robust to irregular sampling~\citep{walker2024logncde}; \citet{cirone2024theoretical} read selective SSMs as linear CDEs in a limit where $\delta$ plays the role of $dt$; oscillatory SSMs study implicit and IMEX integration~\citep{rusch2024linoss}.
+We did not find, in these sources, a refinement of the same held path for selective SSMs that separates splitting from new observations and treats readouts and inter-layer resampling as entry points; this is absence of evidence, not proof of novelty.
 
 %=====================================================================================
 \section{Problem Setup}
 \label{sec:setup}
 
-\paragraph{Continuous-time model.}
-We study a scalar-input selective model with $N$ diagonal modes,
+\paragraph{Model and holds.}
+The toy is a scalar-input selective model with $N$ diagonal modes,
 \begin{equation}
-\dot h_n(t)=g\big(u(t)\big)\big(\lambda_n h_n(t)+B_n(u(t))\,u(t)\big),\qquad y(t)=\mathrm{Re}\sum_{n}C_n(u(t))\,h_n(t),
+\dot h_n=g(u)\big(\lambda_n h_n+B_n(u)\,u\big),\qquad y=\mathrm{Re}\textstyle\sum_nC_n(u)h_n,
 \label{eq:ct}
 \end{equation}
-with $\mathrm{Re}\,\lambda_n<0$, a positive gate $g(u)=\mathrm{softplus}(wu+\beta)$ shared across modes (as $\Delta$ is shared across the state dimension in Mamba-style layers), and affine selective $B(u)$, $C(u)$.
+with $\mathrm{Re}\,\lambda_n<0$, a gate $g(u)=\mathrm{softplus}(wu+\beta)$ shared across modes, and affine $B(u),C(u)$.
+A grid $0=t_0<\dots<t_K=T$ has steps $dt_k$ and mesh $\delta$.
+We use the right-endpoint hold $\tilde u(t)=u(t_k)$ on $(t_{k-1},t_k]$, which is the convention of the Mamba recurrence and of the TIDES code (\cref{sec:convention}).
+A discrete variant is $h_k=\bar A_kh_{k-1}+\bar B_ku_k$ with $\Delta_k=dt_k\,g(u_k)$ (``$\Delta{=}dt\,g$'') or $\Delta_k=\tau g(u_k)$ with a fixed $\tau$ (``$\Delta{=}\tau g$''), and exact ZOH, Euler-$B$ ($\bar B=\Delta B$) or bilinear rules; $\tau$ is the base step.
 
-\paragraph{Grids and holds.}
-A grid is $0=t_0<\dots<t_K=T$ with steps $dt_k=t_k-t_{k-1}$ and mesh $\delta=\max_k dt_k$.
-We use the right-endpoint hold $\tilde u(t)=u(t_k)$ on $(t_{k-1},t_k]$, which matches the recurrences of Mamba and of the TIDES code (the TIDES paper writes the left-endpoint form; its released scan uses the gap before step $k$).
-A discrete variant is $h_k=\bar A_kh_{k-1}+\bar B_ku_k$ with $\Delta_k=dt_k\,g(u_k)$ (``$\Delta{=}dt\,g$'') or $\Delta_k=\tau g(u_k)$ with a fixed $\tau$ (``$\Delta{=}\tau g$'', a step that counts samples), and with one of three rules: exact ZOH ($\bar A=e^{\Delta\lambda}$, $\bar B=(e^{\Delta\lambda}-1)\lambda^{-1}B$), Euler-$B$ ($\bar A=e^{\Delta\lambda}$, $\bar B=\Delta B$), or bilinear.
-We set $\tau$ to the base step, so $\Delta{=}\tau g$ and $\Delta{=}dt\,g$ coincide on the base grid.
-
-\paragraph{Two grid changes.}
-\emph{Splitting} divides every (or every selected) base interval into $m$ equal sub-steps that all receive the held value $u_k$; the right-held physical path is unchanged.
-\emph{New observations} divide the intervals in the same way but give each new sub-time $s$ the value $u(s)$ of the continuous signal; the grids are nested, so the base times are common to all $m$.
-Outputs are always compared at the common base times.
-
-\paragraph{Exact decomposition.}
-For a discrete variant with outputs $D_m$ at the base times of grid $m$, let $Y_m$ denote the continuous-time solution of \eqref{eq:ct} on the held path of grid $m$, evaluated at the same times.
-The change $T_m=D_m-D_1$ splits exactly as
+\paragraph{Grid changes and decomposition.}
+\emph{Splitting} divides base intervals into $m$ equal sub-steps that all receive the held value; \emph{new observations} give each new sub-time the value of the continuous signal.
+Outputs are compared at the common base times.
+With $D_m$ the outputs of a variant on grid $m$ and $Y_m$ the continuous-time solution of \eqref{eq:ct} on the held path of grid $m$, the change splits exactly as
 \begin{equation}
-T_m=\underbrace{(Y_m-Y_1)}_{P_m:\ \text{path term}}+\underbrace{\big[(D_m-Y_m)-(D_1-Y_1)\big]}_{R_m:\ \text{artifact term}},
+T_m=\underbrace{(Y_m-Y_1)}_{P_m\text{: path}}+\underbrace{\big[(D_m-Y_m)-(D_1-Y_1)\big]}_{R_m\text{: artifact}},
 \label{eq:decomp}
 \end{equation}
 so $\|T_m\|^2=\|P_m\|^2+\|R_m\|^2+2\langle P_m,R_m\rangle$.
-Under splitting, $P_m=0$ and the whole change is an artifact.
-Under new observations, $P_m$ reflects genuine new external information about $u$.
-Because the cross term can be large and of either sign, norms of $P_m$ and $R_m$ do not add up, and we never report a ratio of norms as a ``share'' of the change.
+Under splitting $P_m=0$.
+Because the cross term can be large and of either sign, we never report a ratio of norms as a share.
 
 \paragraph{Readouts.}
-For an output sequence $y_1,\dots,y_K$ we distinguish the \emph{sample-count} readouts $\sum_ky_k$ and $\frac1K\sum_ky_k$; two \emph{time-weighted endpoint sums}, the right-endpoint sum $\frac1T\sum_ky_k\,dt_k$ and the trapezoidal sum; and the \emph{exact held-path integral} $\frac1T\int_0^Ty(t)\,dt$, computed in closed form from the intra-step solution under the hold.
-The exact integral is defined only for exact-ZOH states, because Euler-$B$ and bilinear steps have no exact intra-step trajectory.
-
-\paragraph{Toy protocol.}
-Each independent unit is one seed that fixes one parameter draw ($N{=}4$ real modes, $|\lambda_n|\in[0.2,2]$) and one input path (a sum of three sinusoids); grid variants of the same unit are not independent samples.
-The primary configuration uses \NunitsPrimary{} units on a uniform base grid with $T{=}8$, $K{=}16$, and $m\in\{1,2,4,8\}$.
-Nothing is trained, so no train/test split is involved.
-Hypotheses, metrics, thresholds, budget (2 CPU threads, 120\,s) and stop conditions were fixed before the run; three amendments were recorded before any experiment was executed (\cref{app:prereg}).
-References are computed independently of the ZOH code with classical RK4.
+We distinguish sample-count readouts ($\sum_ky_k$, $\frac1K\sum_ky_k$), time-weighted endpoint sums (right-endpoint $\frac1T\sum_ky_k\,dt_k$ and trapezoidal), and the exact held-path integral $\frac1T\int_0^Ty\,dt$, defined only for exact-ZOH states.
 
 %=====================================================================================
 \section{Where Grid Dependence Enters: Analysis}
 \label{sec:analysis}
 
-\subsection{Single layer: the assumptions behind split invariance}
+\subsection{Single layer}
 \label{sec:single}
 
 \begin{proposition}[standard]
 \label{prop:split}
-Fix one base interval $(t_{k-1},t_k]$ and suppose
-(i) the input is the held value $u_k$ on the whole interval, and every sub-step after splitting receives $u_k$;
-(ii) every per-step coefficient ($g$, $B$, $C$, $\lambda$) is a function of the held value only;
-(iii) the step is $\Delta=\text{(sub-step length)}\cdot g(u_k)$; and
-(iv) $\bar A$ and $\bar B$ are the exact ZOH formulas.
-Then, from the same state at $t_{k-1}$, the state and the output at $t_k$ are the same for every number $m$ of equal sub-steps; by induction over intervals, the outputs at all base times are split-invariant.
+Fix a base interval $(t_{k-1},t_k]$ and suppose
+(i) every sub-step receives the held value $u_k$;
+(ii) every coefficient ($g,B,C,\lambda$) is a function of the held value only;
+(iii) the step is (sub-step length)$\,\cdot g(u_k)$; and
+(iv) $\bar A,\bar B$ are the exact ZOH formulas.
+Then, from the same state at $t_{k-1}$, the state and output at $t_k$ are the same for every $m$; by induction the outputs at all base times are split-invariant.
 \end{proposition}
 \begin{proof}
-Under (i)--(iii) every sub-step integrates the same constant-coefficient ODE $\dot h=g(u_k)(\lambda h+B(u_k)u_k)$, and under (iv) each sub-step is its exact flow $\Phi_{s}$ over the sub-step length $s$. Flows compose, $\Phi_{s_1}\circ\Phi_{s_2}=\Phi_{s_1+s_2}$.
+Each sub-step is the exact flow $\Phi_s$ of $\dot h=g(u_k)(\lambda h+B(u_k)u_k)$ over its length $s$, and $\Phi_{s_1}\circ\Phi_{s_2}=\Phi_{s_1+s_2}$.
 \end{proof}
 
-The proposition is textbook; we state it to make the assumptions explicit, because each entry point below violates one of them.
-Violating (iii) ($\Delta{=}\tau g$) turns $m$ sub-steps into $m$ times the decay, so the memory horizon is measured in samples.
-Violating (iv) introduces a local error: for Euler-$B$, $|\Delta B u|\,|\varphi_1(\Delta\lambda)-1|\le|Bu|\,\Delta^2|\lambda|/2$ with $\varphi_1(z)=(e^z-1)/z$, a first-order global error (\cref{app:proofs}, unproved sketch).
-Violating (ii) happens whenever a coefficient sees anything besides the held value, for example a token-indexed convolution over neighbouring samples (Mamba's \texttt{d\_conv}${=}4$ depthwise convolution), time or position features, state-dependent (``liquid'') transitions, or normalization statistics computed over the time axis during training.
-We did not measure the convolution case (\cref{sec:limits}).
+The proposition is textbook; its use is that each entry point violates one assumption.
+$\Delta{=}\tau g$ violates (iii): $m$ sub-steps apply $m$ times the decay.
+Euler-$B$ violates (iv), with local error $|\Delta Bu|\,|\varphi_1(\Delta\lambda)-1|\le|Bu|\Delta^2|\lambda|/2$, $\varphi_1(z)=(e^z-1)/z$.
+(ii) fails whenever a coefficient sees anything besides the held value: a token-indexed convolution (Mamba's \texttt{d\_conv}${=}4$), time or position features, state-dependent transitions, or training-mode normalization statistics over time.
+Bilinear is stable for $\mathrm{Re}\,z<0$ at every step, but for real $z<-2$ its transition is negative (sign-alternating transients) and it tends to $-1$ instead of $e^z\to0$ (inaccurate stiff decay); its held-input fixed point is exact.
 
-\paragraph{Bilinear: stability, oscillation and stiff decay are different properties.}
-For $\mathrm{Re}\,z<0$ the bilinear transition $\bar A=(1+z/2)/(1-z/2)$ satisfies $|\bar A|<1$, so it is stable at every step size.
-For real $z<-2$ it is negative, which produces sign-alternating transients that the exact solution does not have.
-As $z\to-\infty$ it tends to $-1$ instead of $e^z\to0$, so stiff modes decay inaccurately (it is not L-stable).
-Its fixed point under a held input, $-Bu/\lambda$, is exact.
-\Cref{tab:stiff} separates these three properties.
-
-\subsection{Several layers: internal resampling is not new information}
+\subsection{Several layers: internal resampling}
 \label{sec:coupling}
 
-In a stack, layer~2 is driven by the continuous output of layer~1.
-A layerwise recurrence gives layer~2 only the endpoint samples of that signal, held over each step.
-Splitting the input grid changes which internal samples layer~2 sees, although no external observation is added.
-The minimal instance is the linear cascade
+In a stack, layer~2 is driven by the continuous output of layer~1, but a layerwise recurrence gives it only endpoint samples held over each step.
+Splitting the input grid changes which internal samples it sees, without adding any external observation.
+The minimal instance is
 \begin{equation}
-\dot h_1=-a h_1+b\,u(t),\qquad \dot h_2=-c\,h_2+d\,h_1(t),\qquad a,c>0.
+\dot h_1=-a h_1+b\,u(t),\qquad \dot h_2=-c\,h_2+d\,h_1(t).
 \label{eq:cascade}
 \end{equation}
 
 \begin{proposition}[standard]
 \label{prop:cascade}
-Let $u$ be held on a grid with mesh $\delta$, $|u|\le U$, and $h_1(0)=h_2(0)=0$.
-The exact coupled solution of \eqref{eq:cascade} at base times is invariant under splitting.
-The layerwise computation that is exact in layer~1 and gives layer~2 the held value $h_1(t_k)$ on $(t_{k-1},t_k]$ has error $|e_k|\le |b\,d|\,U\,\delta\,e^{c\delta}/c$ at every grid time, for every $T$, including $a=c$.
+Let $u$ be held on a grid with mesh $\delta$, $|u|\le U$, $a\ge0$, $c>0$ and $h_1(0)=h_2(0)=0$.
+(a) The exact coupled solution of \eqref{eq:cascade} at base times is split-invariant.
+(b) The layerwise computation that is exact in layer~1 and holds $h_1(t_k)$ on $(t_{k-1},t_k]$ in layer~2 has absolute error $|e_k|\le|b\,d|\,U\,\delta\,e^{c\delta}/c$ at every grid time, for every $T$ and also for $a=c$.
 \end{proposition}
 \begin{proof}
-The coupled system is linear with constant coefficients on each held interval, so invariance follows as in \cref{prop:split}.
-For the layerwise error, layer~1 is exact, so with $\tau_k=dt_k$,
-$e_k=e^{-c\tau_k}e_{k-1}+d\int_0^{\tau_k}e^{-c(\tau_k-s)}\big[h_1(t_k)-h_1(t_{k-1}+s)\big]ds$.
-Since $|h_1|\le|b|U/a$, $|\dot h_1|\le 2|b|U$, and the bracket is at most $2|b|U(\tau_k-s)$, the local term is at most $|b\,d|U\tau_k^2$.
-Unrolling with $e_0=0$ gives $|e_k|\le|b\,d|U\,\delta\sum_{j\le k}\tau_je^{-c(t_k-t_j)}\le|b\,d|U\,\delta\,e^{c\delta}/c$, where the sum is bounded by $e^{c\delta}\int_0^{t_k}e^{-c(t_k-s)}ds$.
+(a) follows as in \cref{prop:split}, since the coupled system has constant coefficients on each held interval.
+(b) Layer~1 is exact, so with $\tau_k=dt_k$,
+$e_k=e^{-c\tau_k}e_{k-1}+d\int_0^{\tau_k}e^{-c(\tau_k-s)}[h_1(t_k)-h_1(t_{k-1}+s)]\,ds$.
+If $a>0$ then $|h_1|\le|b|U/a$, so $a|h_1|\le|b|U$; if $a=0$ then $a|h_1|=0$; either way $|\dot h_1|\le2|b|U$.
+On each held interval $h_1$ is $C^1$, so the bracket is at most $2|b|U(\tau_k-s)$, and with $e^{-c(\tau_k-s)}\le1$ the local term is at most $|b\,d|U\tau_k^2$.
+Unrolling from $e_0=0$ gives $|e_k|\le|b\,d|U\delta\sum_{j\le k}\tau_je^{-c(t_k-t_j)}$, and since $e^{-c(t_k-t_j)}\le e^{c\delta}e^{-c(t_k-s)}$ for $s\in(t_{j-1},t_j]$, the sum is at most $e^{c\delta}\int_0^{t_k}e^{-c(t_k-s)}ds\le e^{c\delta}/c$.
 \end{proof}
 
-This is elementary numerical analysis; the proof is written out here but has not been checked by a third party.
-The point is interpretive.
-When all single-layer conditions of \cref{prop:split} hold in every layer, a stacked recurrence on the observation grid can still change under splitting, because the inter-layer signal is resampled.
-This change is a reconstruction error of an \emph{internal} signal; calling it new information would be wrong.
-It vanishes if the inter-layer signal is represented exactly (the coupled flow) or if the stack runs on a grid that does not depend on the observations.
-Whether it matters in trained models is open (\cref{sec:exp-real}).
+\begin{remark}[scope of \cref{prop:cascade}]
+\label{rem:scope}
+The argument is elementary and has not been checked by a third party.
+A nonzero $h_1(0)$ adds $a|h_1(0)|$ to $2|b|U$; a nonzero $h_2(0)$ does not enter.
+Uniformity in $T$ needs $c>0$: as $c\to0$ the sum is bounded only by $t_k$ and the bound grows linearly in time; $a<0$ (an unstable first layer) is not covered.
+In the stored P1-COMP-01 outputs, the largest error at the base times is 9--20\% of the bound for $m\in\{1,2,4,8\}$, which is consistent with, not a proof of, the bound.
+The statement is for a linear time-invariant scalar cascade; it gives no guarantee for input-dependent coefficients, nonlinear maps between layers, or trained deep models, where the Lipschitz and contraction constants it uses are not controlled.
+\end{remark}
+
+When all conditions of \cref{prop:split} hold in every layer, a stacked recurrence on the observation grid can therefore still change under splitting because the inter-layer signal is resampled; this is a reconstruction error of an \emph{internal} signal, not new information.
+It vanishes if the inter-layer signal is represented exactly or if the stack runs on a grid that does not depend on the observations.
 
 \subsection{Readouts}
-\label{sec:readout-analysis}
+The exact held-path integral is additive over sub-intervals and hence split-invariant under exact-ZOH states; endpoint sums converge to it only where the grid is refined; sample-count readouts weight samples, not time, so the sample mean converges to a density-weighted average.
 
-Readouts are the last entry point.
-The exact held-path integral is additive over sub-intervals, so under exact-ZOH states it is invariant under splitting.
-Time-weighted endpoint sums converge to it only where the grid is refined; under a nonuniform refinement, the error from unrefined intervals remains.
-Sample-count readouts weight samples, not time: the sample sum scales with the number of samples, and the sample mean converges to a density-weighted average rather than the time average.
-These facts are elementary; the question is how large they are relative to the other entry points.
+\subsection{Interval conventions in the TIDES paper and code}
+\label{sec:convention}
+
+The TIDES paper writes $x_{k+1}=\bar\Lambda(\Delta_k)x_k+\bar B(\Delta_k)u_k$ with $\Delta_k=t_{k+1}-t_k$ and $y_k=Cx_k+Du_k$, i.e.\ $u_k$ is held forward on $[t_k,t_{k+1})$ and the state in $y_k$ does not yet contain $u_k$~\citep{soydan2026tides}.
+The pinned code scans $z_k=\bar\Lambda(t_k-t_{k-1})z_{k-1}+\bar B(t_k-t_{k-1})u_k$ with $y_k=\mathrm{Re}(Cz_k)+Du_k$, and its forecasting collate builds the step sequence $[t_0,t_1-t_0,\dots]$: $u_k$ is held backward on $(t_{k-1},t_k]$ and the state in $y_k$ contains it.
+Both are exact ZOH solutions, but of different input reconstructions.
+On a uniform grid every gap is equal, so $z_k=x_{k+1}$: the difference is a one-index shift of the state, which changes the alignment between the state part of $y_k$ and the feedthrough $Du_k$.
+On an irregular grid each value is paired with a different gap, so the difference is not a relabeling.
+With the pinned code, untrained weights and a fixed impulse input, the code equals the backward-hold recurrence to $\ConvCodeRight$; the one-index shift reproduces the paper form to $\ConvShiftUniform$ on a uniform grid but leaves $\ConvShiftIrregular$ on an irregular one.
+The released code, not the printed equations, defines the model behind TIDES' reported results, and it coincides with the right-endpoint convention used throughout this paper; our splitting protocol repeats the right-endpoint value accordingly.
+We make no claim that this affects TIDES' results.
 
 %=====================================================================================
-\section{Controlled Results}
-\label{sec:exp}
+\section{Trained Official TIDES: a Single-Seed Pilot}
+\label{sec:real}
 
-All results in this section are from the fixed-parameter toys of \cref{sec:setup}.
-They are numerical checks and controlled measurements, not proofs, and they say nothing directly about trained Mamba, S4, S5 or TIDES models.
-The pre-registered FIRST\_RUN executed in \FirstRunSeconds\,s on 2 CPU threads; all data files were byte-identical between two executions (\cref{app:prereg}).
+\paragraph{Protocol (fixed before training; \cref{app:real}).}
+\emph{Model:} official TIDES at a pinned commit (MIT), $\AdapterParams$ parameters, two blocks, input-dependent $\mathrm{Re}\,\Lambda$, $B$, $C$, exact ZOH, causal, no convolution, a linear per-step head; CPU, float32, 2 threads.
+\emph{Task:} regression of the teacher \eqref{eq:ct} with fixed parameters, driven by sine-sum inputs, over $T{=}8$ on a uniform training grid of $K{=}32$ steps; labels are the teacher output on the continuous path at the 32 grid times (label s.d.\ $\RealLabelSD$).
+\emph{Split:} 896 trajectory identifiers split into 512/128/256 train/calibration/test \emph{before} any grid is built; normalization statistics from the training split only.
+\emph{Training:} one seed (0), Adam, 2000 steps, batch 32; calibration MSE every 100 steps; the lowest-calibration-MSE state (step $\RealStep$, MSE $\RealDevMSE$) was saved, hashed and frozen before any test trajectory was generated ($\RealTrainSec$\,s in total).
+\emph{Conditions:} C0 (training grid); S2/S4/S8, which split every interval with the held value repeated; H8, which splits only the first half by 8 (a density change on the same held path); and, as a secondary non-refinement condition, J1 with $K$ random observation times.
+\emph{Arms on the same checkpoint and test trajectories:} \emph{native} (the condition's grid with physical step sizes), \emph{resampled} (last observation carried forward onto the training grid, which uses only observed values and never the continuous path), and, for the pooled readout, \emph{pooling-only} (the native outputs pooled by the time-weighted sum instead of the sample mean).
+\emph{Equivalence rule:} the unit is the per-trajectory test MSE in label units; the margin is $\pm5\%$ of the resampled arm's mean MSE for the same condition, applied to the mean paired difference; ``no practical difference'' requires the 95\% bootstrap CI (2000 resamples of test trajectories) to lie inside the margin.
+The 5\% value is a convention fixed before any trained result (about 2.5\% in RMSE), not derived from an application cost; non-significance is never read as equivalence.
 
-\subsection{Splitting a held interval}
-\label{sec:exp-split}
+\input{generated/tab_real}
 
-\Cref{tab:split} and \cref{fig:convergence}(a) report the artifact against the exact held-path solution.
-With $\Delta{=}dt\,g$ and exact ZOH, the output is split-invariant to $\EoneZohMax$ (maximum over units and $m$), and the exact ZOH code agrees with the independent RK4 reference to $\EoneRKmax$.
-This is an engineering check of \cref{prop:split}, not a finding.
-With the correct step, Euler-$B$ converges at first order (median slope $\EoneEulerSlope$), but its artifact at the base step is large in this toy (median $\EoneEulerMone$, still $\EoneEulerMeight$ at $m{=}8$); the magnitude depends on the toy's $\Delta|\lambda|$ scale and was not measured for any trained model.
-Bilinear converges at second order (slope $\EoneBilinSlope$).
-With $\Delta{=}\tau g$ the artifact does not vanish; it grows from $\EoneNodtMtwo$ at $m{=}2$ to $\EoneNodtMeight$ at $m{=}8$ (medians), and $\HfourEulerFrac$ of $32$ units are non-decreasing for the Euler-$B$ variant.
-The $\Delta{=}\tau g$ variants are grid-dependent by construction; they illustrate a mechanism and are not evidence about Mamba itself.
-On secondary configurations (jittered base grid; complex modes, 8 units each, descriptive only) the pattern is the same, except that bilinear with oscillatory modes changes more under splitting ($\EoneComplexBilin$ vs.\ $\EoneRealBilin$ for real modes at $m{=}8$); we did not test the cause.
+\paragraph{Discrepancy, task loss and runtime.}
+\Cref{tab:real} reports all three together.
+Resampling makes the model split-invariant by construction: its outputs on S2--S8 and H8 equal those on C0 exactly.
+Native evaluation is not: splitting every interval changes the outputs by $\RealDiscStwo$ at $m{=}2$ and $\RealDiscSeight$ at $m{=}8$ (95\% CI $[\RealDiscSeightCIlo,\RealDiscSeightCIhi]$), far above the float32 floor of about $10^{-4}$ (\cref{app:numerics}).
+The native task loss on the refined grids is slightly \emph{lower} than on the training grid (\RealRelDiffStwo\% at S2, \RealRelDiffSeight\% at S8 and \RealRelDiffHeight\% at H8 relative to the resampled MSE of $\RealMSEczero$).
+By the pre-specified rule, S2 shows no practical difference; for S4, S8 and H8 the interval excludes zero but does not lie beyond the margin, so neither equivalence nor a practical difference is established.
+We do not know why the refined native computation is slightly more accurate here; a finer internal sampling of the inter-layer signal is one untested explanation.
+Native inference cost grows with the number of tokens (from $\RealRunNatCzero$\,s to $\RealRunNatSeight$\,s per batch from C0 to S8 in this implementation), while resampling stays at about $\RealRunResSeight$\,s.
+On the secondary J1 condition, the errors of both arms are much larger (native MSE $\RealJoneMSE$ against $\RealMSEczero$ on C0) because $K$ random times observe the input differently, and the paired difference is inconclusive.
+
+\input{generated/tab_pool}
+
+\paragraph{Pooled readout.}
+\Cref{tab:pool} evaluates a sequence-level readout of the same checkpoint: the time average of the teacher output (mean magnitude $\RealPoolLabelAbs$).
+On uniform splits, sample-mean and time-weighted pooling coincide.
+Under the density change H8, the sample mean over native tokens (the pooling used by the TIDES classifier head) errs by $\RealPoolMeanHeight$, whereas time-weighted pooling of the \emph{same} native outputs errs by $\RealPoolTimeHeight$, close to the resampled arm ($\RealPoolResHeight$) and to C0 ($\RealPoolCzero$).
+In this pilot the pooled-readout grid dependence is therefore almost entirely a readout effect, which the pooling-only change removes; the pre-registered direction (R-P5) was supported.
+
+\input{generated/tab_layers}
+
+\paragraph{Where the change appears (exploratory).}
+After seeing the results we measured the change at intermediate features (\cref{tab:layers}); this analysis was not pre-registered.
+The encoder output is unchanged, the first block changes by at most $\RealLayerOneFp$ in float32 and $\RealLayerOneDp$ with the weights cast to float64, and the second block changes by $\RealLayerTwoMin$ to $\RealLayerTwoMax$ in both precisions.
+This is the pattern that \cref{prop:split,prop:cascade} predict: a first layer that satisfies the single-layer conditions is split-invariant up to rounding, and the change enters when the second block receives additional internal samples.
+It localizes the effect in one checkpoint; it does not prove the mechanism for trained stacks in general.
+
+\paragraph{What the pilot does not show.}
+One seed, one small model and one synthetic task are a conditional pilot, not evidence about the performance distribution of the training algorithm or about TIDES on its benchmarks; the teacher belongs to the same continuous-time family as the model, which may favour it; and the calibration curve was unstable (calibration MSE up to $\RealDevMax$ between evaluations), so the selected checkpoint may not be representative.
+Nothing here transfers to real sensor or clinical streams.
+
+%=====================================================================================
+\section{Controlled Toy Results}
+\label{sec:toy}
+
+These fixed-parameter results are numerical checks and controlled measurements, not proofs, and say nothing directly about trained models.
+The pre-registered FIRST\_RUN used \NunitsPrimary{} independent units (one parameter and input draw each), $T{=}8$, $K{=}16$, $m\in\{1,2,4,8\}$, 2 CPU threads and \FirstRunSeconds\,s; details and deviations are in \cref{app:prereg}.
+
+\paragraph{Splitting.}
+With $\Delta{=}dt\,g$ and exact ZOH the output is split-invariant to $\EoneZohMax$ and agrees with an independent RK4 reference to $\EoneRKmax$ (an engineering check of \cref{prop:split}).
+Euler-$B$ with the correct step converges at first order (median slope $\EoneEulerSlope$) but has a median base-step artifact of $\EoneEulerMone$ in this toy; the magnitude depends on the toy's $\Delta|\lambda|$ scale.
+Bilinear converges at second order ($\EoneBilinSlope$); with $\Delta{=}\tau g$ the artifact grows from $\EoneNodtMtwo$ to $\EoneNodtMeight$ (medians, $m{=}2\to8$), by construction (\cref{tab:split}, \cref{fig:convergence}a).
+In a stiff mode ($\lambda{=}-500$) the bilinear transition is $\NtwoAbar$ and Euler-$B$ has an artifact of $\NtwoEulerArt$ (\cref{app:toy}).
 
 \input{generated/tab_split}
 \input{generated/fig_convergence}
 
-\subsection{Stiffness}
-\label{sec:exp-stiff}
+\paragraph{New observations.}
+With exact ZOH the artifact against RK4 on the new held path stays below $\EtwoZohArt$, so the whole change is the change of the continuous-time solution on the new path, i.e.\ new external information.
+The exact decomposition \eqref{eq:decomp} of the other variants (exploratory, \cref{app:toy}) has cross terms between $\EtwoCrossMin$ and $\EtwoCrossMax$ of the per-unit total, so no per-unit share is defined.
 
-\Cref{tab:stiff} uses a stiff scalar mode.
-Bilinear stays stable at every step, but for $z<-2$ its transition is negative and for $\lambda{=}-500$ at the base step it is $\NtwoAbar$ while the exact decay is essentially zero; the output artifact is $\NtwoBilArt$.
-Euler-$B$ overestimates the gain of stiff modes: its artifact reaches $\NtwoEulerArt$ at the same setting, and its steady-state error under a held input grows from $\NthreeEulerSmall$ at $dt{=}0.01$ to $\NthreeEulerLarge$ at $dt{=}8$.
-Exact ZOH and bilinear have exact steady states.
+\paragraph{Readouts and interaction of fixes.}
+On a split-invariant backbone, a density change moves the sample mean by $\EthreeMeanChange$ and the exact integral by $\EthreeExactChange$ (scale-normalized, $m{=}8$).
+The pre-registered clause H7c was mis-specified before the run and failed (slope $\HsevenOrigSlope$); its restatement passed only weakly (median slope $\EthreeRMEslope$, $\EthreeRMEneg$ of 32 units negative).
+One fix at a time (\cref{tab:interaction}): exact ZOH alone gives $\FacZoh$, the physical step alone $\FacDt$, a time readout alone $\FacTime$, against $\FacNone$ without fixes; only all three together reach $\FacAll$.
+Under the pre-registered stop condition this means the toy gives no support for a new architecture; the stop condition is an operational rule, not a statistical, equivalence or novelty test.
 
-\input{generated/tab_stiff}
-
-\subsection{Adding new observations}
-\label{sec:exp-newobs}
-
-When new observations are added, the exact-ZOH artifact against RK4 on the new held path stays below $\EtwoZohArt$, so its whole output change equals the change of the continuous-time solution on the new path.
-That change reflects new external information: the held path approaches the continuous signal, and the error to the continuous-time truth falls from $\EtwoHoldErrOne$ to $\EtwoHoldErrEight$ (median slope $\EtwoSlope$, first order as expected for a hold).
-\Cref{tab:newobs} applies the exact decomposition \eqref{eq:decomp} to the other variants.
-This decomposition was not pre-registered and is an exploratory re-aggregation of the stored outputs.
-For $\Delta{=}\tau g$ with exact ZOH at $m{=}8$, the artifact term alone exceeds the squared total ($\EtwoNodtArtFrac$ of $\sum\|T\|^2$) with a negative cross term ($\EtwoNodtCrossFrac$); for Euler-$B$ with the correct step, the artifact term is $\EtwoEulerArtFrac$ and the cross term $\EtwoEulerCrossFrac$.
-Across the rows of \cref{tab:newobs}, per-unit cross fractions range from $\EtwoCrossMin$ to $\EtwoCrossMax$, which is why we report the three terms rather than a share.
-
-\input{generated/tab_newobs}
-
-\subsection{Readouts and the interaction of fixes}
-\label{sec:exp-readout}
-
-\Cref{tab:readout} changes the observation density in the first half only.
-With exact ZOH and $\Delta{=}dt\,g$, the backbone is split-invariant, yet the sample mean changes by $\EthreeMeanChange$ and the sample sum by $\EthreeSumChange$ (scale-normalized, $m{=}8$).
-The trapezoidal and right-endpoint time-weighted sums change by $\EthreeTrapzChange$ and $\EthreeRiemannChange$; the exact held-path integral changes by $\EthreeExactChange$.
-When new observations are added to the first half, the sample-mean error to the continuous-time average grows from $\EthreeMeanErrOne$ to $\EthreeMeanErrEight$, while the exact integral's error is $\EthreeExactErrEight$ at $m{=}8$; we expect this remaining error to come from the unrefined second half, but did not test it.
-
-Two pre-registered readout checks did not come out cleanly.
-The original clause H7c, which required the right-endpoint sum's change relative to $m{=}1$ to decrease with $m$, was mis-specified before the run: a readout that converges to a limit different from its $m{=}1$ value moves toward that limit.
-It failed as predicted (slope $\HsevenOrigSlope$).
-The restated clause, that the gap between the right-endpoint sum and the exact integral decreases, passed only weakly: median slope $\EthreeRMEslope$, with $\EthreeRMEneg$ of 32 units negative.
-The likely cause is the unrefined half, whose coarse endpoint error does not shrink, but we did not test this separately.
-
-\Cref{tab:interaction} applies one fix at a time to the Mamba-style toy recipe ($\Delta{=}\tau g$, Euler-$B$, sample mean; change $\FacNone$).
-Exact ZOH alone does not help ($\FacZoh$); the physical step alone leaves $\FacDt$; a time-weighted readout alone leaves $\FacTime$.
-Only the combination of the physical step, exact ZOH and the exact integral reaches $\FacAll$.
-The fixes are therefore not additive, and we do not attribute percentages to them.
-Under the pre-registered stop condition, this means the toy provides no support for a new architecture: simple time handling explains the entire single-layer artifact.
-The stop condition is an operational decision rule; it is not a statistical test, an equivalence result or a novelty argument.
-
-\input{generated/tab_readout}
 \input{generated/tab_interaction}
 
-\subsection{Two-layer coupling}
-\label{sec:exp-coupling}
-
-\Cref{tab:coupling} and \cref{fig:convergence}(b) check \cref{prop:cascade} on the held input of FIRST\_RUN unit~0 (no new seed or grid; separately pre-registered as P1-COMP-01; \CompSeconds\,s).
-The exact coupled solution is split-invariant to $\CompInv$ and agrees with RK4 to $\CompRK$, both for $a\neq c$ and for the Jordan case $a=c$.
-The layerwise computation is exact in layer~1 but its layer-2 error is $\CompErrOne$ at the base step and $\CompErrEight$ at $m{=}8$, with slope $\CompSlope$ ($\CompSlopeEq$ for $a=c$).
-Every layer here satisfies \cref{prop:split}; the change comes only from resampling the internal signal.
-This is a standard ODE property, and its size in trained selective stacks is unknown.
+\paragraph{Two-layer cascade.}
+For \eqref{eq:cascade} (P1-COMP-01; held input of FIRST\_RUN unit~0; \CompSeconds\,s), the exact coupled solution is split-invariant to $\CompInv$, while the layerwise computation has error $\CompErrOne$ at the base step and $\CompErrEight$ at $m{=}8$ (slope $\CompSlope$; $\CompSlopeEq$ for $a=c$; \cref{tab:coupling}, \cref{fig:convergence}b).
 
 \input{generated/tab_coupling}
-
-\subsection{Trained models}
-\label{sec:exp-real}
-
-No trained model has been evaluated; this subsection records a protocol fixed before any result (P1-REAL-01).
-We fixed one official implementation before seeing results: TIDES at a pinned commit (MIT license), chosen because it is the authors' code, runs on CPU without custom kernels, and supports per-step physical steps natively.
-The official Mamba code requires CUDA or Triton kernels for its standard paths, and the official S5 code pins 2022 JAX versions, so they were not selected for the first run.
-We have not trained or run any of these models.
-
-The task will be sequence regression of the toy teacher \eqref{eq:ct} (fixed parameters) on sine-sum inputs, with trajectory identifiers split into 512/128/256 train/dev/test \emph{before} any grid is built, labels at fixed physical query times, a fixed physical horizon, and normalization statistics from the training split only.
-One model will be trained on a uniform grid and evaluated on the same test trajectories (i) on the native grid with physical step sizes and (ii) after causal resampling onto the training grid (last observation carried forward), under splitting, nested new observations, and random observation times.
-We will report output discrepancy, task loss and inference cost with bootstrap intervals over test trajectories, and we will call a difference negligible only if the 95\% interval of the paired difference lies within a pre-specified $\pm5\%$ margin; a non-significant difference will not be read as equivalence.
-The protocol predicts, from \cref{prop:cascade}, that the native two-block model will change under splitting beyond the float32 floor, and that resampling will be split-invariant by construction; these are predictions, not results.
-\todo{P1-REAL-01: trained-model discrepancy, task loss and inference cost for native vs.\ resampled evaluation; requires approval to install a CPU tensor library, fetch the pinned code, and a measured training budget}
-
-Reading the pinned code (not running it) shows three places where \cref{sec:analysis} predicts grid dependence: two stacked blocks on the observation grid (\cref{sec:coupling}); a classifier head that averages over tokens, i.e.\ a sample-count readout; and the ZOH input matrix computed as $(\bar\Lambda-1)/\Lambda$ rather than with \texttt{expm1}, which loses relative precision for small $\Lambda\Delta$ in float32 (\cref{app:numerics}).
-Whether any of these matters for TIDES' reported results is \notrun{} and we make no claim about it.
 
 %=====================================================================================
 \section{Limitations}
 \label{sec:limits}
 
-\emph{Toy scope.} All measurements use fixed parameters, one input channel and sinusoidal inputs; the reported magnitudes, especially for Euler-$B$, depend on the toy's $\Delta|\lambda|$ scale and do not transfer to trained models.
-\emph{No trained models.} Real Mamba, S4, S5 and TIDES results are \notrun; the protocol in \cref{sec:exp-real} is a plan.
-\emph{Unmeasured entry points.} The token-indexed convolution of Mamba, normalization over the time axis, and stacks deeper than two linear layers were not measured.
-\emph{Numerics.} float32 behaviour was emulated by rounding every primitive with a correctly rounded exponential; this does not reproduce any GPU kernel.
-\emph{Analysis.} \Cref{prop:split,prop:cascade} are standard; the first-order bounds for the hold error and for Euler-$B$ in \cref{app:proofs} are unproved sketches.
-\emph{Exploratory parts.} The exact decomposition of \cref{tab:newobs} and the stiffness columns of \cref{tab:stiff} are re-aggregations of already-seen results.
-\emph{Pre-registration.} One readout clause was mis-specified and failed, and its restatement passed only weakly (\cref{sec:exp-readout}).
-\emph{Literature.} For the three closest papers (TIDES, Mamba-3, S5) the key equations and experiment sections were read in the original text; the other entries were checked by keyword search of the full text and may be incomplete.
+\emph{Trained evidence is a pilot:} one seed, one checkpoint, one small two-block model, one synthetic task whose teacher is from the model's own family; no statement about the training algorithm, TIDES' benchmarks, Mamba, S4 or S5 is supported.
+\emph{Margin:} the $\pm5\%$ equivalence margin is a convention, not an application-derived tolerance; all intervals are reported.
+\emph{Entry points not measured:} token-indexed convolution, normalization in training mode, and deeper or wider stacks.
+\emph{Analysis:} \cref{prop:split,prop:cascade} are standard; \cref{prop:cascade} covers only a linear time-invariant cascade (\cref{rem:scope}); the hold and Euler-$B$ bounds in \cref{app:proofs} are unproved sketches.
+\emph{Exploratory parts:} the layer localization, the toy decomposition and the stiffness columns were analysed after the results were seen.
+\emph{Numerics:} the float32 floor comes from an emulation.
+\emph{Literature:} the key equations and experiment sections of TIDES, Mamba-3 and S5 were read in the original text; other entries were checked by keyword search.
 
 %=====================================================================================
 \section{Conclusion}
 \label{sec:conclusion}
 
-Grid dependence in a selective SSM does not come from one place.
-In our toys it enters through a step size that counts samples, through an inexact input-matrix discretization, through sample-count readouts, and, in stacks, through the resampling of internal signals.
-A physical step, exact ZOH and an exact time-integral readout remove the single-layer splitting artifact completely, but only together, and they do not remove the inter-layer resampling error, which is first order in the step and carries no new information.
-Because simple time handling suffices in a single layer and the physical-step selective design already exists, we do not propose an architecture.
-The remaining question is empirical: how large each entry point is in trained models.
-\todo{P1-REAL-01: answer for one trained official implementation}
+Grid dependence in selective SSMs enters through a step that counts samples, an inexact input-matrix discretization, sample-count readouts and, in stacks, the resampling of internal signals.
+In controlled toys a physical step, exact ZOH and an exact integral remove the single-layer artifact, but only together, and they leave the inter-layer resampling error, which is first order in the step and carries no new information.
+In a single-seed pilot on the official TIDES code, whose step is physical, the first block is split-invariant up to rounding, the change appears in the second block, resampling to the training grid removes it at the cost of discarding observations, and time-weighted pooling removes the pooled-readout effect of a density change.
+Whether these magnitudes hold across seeds, tasks, sizes and implementations is open.
 
 %=====================================================================================
 \section*{Impact Statement}
 
 This paper presents work whose goal is to advance the field of Machine Learning, specifically the understanding of how sequence models respond to changes in sampling.
-All experiments use synthetic data and small CPU computations.
-The main practical risk we see is over-reading toy results: a model that looks sampling-consistent in a controlled toy may still behave differently on irregularly sampled real data, for example clinical or sensor streams, so any deployment in such settings would need evaluation on the actual data and sampling process.
+All experiments use synthetic data and small CPU computations; the trained-model results come from one seed on one synthetic task.
+The main risk we see is over-reading such results: a model that behaves consistently in a controlled setting may still behave differently on irregularly sampled real data, for example clinical or sensor streams, so any use in such settings needs evaluation on the actual data and sampling process.
 We are not aware of other societal consequences that must be specifically highlighted here.
 
 \bibliography{references}
@@ -410,67 +357,66 @@ We are not aware of other societal consequences that must be specifically highli
 \label{app:prereg}
 
 \paragraph{FIRST\_RUN.}
-The configuration (hypotheses H1--H8, metrics, 32 units, 2 CPU threads, 120\,s budget, stop conditions) was committed before any experiment code ran.
-Three amendments were recorded before any experiment was executed:
-A1 made the RK4 reference step adaptive because a pre-run error estimate showed that the flat 64 sub-steps could exceed the H5 threshold;
-A2 added a restated H7c after noticing that the original clause was mis-specified, while keeping the original clause and evaluating it verbatim;
-A3 fixed the secondary configurations to seeds 0--7, descriptive only.
-Deviations: a timing-only smoke test used seed 999, outside the pre-registered seeds, and its metrics were not inspected;
-the first complete execution recorded a spurious ``dirty tree'' flag because the runner created its log file before checking the tree, so the runner was fixed and the run repeated once, with all data files byte-identical;
-an intermediate execution was killed by a shell pipe and its partial outputs were deleted.
+Hypotheses H1--H8, metrics, 32 units, 2 CPU threads, a 120\,s budget and stop conditions were committed before any experiment code ran.
+Amendments recorded before any experiment ran: A1 (adaptive RK4 reference step), A2 (a restated H7c, keeping the mis-specified original), A3 (secondary configurations fixed to seeds 0--7, descriptive).
+Deviations: a timing-only smoke test on seed 999 (metrics not inspected); a repeated execution after a manifest bookkeeping bug, with byte-identical data files; a partial execution killed by a shell pipe, whose outputs were deleted.
 P1-COMP-01 was pre-registered separately before its code ran.
 \Cref{tab:hypotheses} lists every pre-registered verdict, including the failure.
 
+\paragraph{P1-REAL-01.}
+The design, the pinned implementation and the predictions were committed before any installation.
+Amendments R-A1--R-A9 were committed after an untrained adapter check and a timing smoke on four training trajectories, and before training: calibration-based checkpoint selection, same-held-path refinements only (new-observation conditions removed, one random-time condition kept as secondary), a resampler restricted to observed values, the pooled readout and pooling-only arm, the explicit equivalence unit, the single-seed pilot label, time caps, and seeding of all random generators (the TIDES initialization also draws from NumPy's global generator).
+The pre-registered predictions were: native splitting discrepancy at S8 above $10^{-4}$ (supported), resampled splitting discrepancy exactly zero (supported), native runtime growing with tokens (observed), and a larger sample-mean than time-weighted pooled change on H8 (supported).
+
 \paragraph{Compute.}
-FIRST\_RUN: two complete executions of about 21\,s each, one partial execution of about 1\,s, and a timing smoke test of about 2\,s, all on 2 CPU threads.
+All on CPU (2 threads for experiments), no GPU, no paid API, no external data.
+FIRST\_RUN: two executions of about 21\,s, one partial execution and a smoke test of about 3\,s together.
 P1-COMP-01: \CompSeconds\,s.
-P1-REAL-01: a protocol-only plan check without any model; no training or inference.
-No GPU, no paid API and no external data were used.
+P1-REAL-01: installation of a CPU tensor library (35\,s) and of a \LaTeX\ toolchain (66\,s); adapter check and timing smoke (${\approx}4$\,s; $\AdapterStep$\,s per batch-32 step); convention check (${\approx}2$\,s); training including label generation ($\RealTrainSec$\,s); evaluation ($\RealEvalSec$\,s); layer diagnostic (${\approx}11$\,s).
 
 \input{generated/tab_hypotheses}
+
+\section{P1-REAL-01 details}
+\label{app:real}
+
+\emph{Pinned code facts (read, then executed through the adapter):} the step is \texttt{step\_scale * exp(log\_step)} with a per-mode timescale; the ZOH input matrix is \texttt{(1/Lambda)*(Lambda\_bar-1)*B} without \texttt{expm1}; the scan is $x_k=\bar\Lambda_kx_{k-1}+\bar B_ku_k$ with the gap before step $k$; each block applies \texttt{BatchNorm1d(affine=False)} over batch and time (running statistics at evaluation); an optional causal convolution defaults to off; the classifier head pools with \texttt{h.mean(dim=1)}.
+\emph{Adapter check (untrained, four training trajectories):} forward outputs finite; gradients finite for all 54 parameters that receive one (the six static $\mathrm{Re}\,\Lambda$, $B$, $C$ tensors are unused in input-dependent mode; parameters upstream of the zero-initialized head projections receive zero gradient at step~0 only); an Adam step changed the parameters and lowered the loss on the same batch; evaluation was deterministic, and a per-step step tensor of ones matched the scalar step exactly.
+\emph{Labels:} teacher output on the continuous path from an independent RK4 integration (128 sub-steps per training interval); the pooled label is its time average by Simpson's rule.
+\emph{Readout of J1:} the last native output at or before each training-grid time.
 
 \section{Numerical floor}
 \label{app:numerics}
 
-\Cref{tab:numerics} shows that the naive coefficient $(e^{z}-1)/\lambda$ loses relative precision as $|z|$ shrinks ($\NoneNaive$ at $z{=}-10^{-14}$ in float64), while \texttt{expm1} stays at rounding level.
-In float64 the effect on split composition is negligible for up to $65{,}536$ sub-steps.
-In emulated float32, the composition drift reaches $\NfourFloor$ at $16{,}384$ sub-steps, so differences below about $10^{-4}$ are not interpretable in float32 experiments of this length.
+The naive coefficient $(e^{z}-1)/\lambda$ loses relative precision as $|z|$ shrinks ($\NoneNaive$ at $z{=}-10^{-14}$ in float64), while \texttt{expm1} stays at rounding level (\cref{tab:numerics}).
+In emulated float32, split composition drifts to $\NfourFloor$ at $16{,}384$ sub-steps, so differences below about $10^{-4}$ are not interpretable at that length.
 
 \input{generated/tab_numerics}
+
+\section{Additional toy tables}
+\label{app:toy}
+
+\input{generated/tab_stiff}
+\input{generated/tab_newobs}
+\input{generated/tab_readout}
 
 \section{Proof sketches (unproved)}
 \label{app:proofs}
 
 \paragraph{Assumptions.}
-(A1) $\mathrm{Re}\,\lambda_n\le-\mu<0$; (A2) $g:[-U,U]\to[g_{\min},g_{\max}]$ with $g_{\min}>0$ and Lipschitz constant $L_g$; (A3) $F(v)=g(v)B(v)v$ is $L_F$-Lipschitz with $|F|\le F_{\max}$; (A4) $u$ is $L_u$-Lipschitz with $|u|\le U$.
+(A1) $\mathrm{Re}\,\lambda_n\le-\mu<0$; (A2) $g:[-U,U]\to[g_{\min},g_{\max}]$, $g_{\min}>0$, Lipschitz $L_g$; (A3) $F(v)=g(v)B(v)v$ is $L_F$-Lipschitz with $|F|\le F_{\max}$; (A4) $u$ is $L_u$-Lipschitz with $|u|\le U$.
 
 \paragraph{Hold error (UNPROVED sketch).}
-Let $h_{\tilde u}$ and $h_u$ solve \eqref{eq:ct} driven by the held and the continuous input.
-The error satisfies $\dot e=g(\tilde u)\lambda e+[(g(\tilde u)-g(u))\lambda h_u+F(\tilde u)-F(u)]$, the bracket is at most $(L_g|\lambda|H+L_F)L_u\delta$ with $H=F_{\max}/(g_{\min}\mu)$, and the propagator is bounded by $e^{-g_{\min}\mu(t-s)}$, which suggests $\sup_t|e(t)|\le(L_g|\lambda|H+L_F)L_u\delta/(g_{\min}\mu)$.
-A complete proof must handle the discontinuous $\tilde u$ (Carathéodory solutions) and has not been written.
-The toy's median slope $\EtwoSlope$ is consistent with first order; this is not a proof.
+For solutions driven by the held and the continuous input, $\dot e=g(\tilde u)\lambda e+[(g(\tilde u)-g(u))\lambda h_u+F(\tilde u)-F(u)]$; the bracket is at most $(L_g|\lambda|H+L_F)L_u\delta$ with $H=F_{\max}/(g_{\min}\mu)$ and the propagator is bounded by $e^{-g_{\min}\mu(t-s)}$, suggesting $\sup_t|e(t)|\le(L_g|\lambda|H+L_F)L_u\delta/(g_{\min}\mu)$; a complete proof must treat the discontinuous $\tilde u$ and has not been written.
 
 \paragraph{Euler-$B$ (UNPROVED sketch).}
-With $z=\Delta\lambda$ and $\mathrm{Re}\,z\le0$, $e^z-1-z=z^2\int_0^1(1-s)e^{sz}ds$ gives the local bound $|\Delta Bu|\,|\varphi_1(z)-1|\le|Bu|\Delta^2|\lambda|/2$; summing against the contraction $e^{-g_{\min}\mu\,dt}$ suggests a global $O(\delta)$ bound uniform in $T$ whose constant grows with $\Delta|\lambda|$, consistent with the steady-state gain factor $\Delta|\lambda|/(1-e^{-\Delta|\lambda|})$ visible in \cref{tab:stiff}.
+$e^z-1-z=z^2\int_0^1(1-s)e^{sz}ds$ gives the local bound; summing against the contraction suggests a global $O(\delta)$ bound whose constant grows with $\Delta|\lambda|$.
 
 \paragraph{Refinement with $\Delta{=}\tau g$ (CONJECTURE).}
-With $\Delta=\tau g$ fixed and step $\delta\to0$, the recurrence is the exact flow of the time-rescaled system $\dot h=(\tau/\delta)g(\tilde u)(\lambda h+B(\tilde u)\tilde u)$, whose solution should approach the memoryless quasi-steady state $-B(u)u/\lambda$; the artifact would then tend to a nonzero limit.
-
-\section{Code facts of official implementations (read, not run)}
-\label{app:code}
-
-\begin{itemize}
-  \item Mamba (\texttt{state-spaces/mamba} at the commit pinned in our records): the reference scan computes \texttt{deltaA = exp(delta*A)} and \texttt{deltaB\_u = delta*B*u}; the block applies a depthwise causal \texttt{Conv1d} with \texttt{d\_conv=4} before the SSM; \texttt{dt} is \texttt{softplus} of a projection plus a bias initialized so that \texttt{softplus(bias)} lies in $[0.001,0.1]$; the Mamba-3 module imports Triton kernels.
-  \item TIDES (pinned commit): the step is \texttt{step\_scale * exp(log\_step)}; the ZOH input matrix is \texttt{(1/Lambda)*(Lambda\_bar-1)*B}; the scan is $x_k=\bar\Lambda_kx_{k-1}+\bar B_ku_k$ with the gap before step $k$; each block applies \texttt{BatchNorm1d(affine=False)} over batch and time; an optional causal convolution defaults to off; the classifier pools with \texttt{h.mean(dim=1)}.
-  \item S5 (official JAX code): ZOH as in the paper with a static learned step; per-step intervals are used on a separate branch; CPU requirements pin \texttt{jax==0.3.5}.
-\end{itemize}
-These facts come from reading source files; their effect on any trained model is \notrun.
+The recurrence is the exact flow of $\dot h=(\tau/\delta)g(\tilde u)(\lambda h+B(\tilde u)\tilde u)$, whose solution should approach $-B(u)u/\lambda$ as $\delta\to0$, so the artifact would tend to a nonzero limit.
 
 \section{Reproducibility}
 \label{app:repro}
 
-The anonymized code contains the toy model, grids, RK4 references, experiment runners, the asset generator that produces every table, figure and number in this paper from the raw records, and unit tests (numerical checks, not proofs).
-The trained-model adapter and runner are included but have not been executed.
-\todo{P1-REAL-01: add trained-model results and their compute record}
+The anonymized code contains the toy, the RK4 references, the cascade check, the TIDES adapter, convention check, runner and diagnostic, the frozen checkpoint with its hash, and the generator that produces every table, figure and number in this paper from the raw records.
 
 \end{document}
