@@ -384,6 +384,7 @@ def stage_eval(seed, dev=False):
                 c064 = readout_native(g0, per["C0"]["native64"][n_i])
                 rec["disc_native_float64"] = rel_l2(readout_native(g, per["S8"]["native64"][n_i]), c064)
             recs.append(rec)
+    os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, "eval.jsonl"), "w") as f:
         for r in recs:
             f.write(json.dumps(r) + "\n")
