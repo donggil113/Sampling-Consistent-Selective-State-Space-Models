@@ -516,11 +516,11 @@ Values are listed in \cref{tab:split,tab:coupling}.}
                     f"{cell(c['mse_resampled_mean'], 3)} & {cell(c['paired_diff_mean'])} {ci(c['paired_diff_ci'])} & {verdict} & "
                     f"${c['runtime_native']['seconds_batch']:.2f}$ / ${c['runtime_resampled']['seconds_batch']:.2f}$ \\\\")
     write("tab_real.tex", r"""\begin{table*}[t]
-\caption{Trained official TIDES, seed-0 \emph{conditional pilot} (P1-REAL-01; one checkpoint selected on the calibration split, 256 test trajectories, paired).
+\caption{DEVELOPMENT run (P1-REAL-01): trained official TIDES, seed 0, on its own test set (256 trajectories, ids 640--895; one checkpoint selected on the calibration split; paired).
 ``disc.'': mean relative $\ell_2$ change of the per-step outputs at the 32 training-grid times against the same arm on C0.
 MSE: per-trajectory mean squared error to the teacher at those times (original units; label s.d.\ """ + f"{trn['y_stats'][1]:.2f}" + r""").
-$\Delta$MSE: mean paired difference native $-$ resampled with a 95\% bootstrap CI; the margin is $\pm5\%$ of the resampled mean MSE of the same condition.
-Runtime: seconds for one batch of all 256 sequences (median of 3 calls, 2 CPU threads).
+$\Delta$MSE: mean paired difference native $-$ resampled with a 95\% bootstrap CI; the margin is $\pm5\%$ of the point-estimated resampled mean MSE of the same condition (exploratory rule of the development run).
+Runtime: forward-only model call on prebuilt tensors for one batch of all 256 sequences (median of 3 calls, no warm-up, outside inference mode, 2 CPU threads); resampling is excluded; superseded by \cref{tab:timing}.
 S$m$ and H8 keep the held path; $^\dagger$J1 is a secondary non-refinement condition whose held path differs by construction.}
 \label{tab:real}
 \centering\small
@@ -543,9 +543,7 @@ condition & disc.\ native & disc.\ resampled & MSE native & MSE resampled & $\De
     pl = [json.loads(l)["pooled_label"] for l in open(os.path.join(rdir, "P1-REAL-01.jsonl")) if '"condition": "C0"' in l]
     pl_abs = sum(abs(x) for x in pl) / len(pl)
     write("tab_pool.tex", r"""\begin{table}[t]
-\caption{Pooled readout of the same trained checkpoint (P1-REAL-01 pilot). Label: exact time average of the teacher output over $[0,T]$ (mean absolute value """ + f"{pl_abs:.2f}" + r""").
-``mean'': sample-count mean over tokens (as in the TIDES classifier head); ``time'': right-endpoint time-weighted sum over the same native outputs (pooling-only ablation).
-Mean absolute error to the label and mean absolute change against C0, over 256 test trajectories.}
+\caption{Pooled readout of the development checkpoint on its own test set (P1-REAL-01), label units, means over 256 test trajectories. Left: $n^{-1}\sum_i|p_i(c)-\bar y_i|$; right: $n^{-1}\sum_i|p_i(c)-p_i(\mathrm{C0})|$, with $p=p^{\mathrm{mean}}$ (``native mean'', token mean as in the TIDES classifier head), $p=p^{\mathrm{time}}$ (``native time'', right-endpoint time-weighted sum of the same native outputs; a pooling-only ablation, not an exact integral) or $p=p^{\mathrm{res}}$ (``resampled'', token mean of the 32 resampled outputs); definitions in \cref{sec:real}. Pooled label $\bar y_i$: time average of the teacher output over $[0,T]$ by Simpson's rule on its RK4 nodes (mean absolute value """ + f"{pl_abs:.2f}" + r""").}
 \label{tab:pool}
 \centering\small
 \resizebox{\columnwidth}{!}{%
@@ -565,7 +563,7 @@ cond. & native mean & native time & resampled & native mean & native time & resa
         d = lay["conditions"][n]
         rows.append(f"{n} & " + " & ".join(cell(d[dt][k]["mean"]) for k in ("block1", "block2", "output") for dt in ("float32", "float64")) + " \\\\")
     write("tab_layers.tex", r"""\begin{table}[t]
-\caption{Where the splitting change appears in the trained checkpoint (EXPLORATORY, added after the results were seen). Mean relative $\ell_2$ change against C0 at the training-grid times of the
+\caption{Where the splitting change appears in the development checkpoint (EXPLORATORY, added after its results were seen). Mean relative $\ell_2$ change against C0 at the training-grid times of the
 features after each block and of the (normalized) output, with the frozen weights evaluated in float32 and cast to float64. The encoder output is unchanged (0) in all cases.}
 \label{tab:layers}
 \centering\small
@@ -618,6 +616,158 @@ cond. & fp32 & fp64 & fp32 & fp64 & fp32 & fp64 \\
     macros["RealDevMax"] = sci(max(dev_curve))
     A["REAL"]["layer"] = lay
     A["REAL"]["convention"] = {k: v for k, v in conv.items() if k != "status"}
+
+    # ------------------------------------------------------------------ P1-REAL-02 (seed repetition)
+    d2 = os.path.join(rdir, "P1-REAL-02")
+    order = [("dev_seed0", r"0$^\ddagger$"), ("seed1", "1"), ("seed2", "2"), ("seed3", "3"), ("seed4", "4")]
+    R2 = {k: json.load(open(os.path.join(d2, k, "eval_summary.json"))) for k, _ in order}
+    agg2 = json.load(open(os.path.join(d2, "aggregate.json")))
+    eq2 = json.load(open(os.path.join(d2, "eqcheck.json")))
+    dh2 = json.load(open(os.path.join(d2, "data_hash.json")))
+    th2 = json.load(open(os.path.join(d2, "testset_hash.json")))
+    tr2 = {k: json.load(open(os.path.join(d2, k, "train.json"))) for k in ("seed1", "seed2", "seed3", "seed4")}
+    A["REAL2"] = {"aggregate": {k: v for k, v in agg2.items() if k != "development_row_seed0_new_testset"}, "eqcheck": eq2}
+    vshort = {"no practical difference (CI inside +-5%)": r"within $\pm5\%$", "native lower; CI not beyond margin": "lower",
+              "native lower, beyond margin": "lower, beyond", "native higher; CI not beyond margin": "higher",
+              "native higher, beyond margin": "higher, beyond", "inconclusive": "inconcl.", "NA (denominator too small)": "NA"}
+
+    def pct(x):
+        return f"{100 * x:+.1f}"
+
+    def rcell(L):
+        return f"${pct(L['r'])}$ $[{pct(L['r_ci95'][0])},{pct(L['r_ci95'][1])}]$ {vshort[L['verdict']]}"
+
+    rows = []
+    for k, lab in order:
+        d = R2[k]
+        pe = d["pooled"]["H8"]
+        rows.append(f"{lab} & {d['selected_step']} & {cell(d['selected_dev_mse'])} & {cell(d['S8_disc_float32']['estimate'])} {ci(d['S8_disc_float32']['ci95'])} & "
+                    f"{cell(d['S8_disc_float64']['estimate'])} & {cell(d['primary_D']['estimate'])} {ci(d['primary_D']['ci95'])} & "
+                    f"{cell(pe['mean'])} / {cell(pe['time'])} / {cell(pe['resampled'])} \\\\")
+        if k == "dev_seed0":
+            rows.append(r"\midrule")
+    write("tab_seeds_effects.tex", r"""\begin{table*}[t]
+\caption{P1-REAL-02: the fixed protocol repeated with training seeds 1--4 on a new shared test set (256 trajectories, ids 10000--10255; same task, same data, same checkpoint rule).
+$^\ddagger$Seed 0 is the development pilot (its checkpoint evaluated on the new test set); it is not part of the replication criterion.
+S8 disc.: mean relative $\ell_2$ change of the final per-step outputs under eight-fold splitting of the held path, against C0 (float32 pipeline; fp64: weights and inputs cast to float64).
+$D_s$ (primary, chosen after the seed-0 pilot): mean over trajectories of $|p^{\mathrm{mean}}(\mathrm{H8})-p(\mathrm{C0})|-|p^{\mathrm{time}}(\mathrm{H8})-p(\mathrm{C0})|$ in label units.
+Pooled error: mean $|p-\bar y|$ on H8 for token-mean / time-weighted (pooling-only ablation) / resampled pooling. Brackets: 95\% paired bootstrap CI over test trajectories with the seed fixed.}
+\label{tab:seeds-effects}
+\centering\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{rccccccc}
+\toprule
+seed & step & calib.\ MSE & S8 disc.\ [95\% CI] & fp64 & $D_s$ [95\% CI] & H8 pooled error: mean / time / resampled \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}}
+\end{table*}
+""")
+    rows = []
+    for k, lab in order:
+        d = R2[k]
+        L = d["loss"]
+        t8 = d["timing"]["S8"]
+        rows.append(f"{lab} & {rcell(L['S2'])} & {rcell(L['S8'])} & {rcell(L['H8'])} & {rcell(L['J1'])} & "
+                    f"${t8['native_end_to_end']['median_wall_s']:.2f}$ / ${t8['resampled_end_to_end']['median_wall_s']:.3f}$ \\\\")
+        if k == "dev_seed0":
+            rows.append(r"\midrule")
+    write("tab_seeds_loss.tex", r"""\begin{table*}[t]
+\caption{P1-REAL-02 task-loss contrast $r_s=(\overline{L}_{\mathrm{native}}-\overline{L}_{\mathrm{resampled}})/\overline{L}_{\mathrm{resampled}}$ in percent (per-trajectory MSE at the 32 training-grid times; numerator and denominator recomputed in every bootstrap draw) with the $\pm5\%$ margin rule, and end-to-end wall time for one batch of 256 sequences on S8 (median of 5 timed calls after 2 warm-ups, \texttt{inference\_mode}, 2 threads; resampling included).
+S2, S8 and H8 keep the held path; J1 (random observation times) changes the observed path. $^\ddagger$Development row.}
+\label{tab:seeds-loss}
+\centering\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{rccccc}
+\toprule
+seed & $r_s$(S2) [CI] & $r_s$(S8) [CI] & $r_s$(H8) [CI] & $r_s$(J1) [CI] & S8 end-to-end native / resampled (s) \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}}
+\end{table*}
+""")
+    trows = []
+    for k, lab in order:
+        tm = R2[k]["timing"]
+        for c in ("C0", "S8", "H8"):
+            t_ = tm[c]
+            trows.append(f"{lab} & {c} & {t_['tokens_native']} & ${t_['native_end_to_end']['median_wall_s']:.3f}$ & ${t_['native_forward_only']['median_wall_s']:.3f}$ & "
+                         f"${t_['resampled_end_to_end']['median_wall_s']:.3f}$ & ${t_['resampled_forward_only']['median_wall_s']:.3f}$ & "
+                         f"${t_['native_end_to_end']['median_cpu_s']:.2f}$ \\\\")
+    write("tab_timing.tex", r"""\begin{table}[h]
+\caption{P1-REAL-02 timing (one batch of 256 sequences; median of 5 timed calls after 2 warm-ups; \texttt{inference\_mode}; 2 threads). End-to-end includes tensor construction, LOCF resampling for the resampled arm, forward, de-normalization and readout mapping; forward-only is the model call on prebuilt tensors. CPU seconds are process CPU time summed over threads. Timed repeats are not independent samples.}
+\label{tab:timing}
+\centering\small
+\begin{tabular}{rcrccccc}
+\toprule
+seed & cond. & tokens & nat.\ e2e & nat.\ fwd & res.\ e2e & res.\ fwd & nat.\ e2e CPU \\
+\midrule
+""" + "\n".join(trows) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+""")
+    seeds4 = ["seed1", "seed2", "seed3", "seed4"]
+    Dv = [R2[k]["primary_D"]["estimate"] for k in seeds4]
+    Dlo = [R2[k]["primary_D"]["ci95"][0] for k in seeds4]
+    S8v = [R2[k]["S8_disc_float32"]["estimate"] for k in seeds4]
+    rS8 = [R2[k]["loss"]["S8"]["r"] for k in seeds4]
+    rH8 = [R2[k]["loss"]["H8"]["r"] for k in seeds4]
+    rJ1 = [R2[k]["loss"]["J1"]["r"] for k in seeds4]
+    ratio = [R2[k]["timing"]["S8"]["native_end_to_end"]["median_wall_s"] / R2[k]["timing"]["S8"]["resampled_end_to_end"]["median_wall_s"] for k in seeds4]
+    fratio = [R2[k]["timing"]["S8"]["native_forward_only"]["median_wall_s"] / R2[k]["timing"]["S8"]["resampled_forward_only"]["median_wall_s"] for k in seeds4]
+    macros["RtwoDmin"] = sci(min(Dv), 3)
+    macros["RtwoDmax"] = sci(max(Dv), 3)
+    macros["RtwoDlomin"] = sci(min(Dlo), 3)
+    macros["RtwoSeightMin"] = sci(min(S8v))
+    macros["RtwoSeightMax"] = sci(max(S8v))
+    macros["RtwoRSeightMin"] = pct(min(rS8))
+    macros["RtwoRSeightMax"] = pct(max(rS8))
+    macros["RtwoRHeightMin"] = pct(min(rH8))
+    macros["RtwoRHeightMax"] = pct(max(rH8))
+    macros["RtwoRJoneMin"] = pct(min(rJ1))
+    macros["RtwoRJoneMax"] = pct(max(rJ1))
+    macros["RtwoRJonePilotOld"] = pct(agg2["seed0_pilot_old_testset_r_rederived"]["loss"]["J1"]["r"])
+    macros["RtwoRJoneDev"] = pct(R2["dev_seed0"]["loss"]["J1"]["r"])
+    macros["RtwoRatioMin"] = f"{min(ratio):.1f}"
+    macros["RtwoRatioMax"] = f"{max(ratio):.1f}"
+    macros["RtwoFratioMin"] = f"{min(fratio):.1f}"
+    macros["RtwoFratioMax"] = f"{max(fratio):.1f}"
+    macros["RtwoStepsMin"] = str(min(tr2[k]["selected_step"] for k in seeds4))
+    macros["RtwoStepsMax"] = str(max(tr2[k]["selected_step"] for k in seeds4))
+    macros["RtwoTrainWall"] = f"{sum(tr2[k]['total_wall_seconds'] for k in seeds4):.0f}"
+    macros["RtwoTrainCPU"] = f"{sum(tr2[k]['train_loop_cpu_seconds'] for k in seeds4):.0f}"
+    macros["RtwoEvalWall"] = f"{sum(R2[k]['eval_wall_seconds'] for k, _ in order):.0f}"
+    macros["RtwoDataWall"] = f"{dh2['wall_seconds']:.0f}"
+    macros["RtwoTestWall"] = f"{th2['wall_seconds']:.0f}"
+    macros["RtwoPoolMeanMin"] = sci(min(R2[k]["pooled"]["H8"]["mean"] for k in seeds4))
+    macros["RtwoPoolMeanMax"] = sci(max(R2[k]["pooled"]["H8"]["mean"] for k in seeds4))
+    macros["RtwoPoolTimeMin"] = sci(min(R2[k]["pooled"]["H8"]["time"] for k in seeds4))
+    macros["RtwoPoolTimeMax"] = sci(max(R2[k]["pooled"]["H8"]["time"] for k in seeds4))
+    macros["RtwoPoolResMin"] = sci(min(R2[k]["pooled"]["H8"]["resampled"] for k in seeds4))
+    macros["RtwoPoolResMax"] = sci(max(R2[k]["pooled"]["H8"]["resampled"] for k in seeds4))
+    macros["RtwoSeightFold"] = f"{max(S8v) / min(S8v):.1f}"
+    macros["RtwoCzeroRatioMax"] = f"{max(R2[k]['timing']['C0']['native_end_to_end']['median_wall_s'] / R2[k]['timing']['C0']['resampled_end_to_end']['median_wall_s'] for k in seeds4):.2f}"
+    macros["RtwoCzeroRatioMin"] = f"{min(R2[k]['timing']['C0']['native_end_to_end']['median_wall_s'] / R2[k]['timing']['C0']['resampled_end_to_end']['median_wall_s'] for k in seeds4):.2f}"
+    over = [R2[k]["timing"]["S8"]["resampled_end_to_end"]["median_wall_s"] - R2[k]["timing"]["S8"]["resampled_forward_only"]["median_wall_s"] for k in seeds4]
+    macros["RtwoResOverMin"] = f"{min(over):.3f}"
+    macros["RtwoResOverMax"] = f"{max(over):.3f}"
+    # End-to-end and forward-only are separate timing jobs; count cells where the
+    # end-to-end median is below the forward-only median (run-to-run variation).
+    inv = []
+    for k, _ in order:
+        for cond, tv in R2[k]["timing"].items():
+            for arm in ("native", "resampled"):
+                e = tv[f"{arm}_end_to_end"]["median_wall_s"]
+                f_ = tv[f"{arm}_forward_only"]["median_wall_s"]
+                inv.append((e < f_, (f_ - e) / f_))
+    macros["RtwoInvN"] = str(sum(1 for x, _ in inv if x))
+    macros["RtwoInvTot"] = str(len(inv))
+    macros["RtwoInvMaxPct"] = f"{100 * max((d for x, d in inv if x), default=0.0):.1f}"
+    macros["RtwoEqMax"] = sci(eq2["max_abs_tensor_diff"]) if eq2["max_abs_tensor_diff"] else "0"
+    macros["RtwoEqEqual"] = r"\text{exactly equal}" if eq2["all_tensors_equal"] else r"\text{different}"
 
     # ------------------------------------------------------------------ macros + json
     lines = [f"\\newcommand{{\\{k}}}{{\\ensuremath{{{v}}}}}" for k, v in sorted(macros.items())]

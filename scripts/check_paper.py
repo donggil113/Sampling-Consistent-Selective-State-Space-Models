@@ -49,7 +49,7 @@ def main():
                 refs.update(k.strip() for k in g.split(","))
     numbers = read(os.path.join(PAPER, "generated", "numbers.tex"))
     defined = set(re.findall(r"\\newcommand\{\\(\w+)\}", numbers + main_tex))
-    used_macros = set(re.findall(r"\\(E(?:one|two|three)\w+|Fac\w+|Comp\w+|N(?:one|two|three|four)\w+|H(?:four|seven)\w+|Nunits\w+|FirstRun\w+|Real\w+|Conv\w+|Adapter\w+)", full))
+    used_macros = set(re.findall(r"\\(E(?:one|two|three)\w+|Fac\w+|Comp\w+|N(?:one|two|three|four)\w+|H(?:four|seven)\w+|Nunits\w+|FirstRun\w+|Real\w+|Rtwo\w+|Conv\w+|Adapter\w+)", full))
     envs_open = re.findall(r"\\begin\{(\w+\*?)\}", full)
     envs_close = re.findall(r"\\end\{(\w+\*?)\}", full)
     env_balance = {e: envs_open.count(e) - envs_close.count(e) for e in set(envs_open + envs_close)

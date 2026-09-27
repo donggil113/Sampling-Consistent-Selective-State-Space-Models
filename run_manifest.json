@@ -249,6 +249,105 @@
         "results/raw/P1-REAL-01__convention_check.json": "2af9ce07ca4e7f7d9510296b4b64f447c93f8efb6558b2f4d8ef964c189c52e1",
         "results/raw/P1-REAL-01__adapter_check.json": "7649536f811108b48b86fa7cf0da76fd4df1215745d6826fac00696f710955e4"
       }
+    },
+    {
+      "run_id": "P1-REAL-02",
+      "status": "COMPLETED: 4 of 4 training seeds + development row (1 INVALID attempt recorded, dev row rerun)",
+      "config": {
+        "path": "configs/p1_real_02.json",
+        "sha256": "e02d6f3b29a0e9b934be5911326a708704836af590f68167a2e7f5c0da43a45b",
+        "fixed_at_commit": "5a587b77897de1a53810aa28e36495ca2e94a3bb"
+      },
+      "code_at_training": "5a587b77897de1a53810aa28e36495ca2e94a3bb",
+      "code_fix_after_incident": {
+        "commit": "15ce1c4e839ff6e53747ee54001fc3647ca95d34",
+        "note": "os.makedirs for the dev-row output dir; committed before the dev-row rerun; seeds 1-4 were evaluated with the pre-fix code (identical logic)"
+      },
+      "environment": {
+        "python": "3.11.15",
+        "torch": "2.14.0+cpu",
+        "numpy": "2.4.6",
+        "scipy": "1.17.1",
+        "threads": 2,
+        "device": "cpu",
+        "tides_commit": "4b51adce2060e7209e002a6a2fd6691a2f6fcc5e"
+      },
+      "data_sha256": "dad632e9431bbd62efad3486477fc0526627bc5a59c98330a09a771f8926dccb",
+      "data_equal_to_pilot_stats": true,
+      "testset_sha256": "e5833064d8c1bb738ac5e8df419c2b148fb629f12ea15a9a3f6cd52bcacd0be0",
+      "testset_ids": [
+        10000,
+        10255
+      ],
+      "eqcheck": {
+        "all_tensors_equal": true,
+        "max_abs_tensor_diff": 0.0
+      },
+      "wall_seconds": {
+        "data": 39.731,
+        "eqcheck_shell": 57.4,
+        "train": {
+          "1": 46.498,
+          "2": 47.13,
+          "3": 48.671,
+          "4": 45.563
+        },
+        "testset": 16.123,
+        "eval": {
+          "dev_seed0": 29.501,
+          "seed1": 28.637,
+          "seed2": 28.319,
+          "seed3": 28.91,
+          "seed4": 27.945
+        },
+        "invalid_dev_attempt": 29.9
+      },
+      "cpu_seconds": {
+        "data": 39.429,
+        "train_loop": {
+          "1": 89.585,
+          "2": 91.268,
+          "3": 94.719,
+          "4": 88.745
+        },
+        "testset": 15.999,
+        "eval": {
+          "dev_seed0": 56.929,
+          "seed1": 54.616,
+          "seed2": 54.384,
+          "seed3": 55.599,
+          "seed4": 53.732
+        }
+      },
+      "checkpoints_sha256": {
+        "seed1": "a84a468b94e646dfb13cea83a5d6d5b9e3e2e513947a865504febdcea3259762",
+        "seed2": "7400d03864d8f5d6380536992ff624ace30ff0ea636176c180bd86f2ccb4ac7d",
+        "seed3": "bc70d7e6a6a2841db2e666d106b6602cef0b49b25ca1b58b73f83a01d2a9a095",
+        "seed4": "84e963b5c17e5a45ba5040f7ce1b1b8407a5cdcdae404c2d5f2cc69d9e6c393e"
+      },
+      "outputs_sha256": {
+        "results/raw/P1-REAL-02/INCIDENTS.json": "87d3e127a1a4c5c79bae34225e034c3f1bd8d99a3ba69a4258ac0defb378bd72",
+        "results/raw/P1-REAL-02/aggregate.json": "8167fefe13ea5a8104293d72803041cac262542612d2543f3e486a0830b790d6",
+        "results/raw/P1-REAL-02/data_hash.json": "fa71a03da790a08b1387904216274d4d568177eb9b3cc9d01b76dba6cfd60a78",
+        "results/raw/P1-REAL-02/dev_seed0/eval.jsonl": "e577d35941f87088bfdf4c9db396ec4531d5f2563727a39e00744a03b2d96838",
+        "results/raw/P1-REAL-02/dev_seed0/eval_summary.json": "daac806e0ccb65475de1cae8bc4f8091cc1d9abd53c8dd6478662e635689876c",
+        "results/raw/P1-REAL-02/eqcheck.json": "6d577c34e1209e94d44c0ed6d18df66f66469b266f4af48833090bfbd316ff38",
+        "results/raw/P1-REAL-02/eqcheck_seed0/train.json": "28de0a21944add4fdd8b8432d2c2818aea4bef7496cb567328b8d522382db020",
+        "results/raw/P1-REAL-02/seed1/eval.jsonl": "f1a6c90f66cf65714accee09d6338d09004fba6c44d11c98afdae93684696271",
+        "results/raw/P1-REAL-02/seed1/eval_summary.json": "316e37e40f060cbbff7481fba38fdfb65677a075f5137432b2162f04746518bb",
+        "results/raw/P1-REAL-02/seed1/train.json": "e7cb9cee3fbe44ed97e92b64ea10ca4d42ef097ade3bc11ec0d4b2008e30b66c",
+        "results/raw/P1-REAL-02/seed2/eval.jsonl": "62f15b28d85030cdc505546e4f3fe8f5033dc177dc160d4a42216379fdf7fb4e",
+        "results/raw/P1-REAL-02/seed2/eval_summary.json": "8e7d2fb4e4a7a21d60dc857759b0d90b20cdf47873b79915dd39a58a924ed986",
+        "results/raw/P1-REAL-02/seed2/train.json": "95a0700a82a7100b4585f598d24ce75b7fd6b48dd8512cc4c2068161808bb309",
+        "results/raw/P1-REAL-02/seed3/eval.jsonl": "102f44ccded59a1e85cc8b585339f04e01159744396d00b869470db63a1da378",
+        "results/raw/P1-REAL-02/seed3/eval_summary.json": "31ad02eeb8c436366ecbeb28aa50cbce0acff71b1a3c06bb033a10d1f06c853e",
+        "results/raw/P1-REAL-02/seed3/train.json": "d16a3d6018dab6422c29328d8bda29c5080f5d36eda3df3183bb89286b585ddf",
+        "results/raw/P1-REAL-02/seed4/eval.jsonl": "c2268e265d3e73e18491318d3a556cb5f32fa7ff7d1b5ce1e603298f0c91809e",
+        "results/raw/P1-REAL-02/seed4/eval_summary.json": "450fef1df321705e663ad989aaaaa6aac5e76c277dae8aeb202bde51741c974f",
+        "results/raw/P1-REAL-02/seed4/train.json": "9b9a08cb845aca57042efd3c0b8863bef0cf223c652047ffff32cdbc3f2ab203",
+        "results/raw/P1-REAL-02/testset_cache.json": "4d5cd4ff03daa9410a999757b623a5f2d00f74e826b993f122256b6dd8984f26",
+        "results/raw/P1-REAL-02/testset_hash.json": "b2dbf8656830af54a371890698eb219ba3da070a32e09d9a1dbad59f00f231b6"
+      }
     }
   ]
 }

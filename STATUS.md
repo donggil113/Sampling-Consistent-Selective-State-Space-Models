@@ -1,20 +1,107 @@
 # STATUS — P1 Sampling-grid dependence in selective SSMs
 
-Last updated: 2026-09-27 (UTC), session 3. Branch: `claude/intelligent-maxwell-t1lcda`.
+Last updated: 2026-09-27 (UTC), session 4. Branch: `claude/intelligent-maxwell-t1lcda`.
 
 ## Standing decisions (preserved)
 
-- **ARCHITECTURE_CLAIM = STOPPED.**
-  - Stop condition S2 was triggered at toy level.
-  - TIDES is prior art.
-  - S2 is an operational rule, not a statistical, equivalence or novelty test.
-- **H7c_original = FAIL.** It was mis-specified pre-run.
-- **H7c_restated = WEAK_PASS.** The appendix verdict table now labels it "PASS (weak; see text)".
-- **Trained results = one seed-0 CONDITIONAL PILOT of official TIDES on one synthetic task.** Mamba, S4 and S5 training is NOT_RUN.
-- EXPLORATORY analyses are labelled as such:
+- **ARCHITECTURE_CLAIM = STOPPED.** S2 was triggered at toy level; TIDES is prior art. S2 is an operational rule, not a statistical, equivalence or novelty test.
+- **H7c_original = FAIL. H7c_restated = WEAK_PASS.**
+- **Trained evidence.**
+  - Official TIDES only, on one synthetic task.
+  - Seed 0 is the development pilot (P1-REAL-01).
+  - Seeds 1–4 are the fixed-protocol repetition (P1-REAL-02).
+  - Mamba, S4 and S5 training is NOT_RUN.
+- **EXPLORATORY items:**
   - the FR-E2 decomposition;
   - the stiffness columns;
-  - the P1-REAL-01 layer diagnostic.
+  - the development-checkpoint layer diagnostic;
+  - the development run's fixed-estimated-margin analysis.
+- **P1-REAL-02 primary estimand** (H8 pooled-readout effect) was chosen after seeing the development run. It is not a blind choice.
+
+## Session 4: what was done
+
+**Authorization, stated precisely.**
+
+- This session's user instruction explicitly requests P1-REAL-02 with training seeds 1–4 and a v3 PDF. It states that it is *not* an approval for new installs, data or weight imports, GPU, paid APIs or remote publication.
+- Only already-installed software was used: torch 2.14.0+cpu, numpy, scipy and TeX Live were installed in session 3, together with the pinned TIDES clone.
+- The session-3 install itself rested on Claude's *interpretation* (R-A0) of a user instruction. It was not a separate approval block.
+- Push to the designated branch follows the environment's standing instruction for this branch.
+- `/nvmedata/...` does not exist in this sandbox, so nothing was moved or created there. `/data000` was not touched.
+
+**Closed without training.**
+
+- **A. Timing direction.**
+  - No repository text claimed that resampled evaluation is slower. All texts and raw data agree that native is slower at S8.
+  - Real defect: the development-run "runtime" was a forward-only model call on prebuilt tensors, outside inference mode and without warm-up, and it excluded resampling. It is now labelled so.
+  - P1-REAL-02 measures end-to-end and forward-only time under a fixed protocol. Ratios are named explicitly, e.g. native_S8_end_to_end / resampled_S8_end_to_end = 9.7–11.5.
+  - On J1 (32 tokens each), the development forward times were 0.049 s native vs 0.053 s resampled, i.e. noise.
+- **B. Pooled quantities.**
+  - 0.56 / 0.068 / 0.063 (development, H8) are mean absolute errors of pooled predictions against the pooled label ȳ = T⁻¹∫y dt, in label units. They are not hidden-state discrepancies and not MSEs.
+  - token-mean = p_mean = L⁻¹Σŷ_k.
+  - pooling-only = p_time = T⁻¹Σŷ_k dt_k. This is a readout ablation outside the official model and not an exact integral.
+  - resampled = p_res = K⁻¹Σŷ^res_k over the K = 32 resampled tokens. On H8 it equals the C0 pooled prediction, so 0.063 is the C0 error.
+  - The pooled label ȳ is computed by Simpson's rule on the teacher's RK4 nodes.
+  - Pooled error of an arm = n⁻¹Σ_i |p_i − ȳ_i|.
+  - The definitions are now in the paper §5 and in `configs/p1_real_02.json`.
+- **C. Endpoint finding.** This is a difference between the pinned implementation and the hold convention stated in the paper. The check (`scripts/check_tides_convention.py`, `results/raw/P1-REAL-01__convention_check.json`) is preserved. It is not a claim about the TIDES benchmark results.
+
+**P1-REAL-02** (`configs/p1_real_02.json`, fixed at 5a587b7 before any execution):
+
+| Step | Wall | Result |
+|---|---|---|
+| train/dev data | 39.7 s (CPU 39.4 s) | sha256 dad632e9…; normalization stats exactly equal to the pilot |
+| seed-0 equivalence retrain | 57.4 s | every tensor equal to the frozen pilot checkpoint; same selected step and calibration curve |
+| train seeds 1–4 | 46.5 / 47.1 / 48.7 / 45.6 s (loop CPU ≈ 89–95 s each, 2 threads) | selected steps 1300 / 1600 / 800 / 1800; calibration MSE 0.0127 / 0.0135 / 0.0168 / 0.0125; calibration curves unstable in every seed |
+| new test set (ids 10000–10255) | 16.1 s | sha256 e5833064… |
+| eval development row | 29.9 s **INVALID** (I-1: missing output dir, crashed before writing) + 30.9 s rerun | only that row was rerun |
+| eval seeds 1–4 | ≈ 30 s each | see below |
+| aggregate | 0.3 s | `results/raw/P1-REAL-02/aggregate.json` |
+
+**Results** (per seed, shared 256-trajectory test set; the crossed design is not treated as iid):
+
+- **Primary D_s** (H8 pooled-readout effect, label units): 0.578 / 0.584 / 0.602 / 0.602. The CI excludes 0 in 4/4 seeds, so the effect is **REPLICATED WITHIN THIS TASK**.
+- **S8 final-output discrepancy:** 0.0113 / 0.0219 / 0.0043 / 0.0147. It is above the floor in all seeds and equal in fp64. It varies 5.1-fold across seeds.
+- **Loss contrast r_s:** **NOT STABLE.**
+  - S8: −6.2% to +3.1%.
+  - H8: −4.9% to +6.7%; seed 2 is higher, with a CI that excludes 0.
+  - Seed 3 shows no practical difference on all held-path conditions.
+- **J1** (not a refinement): r_s from −22.6% to −21.2% on the new test set in all seeds. The same development checkpoint gives −20.9% on the new test set but −6.4% (inconclusive) on its old test set, so the result depends on the test draw.
+- **Conditional layer diagnostic:** not triggered, because every seed's S8 discrepancy is above 1e-3.
+
+**Manuscript v3.**
+
+- `paper/main.tex` (v2 at dce4d30) and `paper/main.pdf`, 12 pages.
+- The main body ends on page 6 (Conclusion). Impact Statement and References follow.
+- 0 undefined references or citations; 0 overfull boxes.
+- PDF metadata: Author "Anonymous Authors"; Subject is the unmodified ICML 2026 style default.
+- Title kept.
+- `paper/claims.csv`: core claims K1–K3 plus 40 earlier rows, with superseded development claims re-labelled.
+- Timing text states that end-to-end and forward-only are separate timing jobs. In 4 of 60 seed×condition×arm cells the end-to-end median is below the forward-only median, by up to 9.5%. Differences of a few percent are therefore run-to-run variation; the ~10× S8 ratio is not.
+- The pooled-table caption (App. C) and §5 give every pooled quantity as a formula.
+- Checks:
+  - `scripts/check_paper.py` (static) now also covers the P1-REAL-02 macros.
+  - New `scripts/check_pdf.py` checks the built PDF → `results/pdf_check.json`:
+    - pages;
+    - conclusion / impact / references / appendix start pages;
+    - log warnings;
+    - metadata;
+    - anonymity strings in the text and metadata.
+
+**Export bundle.**
+
+- `export_bundle/` is built by `scripts/make_export_bundle.py`. It contains the manuscript source and PDF, configs, code, tests, small raw and aggregates, manifests and a README, with sha256 in `MANIFEST.sha256`.
+- Excluded:
+  - checkpoints;
+  - cached synthetic data (regenerable; hashes kept);
+  - third-party TIDES code;
+  - the style kit and build intermediates.
+
+## Next research decision (not run)
+
+Decide whether an **independent real irregular time-series dataset** is needed and admissible, rather than extending this synthetic repetition.
+
+- The decision needs the owner to name a dataset with a known license, entity-level split and sampling process.
+- Importing any dataset requires explicit approval; none is assumed.
 
 ## Session 3: what was done
 
@@ -79,9 +166,9 @@ This was recorded as approval R-A0 for A-R1..A-R4 plus a TeX toolchain.
   - Visual check of the rendered pages: tables and the figure are not clipped. The figure legend was moved off the data.
 - **Remaining \todo markers: none.** Remaining open work (multiple seeds, other implementations, other tasks) is stated in Limitations, not as TODOs.
 
-## Next decision (needs the owner's approval)
+## Session 3 next-decision record (superseded by session 4)
 
-The one next decision experiment is **P1-REAL-02**: the same frozen protocol with additional training seeds (for example 1–4), to test whether the pilot's discrepancy, loss and pooling findings are seed-stable.
+The one next decision experiment was **P1-REAL-02**: the same frozen protocol with additional training seeds (for example 1–4), to test whether the pilot's discrepancy, loss and pooling findings are seed-stable.
 
 - It needs approval of the CPU budget, estimated at about 2 min per seed from the measured pilot. This is an estimate, not yet run.
 - No new task, model or implementation is involved.

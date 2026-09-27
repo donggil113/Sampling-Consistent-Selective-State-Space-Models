@@ -1,4 +1,4 @@
-%%%%%%%% Manuscript v2 (v1: git commit 8fb0368) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%% Manuscript v3 (v2: git commit dce4d30; v1: 8fb0368) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TARGET_YEAR      = 2027  (ICML 2027; no official 2027 style published as of 2026-09-26)
 % TEMPLATE_YEAR    = 2026  (official ICML 2026 style kit, review/anonymous mode, unmodified)
 % SUBMISSION_READY = false
@@ -71,9 +71,10 @@
 \begin{abstract}
 A sequence model can change its output when only the time grid of the same physical input changes.
 We ask where this dependence enters a selective state-space model (SSM) and which of it is an artifact rather than new information.
-In fixed-parameter toys we separate interval splitting, which keeps the held input path, from new observations, and find four entry points: a step that counts samples, an inexact input-matrix discretization, sample-count readouts, and the resampling of internal signals between layers; a physical step, exact zero-order hold and an exact time integral remove the single-layer artifact only together.
-We then train the official implementation of a selective SSM whose step is already physical (TIDES) once on a small synthetic regression task and evaluate the same checkpoint on the same test trajectories: splitting the held input eight-fold changes its outputs by $\RealDiscSeight$ (relative $\ell_2$) while resampling to the training grid changes nothing by construction, the change is absent from the first block ($\RealLayerOneDp$ in float64) and appears in the second, and under a density change a sample-count pooled readout errs by $\RealPoolMeanHeight$ where time-weighted pooling of the same outputs errs by $\RealPoolTimeHeight$.
-These are single-seed pilot measurements on synthetic data; we propose no new architecture.
+Separating interval splitting, which keeps the held input path, from new observations, fixed-parameter toys show that a step that counts samples, an inexact input-matrix discretization and sample-count readouts create artifacts that only a physical step, exact zero-order hold and an exact time integral remove together, and that a stack of exact layers still changes under splitting because internal signals are resampled between layers.
+We then train the official implementation of a selective SSM whose step is already physical (TIDES) on a small synthetic regression task with four training seeds under one fixed protocol and evaluate every checkpoint on a shared test set: eight-fold splitting of the held input changes the outputs by $\RtwoSeightMin$--$\RtwoSeightMax$ (relative $\ell_2$, identical in float64), and under a same-path density change a token-mean pooled readout moves by $\RtwoDmin$--$\RtwoDmax$ (label units) more than time-weighted pooling of the same outputs, in every seed.
+The accuracy consequence does not replicate: the native-versus-resampled loss contrast changes sign across seeds, while resampling to the training grid is about ten times cheaper at eight-fold refinement.
+These are same-task repetitions on synthetic data; we propose no new architecture.
 \end{abstract}
 
 %=====================================================================================
@@ -97,10 +98,9 @@ The physical $\Delta t$ in the discretization, exact zero-order-hold (ZOH) formu
 None is an architecture.
 \begin{enumerate}
   \item A protocol that separates splitting from new observations, with an exact path/artifact decomposition and explicit denominators (\cref{sec:setup}).
-  \item Controlled toy measurements of four entry points and of the interaction of fixes: each fix alone leaves at least half of the change (\cref{sec:toy}).
-  \item The inter-layer mechanism stated with explicit assumptions: with a physical step and exact ZOH in every layer, a stack that holds internal endpoint values still changes under splitting, at first order in the step, without new external information (\cref{sec:coupling}).
-  \item A check that the TIDES paper equations and the released code use different interval pairings (\cref{sec:convention}).
-  \item A single-seed pilot on a trained official TIDES checkpoint: native-grid vs.\ training-grid-resampled evaluation and a pooling-only ablation on the same test trajectories, with discrepancy, task loss and runtime, and an exploratory localization of the change to the second block (\cref{sec:real}).
+  \item Two different causes, stated with their assumptions: resampling of internal signals between layers, which changes a stack of exact layers under splitting at first order in the step without new information (\cref{sec:coupling}), and sample-count readouts, which weight tokens instead of time (\cref{sec:readout-analysis}); toy checks in \cref{sec:toy}.
+  \item A fixed-protocol seed repetition on the official TIDES code: native vs.\ training-grid-resampled evaluation and a pooling-only ablation on a shared test set, with discrepancy, task loss and cost reported together (\cref{sec:real}).
+  \item A check that the TIDES paper equations and the released code pair inputs with different intervals (\cref{sec:convention}).
 \end{enumerate}
 
 %=====================================================================================
@@ -223,6 +223,7 @@ When all conditions of \cref{prop:split} hold in every layer, a stacked recurren
 It vanishes if the inter-layer signal is represented exactly or if the stack runs on a grid that does not depend on the observations.
 
 \subsection{Readouts}
+\label{sec:readout-analysis}
 The exact held-path integral is additive over sub-intervals and hence split-invariant under exact-ZOH states; endpoint sums converge to it only where the grid is refined; sample-count readouts weight samples, not time, so the sample mean converges to a density-weighted average.
 
 \subsection{Interval conventions in the TIDES paper and code}
@@ -238,50 +239,63 @@ The released code, not the printed equations, defines the model behind TIDES' re
 We make no claim that this affects TIDES' results.
 
 %=====================================================================================
-\section{Trained Official TIDES: a Single-Seed Pilot}
+\section{Trained Official TIDES: Fixed-Protocol Seed Repetition}
 \label{sec:real}
 
-\paragraph{Protocol (fixed before training; \cref{app:real}).}
+\paragraph{Setup.}
 \emph{Model:} official TIDES at a pinned commit (MIT), $\AdapterParams$ parameters, two blocks, input-dependent $\mathrm{Re}\,\Lambda$, $B$, $C$, exact ZOH, causal, no convolution, a linear per-step head; CPU, float32, 2 threads.
-\emph{Task:} regression of the teacher \eqref{eq:ct} with fixed parameters, driven by sine-sum inputs, over $T{=}8$ on a uniform training grid of $K{=}32$ steps; labels are the teacher output on the continuous path at the 32 grid times (label s.d.\ $\RealLabelSD$).
-\emph{Split:} 896 trajectory identifiers split into 512/128/256 train/calibration/test \emph{before} any grid is built; normalization statistics from the training split only.
-\emph{Training:} one seed (0), Adam, 2000 steps, batch 32; calibration MSE every 100 steps; the lowest-calibration-MSE state (step $\RealStep$, MSE $\RealDevMSE$) was saved, hashed and frozen before any test trajectory was generated ($\RealTrainSec$\,s in total).
-\emph{Conditions:} C0 (training grid); S2/S4/S8, which split every interval with the held value repeated; H8, which splits only the first half by 8 (a density change on the same held path); and, as a secondary non-refinement condition, J1 with $K$ random observation times.
-\emph{Arms on the same checkpoint and test trajectories:} \emph{native} (the condition's grid with physical step sizes), \emph{resampled} (last observation carried forward onto the training grid, which uses only observed values and never the continuous path), and, for the pooled readout, \emph{pooling-only} (the native outputs pooled by the time-weighted sum instead of the sample mean).
-\emph{Equivalence rule:} the unit is the per-trajectory test MSE in label units; the margin is $\pm5\%$ of the resampled arm's mean MSE for the same condition, applied to the mean paired difference; ``no practical difference'' requires the 95\% bootstrap CI (2000 resamples of test trajectories) to lie inside the margin.
-The 5\% value is a convention fixed before any trained result (about 2.5\% in RMSE), not derived from an application cost; non-significance is never read as equivalence.
+\emph{Task:} regression of the teacher \eqref{eq:ct} with fixed parameters, driven by sine-sum inputs, over $T{=}8$ on a uniform training grid of $K{=}32$ steps; labels are the teacher output on the continuous path at the 32 grid times (label s.d.\ $\RealLabelSD$); trajectory identifiers are split into 512/128 train/calibration before any grid is built, with normalization from the training split only.
+\emph{Training:} Adam, 2000 steps, batch 32; calibration MSE every 100 steps; the lowest-calibration-MSE state is saved, hashed and frozen before any test trajectory is generated.
+A development run with seed 0 (\cref{app:pilot}) was used to choose the questions below.
+The repetition was then fixed in advance: training seeds 1--4, each seeding the parameter initialization and the minibatch order but not the data; the train and calibration data are hash-identical to the development run, and retraining seed 0 with the repetition code reproduces every tensor of the development checkpoint (maximum absolute difference $\RtwoEqMax$).
+All seeds share one new test set of 256 trajectories from the same generator, with identifiers disjoint from all earlier ones; no seed was replaced or added.
+This is a repetition on the same task, not a new task.
 
-\input{generated/tab_real}
+\paragraph{Conditions, arms and estimands.}
+The held-path refinements are C0 (training grid), S2/S4/S8 (every interval split with the held value repeated) and H8 (only the first half split by 8, a density change on the same held path); J1 ($K$ random observation times) changes the observed path and is reported separately.
+\emph{Native} evaluation feeds the condition's grid with physical step sizes; \emph{resampled} evaluation carries the last observation forward onto the training grid using only observed times and values.
+On S and H conditions resampling reproduces the C0 input exactly, so its zero discrepancy is an identity control, not evidence of superiority.
+For a sequence-level readout let $\bar y_i=T^{-1}\!\int_0^Ty_i\,dt$ be the pooled label (Simpson's rule on the teacher's RK4 nodes) and $\hat y_{i,k}(c)$ the native outputs on condition $c$ with steps $dt_k(c)$ and $L_c$ tokens.
+We compare the token mean $p^{\mathrm{mean}}_i(c)=L_c^{-1}\sum_k\hat y_{i,k}(c)$, the pooling of the TIDES classifier head (here applied to the outputs of a linear per-step head, which equals pooling the features first), with the time-weighted sum $p^{\mathrm{time}}_i(c)=T^{-1}\sum_k\hat y_{i,k}(c)\,dt_k(c)$ of the \emph{same} outputs.
+The latter is a pooling-only ablation, not part of the official model and not an exact integral; the resampled arm pools its $K$ outputs by $p^{\mathrm{res}}_i(c)=K^{-1}\sum_k\hat y^{\mathrm{res}}_{i,k}(c)$. On the uniform C0 grid all three equal $p_i(\mathrm{C0})$; the pooled error of an arm is $n^{-1}\sum_i|p_i(c)-\bar y_i|$.
+The primary estimand, chosen after the development run, is the pooled-readout effect
+$D_s=\frac1n\sum_i\big(|p^{\mathrm{mean}}_{s,i}(\mathrm{H8})-p_{s,i}(\mathrm{C0})|-|p^{\mathrm{time}}_{s,i}(\mathrm{H8})-p_{s,i}(\mathrm{C0})|\big)$ in label units.
+Secondary estimands are the final-output discrepancy under S8, $\|\hat y(\mathrm{S8})-\hat y(\mathrm{C0})\|_2/\|\hat y(\mathrm{C0})\|_2$ over the 32 grid times (also with weights and inputs cast to float64); the loss contrast $r_s=(\overline L_{\mathrm{native}}-\overline L_{\mathrm{resampled}})/\overline L_{\mathrm{resampled}}$ of the per-trajectory MSE; and wall time.
+Uncertainty is a paired bootstrap over the 256 test trajectories with the seed fixed, with ratios recomputed in every draw.
+Because the seeds share the trajectories (a crossed design), we report the seeds separately and give only their range, not a pooled interval.
+A loss difference is called negligible only if the interval of $r_s$ lies inside $\pm5\%$, a convention (about 2.5\% in RMSE) rather than an application tolerance; non-significance is never read as equivalence.
 
-\paragraph{Discrepancy, task loss and runtime.}
-\Cref{tab:real} reports all three together.
-Resampling makes the model split-invariant by construction: its outputs on S2--S8 and H8 equal those on C0 exactly.
-Native evaluation is not: splitting every interval changes the outputs by $\RealDiscStwo$ at $m{=}2$ and $\RealDiscSeight$ at $m{=}8$ (95\% CI $[\RealDiscSeightCIlo,\RealDiscSeightCIhi]$), far above the float32 floor of about $10^{-4}$ (\cref{app:numerics}).
-The native task loss on the refined grids is slightly \emph{lower} than on the training grid (\RealRelDiffStwo\% at S2, \RealRelDiffSeight\% at S8 and \RealRelDiffHeight\% at H8 relative to the resampled MSE of $\RealMSEczero$).
-By the pre-specified rule, S2 shows no practical difference; for S4, S8 and H8 the interval excludes zero but does not lie beyond the margin, so neither equivalence nor a practical difference is established.
-We do not know why the refined native computation is slightly more accurate here; a finer internal sampling of the inter-layer signal is one untested explanation.
-Native inference cost grows with the number of tokens (from $\RealRunNatCzero$\,s to $\RealRunNatSeight$\,s per batch from C0 to S8 in this implementation), while resampling stays at about $\RealRunResSeight$\,s.
-On the secondary J1 condition, the errors of both arms are much larger (native MSE $\RealJoneMSE$ against $\RealMSEczero$ on C0) because $K$ random times observe the input differently, and the paired difference is inconclusive.
+\input{generated/tab_seeds_effects}
+\input{generated/tab_seeds_loss}
 
-\input{generated/tab_pool}
+\paragraph{The grid and readout effects replicate across seeds.}
+The primary effect is positive with an interval excluding zero in all four seeds ($D_s$ between $\RtwoDmin$ and $\RtwoDmax$, smallest lower bound $\RtwoDlomin$; \cref{tab:seeds-effects}), so the pre-specified replication criterion within this task is met.
+On H8, token-mean pooling errs by $\RtwoPoolMeanMin$--$\RtwoPoolMeanMax$ against the pooled label, whereas time-weighted pooling of the same native outputs errs by $\RtwoPoolTimeMin$--$\RtwoPoolTimeMax$, close to the resampled arm ($\RtwoPoolResMin$--$\RtwoPoolResMax$).
+The final-output discrepancy under S8 is $\RtwoSeightMin$--$\RtwoSeightMax$, far above the float32 floor and unchanged in float64, so it is not a precision effect; it varies $\RtwoSeightFold$-fold between seeds, and the seed whose checkpoint was selected earliest (step 800) has the smallest value, a relation we did not test.
 
-\paragraph{Pooled readout.}
-\Cref{tab:pool} evaluates a sequence-level readout of the same checkpoint: the time average of the teacher output (mean magnitude $\RealPoolLabelAbs$).
-On uniform splits, sample-mean and time-weighted pooling coincide.
-Under the density change H8, the sample mean over native tokens (the pooling used by the TIDES classifier head) errs by $\RealPoolMeanHeight$, whereas time-weighted pooling of the \emph{same} native outputs errs by $\RealPoolTimeHeight$, close to the resampled arm ($\RealPoolResHeight$) and to C0 ($\RealPoolCzero$).
-In this pilot the pooled-readout grid dependence is therefore almost entirely a readout effect, which the pooling-only change removes; the pre-registered direction (R-P5) was supported.
+\paragraph{The accuracy consequence does not replicate.}
+The development run suggested that native evaluation on refined grids is slightly more accurate than resampled evaluation.
+Across seeds 1--4, $r_s$ ranges from $\RtwoRSeightMin\%$ to $\RtwoRSeightMax\%$ on S8 and from $\RtwoRHeightMin\%$ to $\RtwoRHeightMax\%$ on H8 (\cref{tab:seeds-loss}): seed~2 is worse on H8 with an interval that excludes zero, seed~3 shows no practical difference on every held-path condition, and the remaining verdicts are mixed.
+We therefore report no stable accuracy difference between native and resampled evaluation on held-path refinements.
+On J1, native evaluation has lower MSE in every seed on the new test set ($r_s$ from $\RtwoRJoneMin\%$ to $\RtwoRJoneMax\%$), but the development checkpoint, which gives $\RtwoRJoneDev\%$ here, gave $\RtwoRJonePilotOld\%$ (inconclusive) on its own test set, so the J1 contrast depends strongly on the test draw; J1 is not a refinement of the held path.
+
+\paragraph{Cost.}
+With the pre-specified timing protocol (inference mode, two warm-up and five timed calls, one batch of 256 sequences, 2 threads), the ratio native\_S8\_end\_to\_end\,/\,resampled\_S8\_end\_to\_end is $\RtwoRatioMin$--$\RtwoRatioMax$ across seeds and native\_S8\_forward\,/\,resampled\_S8\_forward is $\RtwoFratioMin$--$\RtwoFratioMax$; on C0 the end-to-end ratio is $\RtwoCzeroRatioMin$--$\RtwoCzeroRatioMax$ (\cref{tab:timing}).
+End-to-end time includes resampling and tensor construction; for the resampled arm on S8 the difference between the end-to-end and forward-only medians is $\RtwoResOverMin$--$\RtwoResOverMax$\,s.
+The two boundaries are timed in separate jobs, and in $\RtwoInvN$ of $\RtwoInvTot$ seed--condition--arm cells the end-to-end median is below the forward-only median (by up to $\RtwoInvMaxPct$\%), so timing differences of a few percent are within run-to-run variation; the order-of-magnitude S8 ratio is not.
+The development run's timings ($\RealRunNatSeight$\,s native on S8) were forward-only, without warm-up and outside inference mode, and excluded resampling; they are superseded for cost statements.
 
 \input{generated/tab_layers}
 
-\paragraph{Where the change appears (exploratory).}
-After seeing the results we measured the change at intermediate features (\cref{tab:layers}); this analysis was not pre-registered.
+\paragraph{Where the discrepancy enters (exploratory, development checkpoint).}
+After seeing the development results we measured the change at intermediate features of the development checkpoint (\cref{tab:layers}); this was not pre-registered.
 The encoder output is unchanged, the first block changes by at most $\RealLayerOneFp$ in float32 and $\RealLayerOneDp$ with the weights cast to float64, and the second block changes by $\RealLayerTwoMin$ to $\RealLayerTwoMax$ in both precisions.
 This is the pattern that \cref{prop:split,prop:cascade} predict: a first layer that satisfies the single-layer conditions is split-invariant up to rounding, and the change enters when the second block receives additional internal samples.
-It localizes the effect in one checkpoint; it does not prove the mechanism for trained stacks in general.
+The repetition pre-specified a per-seed layer diagnostic only if some seed's S8 discrepancy fell below $10^{-3}$; this did not happen, so the localization rests on one checkpoint.
 
-\paragraph{What the pilot does not show.}
-One seed, one small model and one synthetic task are a conditional pilot, not evidence about the performance distribution of the training algorithm or about TIDES on its benchmarks; the teacher belongs to the same continuous-time family as the model, which may favour it; and the calibration curve was unstable (calibration MSE up to $\RealDevMax$ between evaluations), so the selected checkpoint may not be representative.
-Nothing here transfers to real sensor or clinical streams.
+\paragraph{What this does not show.}
+Four training seeds of one two-block model on one synthetic task give a replication within that task, not evidence about other data, sensors, models or tasks, about TIDES' benchmarks, or a precise statement about the distribution of training runs.
+The teacher is from the model's own continuous-time family, the primary estimand was chosen after the development run, and the calibration curves were unstable in every seed (up to $\RealDevMax$ in the development run), so the selected checkpoints depend on the evaluation schedule.
 
 %=====================================================================================
 \section{Controlled Toy Results}
@@ -320,11 +334,11 @@ For \eqref{eq:cascade} (P1-COMP-01; held input of FIRST\_RUN unit~0; \CompSecond
 \section{Limitations}
 \label{sec:limits}
 
-\emph{Trained evidence is a pilot:} one seed, one checkpoint, one small two-block model, one synthetic task whose teacher is from the model's own family; no statement about the training algorithm, TIDES' benchmarks, Mamba, S4 or S5 is supported.
+\emph{Trained evidence:} four training seeds and a development seed of one small two-block model on one synthetic task whose teacher is from the model's own family; no statement about other tasks, real data, the population of training runs, TIDES' benchmarks, Mamba, S4 or S5 is supported, and the accuracy contrast was not stable.
 \emph{Margin:} the $\pm5\%$ equivalence margin is a convention, not an application-derived tolerance; all intervals are reported.
 \emph{Entry points not measured:} token-indexed convolution, normalization in training mode, and deeper or wider stacks.
 \emph{Analysis:} \cref{prop:split,prop:cascade} are standard; \cref{prop:cascade} covers only a linear time-invariant cascade (\cref{rem:scope}); the hold and Euler-$B$ bounds in \cref{app:proofs} are unproved sketches.
-\emph{Exploratory parts:} the layer localization, the toy decomposition and the stiffness columns were analysed after the results were seen.
+\emph{Post hoc choices:} the primary estimand of the repetition was chosen after the development run; the layer localization, the toy decomposition and the stiffness columns were analysed after the results were seen.
 \emph{Numerics:} the float32 floor comes from an emulation.
 \emph{Literature:} the key equations and experiment sections of TIDES, Mamba-3 and S5 were read in the original text; other entries were checked by keyword search.
 
@@ -334,14 +348,14 @@ For \eqref{eq:cascade} (P1-COMP-01; held input of FIRST\_RUN unit~0; \CompSecond
 
 Grid dependence in selective SSMs enters through a step that counts samples, an inexact input-matrix discretization, sample-count readouts and, in stacks, the resampling of internal signals.
 In controlled toys a physical step, exact ZOH and an exact integral remove the single-layer artifact, but only together, and they leave the inter-layer resampling error, which is first order in the step and carries no new information.
-In a single-seed pilot on the official TIDES code, whose step is physical, the first block is split-invariant up to rounding, the change appears in the second block, resampling to the training grid removes it at the cost of discarding observations, and time-weighted pooling removes the pooled-readout effect of a density change.
-Whether these magnitudes hold across seeds, tasks, sizes and implementations is open.
+On the official TIDES code, whose step is physical, the final-output change under splitting of the held path and the readout effect of a same-path density change both replicate across four training seeds on one task, and time-weighted pooling of the same outputs removes the readout effect; the loss consequence of native versus resampled evaluation does not replicate, and resampling is about ten times cheaper at eight-fold refinement.
+Whether independent real time series show the same entry points is the open question.
 
 %=====================================================================================
 \section*{Impact Statement}
 
 This paper presents work whose goal is to advance the field of Machine Learning, specifically the understanding of how sequence models respond to changes in sampling.
-All experiments use synthetic data and small CPU computations; the trained-model results come from one seed on one synthetic task.
+All experiments use synthetic data and small CPU computations; the trained-model results come from four training seeds and a development seed on one synthetic task.
 The main risk we see is over-reading such results: a model that behaves consistently in a controlled setting may still behave differently on irregularly sampled real data, for example clinical or sensor streams, so any use in such settings needs evaluation on the actual data and sampling process.
 We are not aware of other societal consequences that must be specifically highlighted here.
 
@@ -368,21 +382,42 @@ The design, the pinned implementation and the predictions were committed before 
 Amendments R-A1--R-A9 were committed after an untrained adapter check and a timing smoke on four training trajectories, and before training: calibration-based checkpoint selection, same-held-path refinements only (new-observation conditions removed, one random-time condition kept as secondary), a resampler restricted to observed values, the pooled readout and pooling-only arm, the explicit equivalence unit, the single-seed pilot label, time caps, and seeding of all random generators (the TIDES initialization also draws from NumPy's global generator).
 The pre-registered predictions were: native splitting discrepancy at S8 above $10^{-4}$ (supported), resampled splitting discrepancy exactly zero (supported), native runtime growing with tokens (observed), and a larger sample-mean than time-weighted pooled change on H8 (supported).
 
+\paragraph{P1-REAL-02.}
+The configuration (seeds, identical protocol, new test set, primary and secondary estimands, bootstrap and margin rules, timing boundaries, failure handling, conditional extra diagnostics) was committed before any repetition run.
+One incident occurred: the evaluation of the development row crashed before writing any output because its output directory was not created; the attempt is recorded as INVALID, the directory creation was added, and only that row was rerun (the four training seeds were unaffected).
+The pre-specified conditional layer diagnostic was not triggered.
+
 \paragraph{Compute.}
-All on CPU (2 threads for experiments), no GPU, no paid API, no external data.
+All on CPU (2 threads for experiments), no GPU, no paid API, no external data; wall and process CPU seconds are distinguished where recorded.
 FIRST\_RUN: two executions of about 21\,s, one partial execution and a smoke test of about 3\,s together.
 P1-COMP-01: \CompSeconds\,s.
-P1-REAL-01: installation of a CPU tensor library (35\,s) and of a \LaTeX\ toolchain (66\,s); adapter check and timing smoke (${\approx}4$\,s; $\AdapterStep$\,s per batch-32 step); convention check (${\approx}2$\,s); training including label generation ($\RealTrainSec$\,s); evaluation ($\RealEvalSec$\,s); layer diagnostic (${\approx}11$\,s).
+P1-REAL-01 (development): installation of a CPU tensor library (35\,s) and of a \LaTeX\ toolchain (66\,s); adapter check and timing smoke (${\approx}4$\,s; $\AdapterStep$\,s per batch-32 step); convention check (${\approx}2$\,s); training including label generation ($\RealTrainSec$\,s); evaluation ($\RealEvalSec$\,s); layer diagnostic (${\approx}11$\,s).
+P1-REAL-02: data generation $\RtwoDataWall$\,s; seed-0 equivalence retrain ${\approx}57$\,s; four training runs $\RtwoTrainWall$\,s wall in total ($\RtwoTrainCPU$\,s process CPU in the training loops); test-set generation $\RtwoTestWall$\,s; five evaluations $\RtwoEvalWall$\,s wall in total, plus the invalid development attempt (${\approx}30$\,s).
 
 \input{generated/tab_hypotheses}
 
-\section{P1-REAL-01 details}
+\section{Implementation and protocol details}
 \label{app:real}
 
 \emph{Pinned code facts (read, then executed through the adapter):} the step is \texttt{step\_scale * exp(log\_step)} with a per-mode timescale; the ZOH input matrix is \texttt{(1/Lambda)*(Lambda\_bar-1)*B} without \texttt{expm1}; the scan is $x_k=\bar\Lambda_kx_{k-1}+\bar B_ku_k$ with the gap before step $k$; each block applies \texttt{BatchNorm1d(affine=False)} over batch and time (running statistics at evaluation); an optional causal convolution defaults to off; the classifier head pools with \texttt{h.mean(dim=1)}.
 \emph{Adapter check (untrained, four training trajectories):} forward outputs finite; gradients finite for all 54 parameters that receive one (the six static $\mathrm{Re}\,\Lambda$, $B$, $C$ tensors are unused in input-dependent mode; parameters upstream of the zero-initialized head projections receive zero gradient at step~0 only); an Adam step changed the parameters and lowered the loss on the same batch; evaluation was deterministic, and a per-step step tensor of ones matched the scalar step exactly.
 \emph{Labels:} teacher output on the continuous path from an independent RK4 integration (128 sub-steps per training interval); the pooled label is its time average by Simpson's rule.
 \emph{Readout of J1:} the last native output at or before each training-grid time.
+\emph{Eval-mode checks (P1-REAL-02, every seed):} every module in evaluation mode during calibration and test; dropout probability 0; batch normalization with running statistics; equal sequence lengths within every batch (no padding or masking is used); all step sizes positive (the smallest native step is $1/8$ of the training step on S8 and H8).
+\emph{Timing (P1-REAL-02):} \cref{tab:timing}.
+
+\input{generated/tab_timing}
+
+\section{Development pilot (seed 0) on its own test set}
+\label{app:pilot}
+
+These results come from the development run (P1-REAL-01), whose questions and estimands were not fixed in advance beyond its own predictions, on its own test set (identifiers 640--895).
+Its equivalence analysis used a margin of 5\% of the point-estimated resampled MSE (kept here as exploratory); the repetition in \cref{sec:real} instead bootstraps the ratio $r_s$.
+Pooled quantities in \cref{tab:pool} are mean absolute errors (or changes) of pooled predictions against the pooled label, in label units; they are not hidden-state discrepancies or MSEs.
+Its runtimes are forward-only model calls on prebuilt tensors (no warm-up, outside inference mode) and exclude resampling.
+
+\input{generated/tab_real}
+\input{generated/tab_pool}
 
 \section{Numerical floor}
 \label{app:numerics}

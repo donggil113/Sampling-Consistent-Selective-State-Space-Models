@@ -1,6 +1,6 @@
 # Research packet: Sampling-grid dependence in selective SSMs (P1)
 
-Last updated: 2026-09-27 (third session). Branch: `claude/intelligent-maxwell-t1lcda`.
+Last updated: 2026-09-27 (fourth session). Branch: `claude/intelligent-maxwell-t1lcda`.
 
 Runs covered:
 
@@ -263,4 +263,24 @@ Setup:
   - Anything about TIDES benchmarks, Mamba, S4 or S5.
   - Any transfer to real sensor or clinical data.
   - The teacher belongs to the model's own continuous-time family, which may favour it.
+
+## 10. P1-REAL-02 (fixed-protocol seed repetition; session 4)
+
+- **Config.** `configs/p1_real_02.json`, fixed at 5a587b7 before execution.
+- **Seeds.** Training seeds 1–4. Seed 0 is the development run: it appears as a separate row and is excluded from the replication criterion.
+- **Data.** Train/calibration data are hash-identical to the pilot (stats equal). Retraining seed 0 reproduces the pilot checkpoint exactly.
+- **Test set.** New shared set, ids 10000–10255, from the same generator. This is a same-task repetition.
+- **Estimands** (units in the config).
+  - Primary: D_s = mean_i(|p_mean(H8) − p(C0)| − |p_time(H8) − p(C0)|). It was chosen after the development run. P1-REAL-01 had no single primary, and the never-run NX1 draft's splitting-consistency primary is kept as the S8 secondary.
+  - Secondary: the S8 final-output discrepancy (fp32 and fp64), and r_s = (L̄_nat − L̄_res)/L̄_res with its ratio recomputed per bootstrap draw.
+- **Statistics.** Paired trajectory bootstrap with the seed fixed. The four seeds are reported separately, with no pooled CI (crossed design).
+- **Results.**
+  - D_s is 0.578–0.602 and its CI excludes 0 in 4/4 seeds, so the effect is **replicated within this task**.
+  - The S8 discrepancy is 0.0043–0.0219 (fp64 equal).
+  - r_s is not stable across seeds (S8 −6.2%..+3.1%; H8 −4.9%..+6.7%).
+  - J1 is −22.6%..−21.2% on the new test set but −6.4% (inconclusive) for the development checkpoint on the old set, so it depends on the test draw.
+  - Cost: native_S8_end_to_end / resampled_S8_end_to_end = 9.7–11.5, and forward-only 11.5–14.1.
+- **Incident I-1.** A development-row evaluation crashed before writing output. It is recorded as INVALID, and only that row was rerun.
+- **Interpretation.** The grid effect (inter-layer resampling) and the readout effect (token-mean pooling) are stable across optimizer initializations in this task. The accuracy consequence is not.
+  - None of this is evidence about other data, models or tasks, or about TIDES' benchmark results.
 
