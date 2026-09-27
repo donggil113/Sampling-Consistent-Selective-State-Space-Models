@@ -96,14 +96,13 @@ Entries are the median over units of the output artifact $\|y_m-y^\star\|_2/\|y^
 slope is the median per-unit log--log slope over $m\in\{1,2,4,8\}$. $\tau$ is the base step, so $\Delta{=}\tau g$ coincides with $\Delta{=}dt\,g$ at $m{=}1$.}
 \label{tab:split}
 \centering\small
-\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcccccc}
 \toprule
 variant & $m{=}1$ & $m{=}2$ & $m{=}4$ & $m{=}8$ & max, $m{=}8$ & slope \\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table}
 """)
     macros["EoneZohMax"] = sci(zmax)
@@ -156,14 +155,13 @@ variant & $m{=}1$ & $m{=}2$ & $m{=}4$ & $m{=}8$ & max, $m{=}8$ & slope \\
 The stable/sign/decay columns are an exploratory re-reading of logged values.}
 \label{tab:stiff}
 \centering\small
-\resizebox{\columnwidth}{!}{%
 \begin{tabular}{rrrrrccrr}
 \toprule
 $\lambda$ & $m$ & $z$ & $\bar A_{\mathrm{bil}}$ & $e^{z}$ & stable & sign-alt. & bilinear & Euler-$B$ \\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \vspace{4pt}
 
 \begin{tabular}{rccc}
@@ -220,14 +218,13 @@ $dt$ & exact ZOH & Euler-$B$ & bilinear \\
 Medians over units. The exact held-path integral is defined only for exact-ZOH states.}
 \label{tab:readout}
 \centering\small
-\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccc}
 \toprule
 readout & split, exact ZOH $\Delta{=}dt\,g$ & split, Euler-$B$ $\Delta{=}\tau g$ & new obs., exact ZOH \\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table}
 """)
     macros["EthreeMeanChange"] = sci(A["E3a"]["sample_mean"]["zoh_dt_change_m8"])
@@ -310,14 +307,13 @@ and the per-unit range of the cross fraction. $P$ uses the exact-ZOH output as a
 Median total change is relative to $\|y_1\|$. EXPLORATORY re-aggregation; the cross term shows that no per-unit ``share'' is well defined.}
 \label{tab:newobs}
 \centering\small
-\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcccccc}
 \toprule
 variant & $m$ & median $\|T\|/\|y_1\|$ & $\|P\|^2$ & $\|R\|^2$ & $2\langle P,R\rangle$ & cross range \\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table}
 """)
     macros["EtwoZohArt"] = sci(art_zoh)
@@ -355,14 +351,13 @@ Columns $m$: error of the layerwise computation (layer 2 holds the layer-1 endpo
 ``change'' is the layerwise change $m{=}8$ vs.\ $m{=}1$; the last column is the largest change of the exact coupled solution over $m$. No external observation is added in this experiment.}
 \label{tab:coupling}
 \centering\small
-\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccccccc}
 \toprule
 case & $m{=}1$ & $m{=}2$ & $m{=}4$ & $m{=}8$ & slope & change & exact inv. \\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table}
 """)
     macros["CompErrOne"] = sci(A["COMP01"]["distinct"]["layerwise_error"][1])
@@ -450,10 +445,10 @@ run & check & verdict \\
 \begin{tikzpicture}
 \begin{groupplot}[group style={group size=2 by 1, horizontal sep=0.85cm},
   width=0.47\columnwidth, height=0.47\columnwidth, xmode=log, ymode=log, log basis x=2,
-  xtick={1,2,4,8}, xticklabels={1,2,4,8}, xlabel={sub-steps $m$}, tick label style={font=\scriptsize},
-  label style={font=\scriptsize}, title style={font=\scriptsize}, grid=major, grid style={gray!20, line width=0.3pt},
-  axis line style={gray!60}, legend style={font=\tiny, draw=none, fill=none}, legend cell align=left]
-\nextgroupplot[title={(a) single layer, FR-E1}, ylabel={relative error}, ymin=5e-5, ymax=5,
+  xtick={1,2,4,8}, xticklabels={1,2,4,8}, xlabel={sub-steps $m$}, tick label style={font=\footnotesize},
+  label style={font=\footnotesize}, title style={font=\footnotesize}, grid=major, grid style={gray!20, line width=0.3pt},
+  axis line style={gray!60}, legend style={font=\scriptsize, draw=none, fill=none}, legend cell align=left]
+\nextgroupplot[title={(a) single layer}, ylabel={relative error}, ymin=5e-5, ymax=5,
   legend style={at={(0.5,-0.33)}, anchor=north}]
 \addplot[seriesA, line width=1pt, mark=*, mark size=1.6pt] coordinates {""" + coords(s_eu) + r"""};
 \addlegendentry{Euler-$B$, $\Delta{=}dt\,g$}
@@ -461,7 +456,7 @@ run & check & verdict \\
 \addlegendentry{bilinear, $\Delta{=}dt\,g$}
 \addplot[seriesC, line width=1pt, dotted, mark=triangle*, mark size=2pt] coordinates {""" + coords(s_nd) + r"""};
 \addlegendentry{exact ZOH, $\Delta{=}\tau g$}
-\nextgroupplot[title={(b) two-layer cascade, P1-COMP-01}, ymin=5e-3, ymax=0.5,
+\nextgroupplot[title={(b) two-layer cascade}, ymin=5e-3, ymax=0.5,
   legend style={at={(0.5,-0.33)}, anchor=north}]
 \addplot[seriesA, line width=1pt, mark=*, mark size=1.6pt] coordinates {""" + coords(s_cd) + r"""};
 \addlegendentry{$a{=}1,\,c{=}0.5$}
@@ -469,7 +464,7 @@ run & check & verdict \\
 \addlegendentry{$a{=}c{=}1$}
 \end{groupplot}
 \end{tikzpicture}
-\caption{Error against the exact held-path solution as the same held interval is split into $m$ sub-steps (medians over 32 toy units in (a); one deterministic case per line in (b)).
+\caption{Error against the exact held-path solution as the same held interval is split into $m$ sub-steps: (a) single layer (FR-E1-SPLIT; medians over 32 toy units); (b) two-layer cascade (P1-COMP-01; one deterministic case per line).
 Exact ZOH with $\Delta{=}dt\,g$ (a) and the exact coupled solution (b) stay at $10^{-15}$ and are not drawn. The $\Delta{=}\tau g$ line starts at $m{=}2$ because it is exact at $m{=}1$ by construction.
 Values are listed in \cref{tab:split,tab:coupling}.}
 \label{fig:convergence}
@@ -501,38 +496,41 @@ Values are listed in \cref{tab:split,tab:coupling}.}
 
     short = {
         "NO PRACTICAL DIFFERENCE (CI inside +-5% margin)": r"within $\pm5\%$",
-        "NATIVE BETTER (CI < 0); not shown beyond margin": r"native lower, CI not beyond margin",
-        "NATIVE BETTER (CI < 0)": r"native lower, beyond margin",
-        "NATIVE WORSE (CI > 0); not shown beyond margin": r"native higher; not beyond margin",
-        "NATIVE WORSE (CI > 0)": r"native higher, beyond margin",
+        "NATIVE BETTER (CI < 0); not shown beyond margin": r"lower",
+        "NATIVE BETTER (CI < 0)": r"lower, beyond margin",
+        "NATIVE WORSE (CI > 0); not shown beyond margin": r"higher",
+        "NATIVE WORSE (CI > 0)": r"higher, beyond margin",
         "INCONCLUSIVE (CI includes 0 and exceeds the margin)": "inconclusive",
     }
     rows = []
-    for n, lab in (("C0", "C0 (training grid)"), ("S2", "S2"), ("S4", "S4"), ("S8", "S8"), ("H8", "H8 (first half $\\times8$)"),
-                   ("J1", "J1 (random times)$^\\dagger$")):
+    def e4(x):
+        v = 1e4 * x
+        if v == 0:
+            return "0"
+        return f"{v:+.0f}" if abs(v) >= 100 else f"{v:+.1f}"
+
+    for n, lab in (("C0", "C0"), ("S2", "S2"), ("S4", "S4"), ("S8", "S8"), ("H8", "H8"), ("J1", "J1$^\\dagger$")):
         c = C[n]
         verdict = "identical inputs (check)" if n == "C0" else short[c["equivalence_verdict"]]
         rows.append(f"{lab} & {cell(c['disc_native_mean'])} & {cell(c['disc_resampled_mean'])} & {cell(c['mse_native_mean'], 3)} & "
-                    f"{cell(c['mse_resampled_mean'], 3)} & {cell(c['paired_diff_mean'])} {ci(c['paired_diff_ci'])} & {verdict} & "
-                    f"${c['runtime_native']['seconds_batch']:.2f}$ / ${c['runtime_resampled']['seconds_batch']:.2f}$ \\\\")
-    write("tab_real.tex", r"""\begin{table*}[t]
+                    f"{cell(c['mse_resampled_mean'], 3)} & ${e4(c['paired_diff_mean'])}$ $[{e4(c['paired_diff_ci'][0])},\\,{e4(c['paired_diff_ci'][1])}]$ & {verdict} \\\\")
+    write("tab_real.tex", r"""\begin{table}[t]
 \caption{DEVELOPMENT run (P1-REAL-01): trained official TIDES, seed 0, on its own test set (256 trajectories, ids 640--895; one checkpoint selected on the calibration split; paired).
 ``disc.'': mean relative $\ell_2$ change of the per-step outputs at the 32 training-grid times against the same arm on C0.
 MSE: per-trajectory mean squared error to the teacher at those times (original units; label s.d.\ """ + f"{trn['y_stats'][1]:.2f}" + r""").
-$\Delta$MSE: mean paired difference native $-$ resampled with a 95\% bootstrap CI; the margin is $\pm5\%$ of the point-estimated resampled mean MSE of the same condition (exploratory rule of the development run).
-Runtime: forward-only model call on prebuilt tensors for one batch of all 256 sequences (median of 3 calls, no warm-up, outside inference mode, 2 CPU threads); resampling is excluded; superseded by \cref{tab:timing}.
-S$m$ and H8 keep the held path; $^\dagger$J1 is a secondary non-refinement condition whose held path differs by construction.}
+$\Delta$MSE: mean paired difference native $-$ resampled in units of $10^{-4}$ (label units squared) with a 95\% bootstrap CI; the margin is $\pm5\%$ of the point-estimated resampled mean MSE of the same condition (exploratory rule of the development run).
+Verdict (native vs.\ resampled MSE): lower/higher if the CI excludes 0 on that side. Runtimes of this run are not tabulated; they were forward-only and are superseded by \cref{tab:timing}.
+C0 is the training grid; S$m$ and H8 (first half split by 8) keep the held path; $^\dagger$J1 (random observation times) is a secondary non-refinement condition whose held path differs by construction.}
 \label{tab:real}
 \centering\small
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{lccccccc}
+\begin{tabular}{lcccccc}
 \toprule
-condition & disc.\ native & disc.\ resampled & MSE native & MSE resampled & $\Delta$MSE [95\% CI] & margin rule & runtime nat./res.\ (s) \\
+cond. & disc.\ native & disc.\ resampled & MSE native & MSE resampled & $\Delta$MSE [95\% CI] ($10^{-4}$) & margin rule \\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
-\end{tabular}}
-\end{table*}
+\end{tabular}
+\end{table}
 """)
     rows = []
     for n in ("C0", "S8", "H8", "J1"):
@@ -546,7 +544,6 @@ condition & disc.\ native & disc.\ resampled & MSE native & MSE resampled & $\De
 \caption{Pooled readout of the development checkpoint on its own test set (P1-REAL-01), label units, means over 256 test trajectories. Left: $n^{-1}\sum_i|p_i(c)-\bar y_i|$; right: $n^{-1}\sum_i|p_i(c)-p_i(\mathrm{C0})|$, with $p=p^{\mathrm{mean}}$ (``native mean'', token mean as in the TIDES classifier head), $p=p^{\mathrm{time}}$ (``native time'', right-endpoint time-weighted sum of the same native outputs; a pooling-only ablation, not an exact integral) or $p=p^{\mathrm{res}}$ (``resampled'', token mean of the 32 resampled outputs); definitions in \cref{sec:real}. Pooled label $\bar y_i$: time average of the teacher output over $[0,T]$ by Simpson's rule on its RK4 nodes (mean absolute value """ + f"{pl_abs:.2f}" + r""").}
 \label{tab:pool}
 \centering\small
-\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcccccc}
 \toprule
  & \multicolumn{3}{c}{error to pooled label} & \multicolumn{3}{c}{change vs.\ C0} \\
@@ -555,7 +552,7 @@ cond. & native mean & native time & resampled & native mean & native time & resa
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table}
 """)
     rows = []
@@ -567,7 +564,6 @@ cond. & native mean & native time & resampled & native mean & native time & resa
 features after each block and of the (normalized) output, with the frozen weights evaluated in float32 and cast to float64. The encoder output is unchanged (0) in all cases.}
 \label{tab:layers}
 \centering\small
-\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lcccccc}
 \toprule
  & \multicolumn{2}{c}{block 1} & \multicolumn{2}{c}{block 2} & \multicolumn{2}{c}{output} \\
@@ -576,7 +572,7 @@ cond. & fp32 & fp64 & fp32 & fp64 & fp32 & fp64 \\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table}
 """)
     macros["RealStep"] = str(trn["selected_step"])
@@ -627,66 +623,118 @@ cond. & fp32 & fp64 & fp32 & fp64 & fp32 & fp64 \\
     th2 = json.load(open(os.path.join(d2, "testset_hash.json")))
     tr2 = {k: json.load(open(os.path.join(d2, k, "train.json"))) for k in ("seed1", "seed2", "seed3", "seed4")}
     A["REAL2"] = {"aggregate": {k: v for k, v in agg2.items() if k != "development_row_seed0_new_testset"}, "eqcheck": eq2}
-    vshort = {"no practical difference (CI inside +-5%)": r"within $\pm5\%$", "native lower; CI not beyond margin": "lower",
-              "native lower, beyond margin": "lower, beyond", "native higher; CI not beyond margin": "higher",
-              "native higher, beyond margin": "higher, beyond", "inconclusive": "inconcl.", "NA (denominator too small)": "NA"}
+    HD = json.load(open(os.path.join(d2, "h8_decomposition", "summary.json")))["rows"]
+    A["REAL2"]["h8_decomposition"] = HD
+    seeds_order = [("seed1", "1"), ("seed2", "2"), ("seed3", "3"), ("seed4", "4")]
+
+    def sgn(x, nd=3):
+        return f"${x:+.{nd}f}$"
+
+    def fci(c, fmt="{:.3f}"):
+        return "$[" + fmt.format(c[0]) + ",\\," + fmt.format(c[1]) + "]$"
+
+    # float32 vs float64 S8 discrepancy (stored per-trajectory values, Python floats)
+    fp = {}
+    for k, _ in seeds_order:
+        recs8 = [json.loads(l) for l in open(os.path.join(d2, k, "eval.jsonl")) if '"condition": "S8"' in l]
+        e32, e64 = R2[k]["S8_disc_float32"]["estimate"], R2[k]["S8_disc_float64"]["estimate"]
+        fp[k] = {"est_diff": abs(e32 - e64), "rel": abs(e32 - e64) / e32,
+                 "traj_max": max(abs(r["disc_native"] - r["disc_native_float64"]) for r in recs8),
+                 "traj_min_disc": min(r["disc_native"] for r in recs8)}
+    A["REAL2"]["fp32_vs_fp64"] = fp
+
+    rows = []
+    for k, lab in seeds_order:
+        d = R2[k]
+        e = d["S8_disc_float32"]
+        rows.append(f"{lab} & {d['selected_step']} & ${d['selected_dev_mse']:.4f}$ & ${e['estimate']:.4f}$ {fci(e['ci95'], '{:.4f}')} \\\\")
+    write("tab_seeds_coupling.tex", r"""\begin{table}[t]
+\caption{Model-coupling effect (P1-REAL-02, training seeds 1--4; same task, data and checkpoint rule; shared test set of 256 trajectories, ids 10000--10255).
+Step and calib.\ MSE: selected checkpoint and its calibration MSE (label units squared).
+S8 disc.: mean over trajectories of the relative $\ell_2$ change of the final per-step outputs at the 32 training-grid times when every held interval is split into 8 sub-steps, against C0 (float32).
+Brackets: 95\% paired bootstrap CI over test trajectories with the seed fixed.}
+\label{tab:seeds-coupling}
+\centering\small
+\begin{tabular}{rccc}
+\toprule
+seed & step & calib.\ MSE & S8 disc.\ [95\% CI] \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+""")
+    rows = []
+    for k, lab in seeds_order:
+        d, h = R2[k], HD[k]
+        rows.append(f"{lab} & ${d['primary_D']['estimate']:.3f}$ {fci(d['primary_D']['ci95'])} & {sgn(h['pmean_minus_pC0']['mean'])} & "
+                    f"{sgn(h['W']['mean'])} & {sgn(h['M']['mean'])} {fci(h['M']['ci95'], '{:+.3f}')} & "
+                    f"{sgn(h['Q']['mean'])} {fci(h['Q']['ci95'], '{:+.3f}')} & ${h['Q']['mean_abs']:.3f}$ \\\\")
+    write("tab_seeds_readout.tex", r"""\begin{table*}[t]
+\caption{Readout decomposition under the same-path density change H8 (first half of $[0,T]$ split by 8; 144 tokens), training seeds 1--4, label units, means over the 256 test trajectories.
+$D_s$ (primary, chosen after the development run): mean of $|p^{\mathrm{mean}}(\mathrm{H8})-p(\mathrm{C0})|-|p^{\mathrm{time}}(\mathrm{H8})-p(\mathrm{C0})|$.
+Per trajectory, exactly, $p^{\mathrm{mean}}(\mathrm{H8})-p(\mathrm{C0})=W+M$ and $p^{\mathrm{time}}(\mathrm{H8})-p(\mathrm{C0})=Q$ with $W=\sum_j(a_j-w_j)b_j=\tfrac{7}{18}(A-B)$, $M=\sum_ja_j(z_j-b_j)$, $Q=\sum_jw_j(z_j-b_j)$; $b_j$ is the C0 output of token $j$'s base interval, $z_j$ the native H8 output, $a_j=1/144$, $w_j=dt_j/T$, and $A$, $B$ are the mean C0 outputs over the first and second half of $[0,T]$.
+$W$ uses only C0 outputs: it is the same for any model whose H8 outputs repeat the C0 output within each base interval.
+The signed terms are not an additive decomposition of the absolute-value estimand $D_s$.
+Brackets: 95\% paired bootstrap CI (seed fixed).}
+\label{tab:seeds-readout}
+\centering\small
+\begin{tabular}{rcccccc}
+\toprule
+seed & $D_s$ [95\% CI] & $p^{\mathrm{mean}}-p(\mathrm{C0})$ & $W$ & $M$ [95\% CI] & $Q$ [95\% CI] & $|Q|$ \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}
+\end{table*}
+""")
+    vsym = {"no practical difference (CI inside +-5%)": "$=$", "native lower; CI not beyond margin": "$<$",
+            "native lower, beyond margin": r"$\ll$", "native higher; CI not beyond margin": "$>$",
+            "native higher, beyond margin": r"$\gg$", "inconclusive": "?", "NA (denominator too small)": "NA"}
 
     def pct(x):
         return f"{100 * x:+.1f}"
 
-    def rcell(L):
-        return f"${pct(L['r'])}$ $[{pct(L['r_ci95'][0])},{pct(L['r_ci95'][1])}]$ {vshort[L['verdict']]}"
+    def rc(L):
+        return f"${pct(L['r'])}$ $[{pct(L['r_ci95'][0])},\\,{pct(L['r_ci95'][1])}]$ & {vsym[L['verdict']]}"
 
-    rows = []
-    for k, lab in order:
-        d = R2[k]
-        pe = d["pooled"]["H8"]
-        rows.append(f"{lab} & {d['selected_step']} & {cell(d['selected_dev_mse'])} & {cell(d['S8_disc_float32']['estimate'])} {ci(d['S8_disc_float32']['ci95'])} & "
-                    f"{cell(d['S8_disc_float64']['estimate'])} & {cell(d['primary_D']['estimate'])} {ci(d['primary_D']['ci95'])} & "
-                    f"{cell(pe['mean'])} / {cell(pe['time'])} / {cell(pe['resampled'])} \\\\")
-        if k == "dev_seed0":
-            rows.append(r"\midrule")
-    write("tab_seeds_effects.tex", r"""\begin{table*}[t]
-\caption{P1-REAL-02: the fixed protocol repeated with training seeds 1--4 on a new shared test set (256 trajectories, ids 10000--10255; same task, same data, same checkpoint rule).
-$^\ddagger$Seed 0 is the development pilot (its checkpoint evaluated on the new test set); it is not part of the replication criterion.
-S8 disc.: mean relative $\ell_2$ change of the final per-step outputs under eight-fold splitting of the held path, against C0 (float32 pipeline; fp64: weights and inputs cast to float64).
-$D_s$ (primary, chosen after the seed-0 pilot): mean over trajectories of $|p^{\mathrm{mean}}(\mathrm{H8})-p(\mathrm{C0})|-|p^{\mathrm{time}}(\mathrm{H8})-p(\mathrm{C0})|$ in label units.
-Pooled error: mean $|p-\bar y|$ on H8 for token-mean / time-weighted (pooling-only ablation) / resampled pooling. Brackets: 95\% paired bootstrap CI over test trajectories with the seed fixed.}
-\label{tab:seeds-effects}
-\centering\small
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{rccccccc}
-\toprule
-seed & step & calib.\ MSE & S8 disc.\ [95\% CI] & fp64 & $D_s$ [95\% CI] & H8 pooled error: mean / time / resampled \\
-\midrule
-""" + "\n".join(rows) + r"""
-\bottomrule
-\end{tabular}}
-\end{table*}
-""")
-    rows = []
-    for k, lab in order:
-        d = R2[k]
-        L = d["loss"]
-        t8 = d["timing"]["S8"]
-        rows.append(f"{lab} & {rcell(L['S2'])} & {rcell(L['S8'])} & {rcell(L['H8'])} & {rcell(L['J1'])} & "
-                    f"${t8['native_end_to_end']['median_wall_s']:.2f}$ / ${t8['resampled_end_to_end']['median_wall_s']:.3f}$ \\\\")
-        if k == "dev_seed0":
-            rows.append(r"\midrule")
+    rows = [f"{lab} & " + " & ".join(rc(R2[k]["loss"][c]) for c in ("S2", "S8", "H8", "J1")) + " \\\\" for k, lab in seeds_order]
     write("tab_seeds_loss.tex", r"""\begin{table*}[t]
-\caption{P1-REAL-02 task-loss contrast $r_s=(\overline{L}_{\mathrm{native}}-\overline{L}_{\mathrm{resampled}})/\overline{L}_{\mathrm{resampled}}$ in percent (per-trajectory MSE at the 32 training-grid times; numerator and denominator recomputed in every bootstrap draw) with the $\pm5\%$ margin rule, and end-to-end wall time for one batch of 256 sequences on S8 (median of 5 timed calls after 2 warm-ups, \texttt{inference\_mode}, 2 threads; resampling included).
-S2, S8 and H8 keep the held path; J1 (random observation times) changes the observed path. $^\ddagger$Development row.}
+\caption{Task-risk effect: loss contrast $r_s=(\overline{L}_{\mathrm{native}}-\overline{L}_{\mathrm{resampled}})/\overline{L}_{\mathrm{resampled}}$ in percent (per-trajectory MSE at the 32 training-grid times; numerator and denominator recomputed in every bootstrap draw), training seeds 1--4.
+Verdict: $=$ CI inside $\pm5\%$; $<$ / $>$ native lower / higher (CI excludes 0); $\ll$ / $\gg$ also beyond the margin; ? inconclusive. The $\pm5\%$ margin is a convention.
+S2, S8 and H8 keep the held path; J1 (random observation times) changes the observed path. Timing: \cref{tab:timing}.}
 \label{tab:seeds-loss}
 \centering\small
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{rccccc}
+\begin{tabular}{rcccccccc}
 \toprule
-seed & $r_s$(S2) [CI] & $r_s$(S8) [CI] & $r_s$(H8) [CI] & $r_s$(J1) [CI] & S8 end-to-end native / resampled (s) \\
+seed & \multicolumn{2}{c}{$r_s$(S2) [95\% CI]} & \multicolumn{2}{c}{$r_s$(S8) [95\% CI]} & \multicolumn{2}{c}{$r_s$(H8) [95\% CI]} & \multicolumn{2}{c}{$r_s$(J1) [95\% CI]} \\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table*}
+""")
+    d, h = R2["dev_seed0"], HD["dev_seed0"]
+    L = d["loss"]
+    items = [("selected step / calibration MSE", f"{d['selected_step']} / ${d['selected_dev_mse']:.4f}$"),
+             ("S8 disc.\\ [95\\% CI]", f"${d['S8_disc_float32']['estimate']:.4f}$ {fci(d['S8_disc_float32']['ci95'], '{:.4f}')}"),
+             ("$D_s$ [95\\% CI]", f"${d['primary_D']['estimate']:.3f}$ {fci(d['primary_D']['ci95'])}"),
+             ("$p^{\\mathrm{mean}}-p(\\mathrm{C0})$, $W$, $M$, $Q$ (means)",
+              f"{sgn(h['pmean_minus_pC0']['mean'])}, {sgn(h['W']['mean'])}, {sgn(h['M']['mean'])}, {sgn(h['Q']['mean'])}")]
+    for c in ("S2", "S8", "H8", "J1"):
+        items.append((f"$r_s$({c}) [95\\% CI], verdict", rc(L[c]).replace(" & ", " ")))
+    write("tab_dev_newtest.tex", r"""\begin{table}[h]
+\caption{Development checkpoint (seed 0, P1-REAL-01) evaluated with the P1-REAL-02 protocol on the new shared test set; not part of the replication criterion. Definitions as in \cref{tab:seeds-coupling,tab:seeds-readout,tab:seeds-loss}.}
+\label{tab:dev-newtest}
+\centering\small
+\begin{tabular}{ll}
+\toprule
+quantity & development checkpoint, new test set \\
+\midrule
+""" + "\n".join(f"{a} & {b} \\\\" for a, b in items) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
 """)
     trows = []
     for k, lab in order:
@@ -697,7 +745,7 @@ seed & $r_s$(S2) [CI] & $r_s$(S8) [CI] & $r_s$(H8) [CI] & $r_s$(J1) [CI] & S8 en
                          f"${t_['resampled_end_to_end']['median_wall_s']:.3f}$ & ${t_['resampled_forward_only']['median_wall_s']:.3f}$ & "
                          f"${t_['native_end_to_end']['median_cpu_s']:.2f}$ \\\\")
     write("tab_timing.tex", r"""\begin{table}[h]
-\caption{P1-REAL-02 timing (one batch of 256 sequences; median of 5 timed calls after 2 warm-ups; \texttt{inference\_mode}; 2 threads). End-to-end includes tensor construction, LOCF resampling for the resampled arm, forward, de-normalization and readout mapping; forward-only is the model call on prebuilt tensors. CPU seconds are process CPU time summed over threads. Timed repeats are not independent samples.}
+\caption{P1-REAL-02 timing (one batch of 256 sequences; median of 5 timed calls after 2 warm-ups; \texttt{inference\_mode}; 2 threads). End-to-end includes tensor construction, LOCF resampling for the resampled arm, forward, de-normalization and readout mapping; forward-only is the model call on prebuilt tensors. CPU seconds are process CPU time summed over threads. Timed repeats are not independent samples. $^\ddagger$Development checkpoint (seed 0).}
 \label{tab:timing}
 \centering\small
 \begin{tabular}{rcrccccc}
@@ -766,6 +814,30 @@ seed & cond. & tokens & nat.\ e2e & nat.\ fwd & res.\ e2e & res.\ fwd & nat.\ e2
     macros["RtwoInvN"] = str(sum(1 for x, _ in inv if x))
     macros["RtwoInvTot"] = str(len(inv))
     macros["RtwoInvMaxPct"] = f"{100 * max((d for x, d in inv if x), default=0.0):.1f}"
+    # float32 vs float64 (checkpoint-specific precision diagnostic)
+    macros["RtwoFpEstMax"] = sci(max(fp[k]["est_diff"] for k in seeds4))
+    macros["RtwoFpRelMax"] = sci(max(fp[k]["rel"] for k in seeds4))
+    macros["RtwoFpTrajMax"] = sci(max(fp[k]["traj_max"] for k in seeds4))
+    macros["RtwoDiscTrajMin"] = sci(min(fp[k]["traj_min_disc"] for k in seeds4))
+    # H8 signed decomposition (one frozen forward per checkpoint; reproduces stored pooled values)
+    def hr(key, field="mean", fmt="{:+.3f}"):
+        v = [HD[k][key][field] for k in seeds4]
+        return fmt.format(min(v)), fmt.format(max(v))
+    for name, key, field, fmt in (("Delta", "pmean_minus_pC0", "mean", "{:+.2f}"), ("W", "W", "mean", "{:+.2f}"),
+                                  ("M", "M", "mean", "{:+.3f}"), ("Mabs", "M", "mean_abs", "{:.3f}"),
+                                  ("Mend", "M_end", "mean_abs", "{:.4f}"), ("Qabs", "Q", "mean_abs", "{:.3f}"),
+                                  ("DeltaAbs", "pmean_minus_pC0", "mean_abs", "{:.2f}"), ("Wabs", "W", "mean_abs", "{:.2f}")):
+        lo, hi = hr(key, field, fmt)
+        macros[f"Dec{name}Min"], macros[f"Dec{name}Max"] = lo, hi
+    ab = [HD[k]["A_minus_B_mean"] for k in seeds4]
+    macros["DecABMin"], macros["DecABMax"] = f"{min(ab):.2f}", f"{max(ab):.2f}"
+    macros["DecSignMin"] = f"{100 * min(HD[k]['frac_sign_W_eq_sign_change'] for k in seeds4):.0f}"
+    rep = [HD[k]["pooled_error"]["replicated_baseline_token_mean"] for k in seeds4]
+    macros["DecRepErrMin"], macros["DecRepErrMax"] = f"{min(rep):.2f}", f"{max(rep):.2f}"
+    macros["DecMismatch"] = sci(max(HD[k]["max_abs_mismatch_vs_stored"] for k in HD)) if max(HD[k]["max_abs_mismatch_vs_stored"] for k in HD) else "0"
+    macros["DecIdentity"] = sci(max(HD[k]["max_abs_identity_residual"] for k in HD))
+    hsum = json.load(open(os.path.join(d2, "h8_decomposition", "summary.json")))
+    macros["DecWall"] = f"{hsum['wall_seconds']:.1f}"
     macros["RtwoEqMax"] = sci(eq2["max_abs_tensor_diff"]) if eq2["max_abs_tensor_diff"] else "0"
     macros["RtwoEqEqual"] = r"\text{exactly equal}" if eq2["all_tensors_equal"] else r"\text{different}"
 

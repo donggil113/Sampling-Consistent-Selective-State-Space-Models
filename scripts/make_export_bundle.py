@@ -1,4 +1,5 @@
-"""Assemble export_bundle/ for review: manuscript source and PDF, configs, code, small raw
+"""Assemble export_bundle/, the INTERNAL evidence package (the anonymous review package is
+anon_submission/, built by scripts/make_anon_package.py): manuscript source and PDF, configs, code, small raw
 results and aggregates, manifests, plus a MANIFEST.sha256 over every bundled file.
 
 Excluded on purpose (see export_bundle/README.md): model checkpoints (*.pt), cached synthetic
@@ -29,6 +30,8 @@ INCLUDE = [
     "results/raw/P1-REAL-02/*.json",
     "results/raw/P1-REAL-02/*/train.json", "results/raw/P1-REAL-02/*/train.log",
     "results/raw/P1-REAL-02/*/eval.jsonl", "results/raw/P1-REAL-02/*/eval_summary.json",
+    "results/raw/P1-REAL-02/h8_decomposition/*", "results/anon_check.json",
+    "paper/anon_README.md", "notes/*.md",
     "run_manifest.json", "STATUS.md", "RESEARCH_PACKET.md", "RELATED_WORK.md",
 ]
 EXCLUDE_NAMES = {"data_cache.json", "testset_cache.json"}

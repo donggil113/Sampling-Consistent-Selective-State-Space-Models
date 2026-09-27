@@ -1,13 +1,18 @@
 {
   "pdf": "paper/main.pdf",
-  "pages_total": 12,
-  "conclusion_page": 6,
+  "pages_total": 16,
+  "conclusion_heading_page": 7,
+  "body_end_page": 7,
+  "body_end_last_words": "selective SSMs is open",
+  "body_end_last_words_found_on_pages": [
+    7
+  ],
   "impact_statement_page": 7,
   "references_page": 7,
-  "appendix_start_page": 8,
-  "icml_limit": "8 pages of main body; references, impact statement and appendix do not count",
+  "appendix_start_page": 9,
+  "icml_limit": "8 pages of main body (counted to the page of its last sentence); references, impact statement and appendix do not count",
   "overfull_boxes": 0,
-  "underfull_boxes": 6,
+  "underfull_boxes": 11,
   "undefined_references_or_citations": 0,
   "multiply_defined_labels": 0,
   "unresolved_question_marks_in_text": 0,

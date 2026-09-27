@@ -348,6 +348,44 @@
         "results/raw/P1-REAL-02/testset_cache.json": "4d5cd4ff03daa9410a999757b623a5f2d00f74e826b993f122256b6dd8984f26",
         "results/raw/P1-REAL-02/testset_hash.json": "b2dbf8656830af54a371890698eb219ba3da070a32e09d9a1dbad59f00f231b6"
       }
+    },
+    {
+      "run_id": "P1-REAL-02-H8DECOMP",
+      "status": "COMPLETED (derived analysis; 5 of 5 checkpoints reproduce stored pooled values exactly)",
+      "config": {
+        "path": "configs/p1_real_02_h8_decomp.json",
+        "sha256": "2ee4c593623c147ebbd382c5219f132e80d4cfce3480b82a31e211e1e90c552f",
+        "fixed_at_commit": "2c4b865e843aefe2ca39a17b2b19e90a12665aa0"
+      },
+      "reason": "per-token outputs were not stored by P1-REAL-02 (outputs_not_preserved); one frozen native forward per existing checkpoint on C0 and H8; no training, no timing",
+      "checkpoints_used": {
+        "seed1": "a84a468b94e646dfb13cea83a5d6d5b9e3e2e513947a865504febdcea3259762",
+        "seed2": "7400d03864d8f5d6380536992ff624ace30ff0ea636176c180bd86f2ccb4ac7d",
+        "seed3": "bc70d7e6a6a2841db2e666d106b6602cef0b49b25ca1b58b73f83a01d2a9a095",
+        "seed4": "84e963b5c17e5a45ba5040f7ce1b1b8407a5cdcdae404c2d5f2cc69d9e6c393e",
+        "dev_seed0": "e4784897f5d507f0fa2bc29b2fb8d5fd7e7d81f8ad6498ce3a6f3fe9331bb455"
+      },
+      "testset_sha256": "e5833064d8c1bb738ac5e8df419c2b148fb629f12ea15a9a3f6cd52bcacd0be0",
+      "max_abs_mismatch_vs_stored": 0.0,
+      "max_abs_identity_residual": 4.558853294867049e-15,
+      "wall_seconds_in_script": 7.659,
+      "cpu_seconds_in_script": 7.696,
+      "shell_wall_seconds": 13.5,
+      "threads": 2,
+      "results_seen_before_config": "yes: P1-REAL-02 pooled results were known; the decomposition is post hoc",
+      "outputs_sha256": {
+        "dev_seed0_terms.jsonl": "f5d0a3a14b0f4ff74dbbc15ef34daaf93cd5e2bd9b266b28d016a462d8322c05",
+        "dev_seed0_tokens.json.gz": "fcd24a4bbb29986121638fe23f80fa7889086ed9e8b3726f7f56eba709ddbbba",
+        "seed1_terms.jsonl": "69abdd350073df5ddcca5ffbf0bb5b6eeb97dd05861faaf0362a740d3de470fd",
+        "seed1_tokens.json.gz": "4effaa9537bda506ddee55bbde17e783a4cd08a91af69cb801eed42be0d8279f",
+        "seed2_terms.jsonl": "57f2a64c01d1a1cae68a8871a0a0175973c111b691ea86872b3f00657acf095a",
+        "seed2_tokens.json.gz": "685a1465d8c278f6db4a89b829d41cf934c40fe7e53566c14b905e0d63261394",
+        "seed3_terms.jsonl": "a6868eef36953ef62d2956516c7aef61959524242c9ef522a871ba6ae588b587",
+        "seed3_tokens.json.gz": "90b60c50f7b0c7cfe3a28618c9c7e0fbeecc87bb50d6ae4ac198fee6085f4bb2",
+        "seed4_terms.jsonl": "3bd57bb214dd910e723a4a1ffa82d7249b681beb6b8dc4855289df2049d49792",
+        "seed4_tokens.json.gz": "cfbcdb496eb1ede95387a20033a575c67175dc899c37572ddde999acdba4afcc",
+        "summary.json": "6dca1cb9cc42a99645a925fd086df70a268913e3830f7fd31f66ffb1f7722816"
+      }
     }
   ]
 }

@@ -1,6 +1,6 @@
 # STATUS — P1 Sampling-grid dependence in selective SSMs
 
-Last updated: 2026-09-27 (UTC), session 4. Branch: `claude/intelligent-maxwell-t1lcda`.
+Last updated: 2026-09-27 (UTC), session 5 (round 5). Branch: `claude/intelligent-maxwell-t1lcda`.
 
 ## Standing decisions (preserved)
 
@@ -17,6 +17,94 @@ Last updated: 2026-09-27 (UTC), session 4. Branch: `claude/intelligent-maxwell-t
   - the development-checkpoint layer diagnostic;
   - the development run's fixed-estimated-margin analysis.
 - **P1-REAL-02 primary estimand** (H8 pooled-readout effect) was chosen after seeing the development run. It is not a blind choice.
+
+## Session 5 (round 5): what was done
+
+**Checkout.** Branch `claude/intelligent-maxwell-t1lcda`; HEAD at start 2fd9ae6, matching the previous report.
+
+**Authorization.**
+
+- The round-5 instruction is not an approval for downloads, GPU, paid APIs, global changes, external upload or submission, and no separate resource-approval block was delivered.
+- Only the existing CPU environment was reused: torch 2.14.0+cpu, the pinned TIDES clone and TeX Live.
+- The only new computation is the frozen forward pass that section B of the instruction prescribes when per-token outputs are missing.
+- `/nvmedata` does not exist in this sandbox, so nothing was created there; `/data000` was not touched.
+
+**A. Corrections to v3 (no retraining).**
+
+1. **Body end page.** v3 ended its body on page 7, not page 6. `check_pdf.py` now reads the `body-end` label, which sits after the last Conclusion sentence, from `main.aux` and cross-checks the last words in the PDF text. v4: body ends on page 7 of 16.
+2. **Table readability.**
+   - Every `\resizebox` was removed from the generated tables; `check_paper.py` now fails if a table uses `\resizebox`, `\scalebox`, `\tiny` or `\scriptsize`.
+   - A probe build had shown effective font sizes of 5.2–6.6 pt in the v3 body tables (Table 2 at 6.3 pt).
+   - The body now has three tables at 9 pt (`\small`), none scaled:
+     - model coupling;
+     - readout decomposition;
+     - task loss.
+   - Timing is in the appendix, the development row is in the appendix (`tab_dev_newtest`), and the toy tables `tab_split`, `tab_coupling` and `tab_layers` moved to the appendix.
+   - The figure fonts were enlarged (ticks and labels 8 pt, legend 7 pt; the legend was 5 pt).
+   - Pages 1, 5, 6, 7 and 9–13 were rendered and inspected at 96 dpi.
+3. **"only ... together".** Replaced by "in the tested single-layer ablation, the combined corrections reduced …", with an explicit statement that this is not a necessity result: a last-state readout needs no time integral, and a zero input removes the artifact.
+4. **Prop. 4.2.** Stated as an O(mesh) upper bound for the scalar LTI cascade only. It gives no lower bound (zero input gives zero error) and no deep-network theorem. "The pattern … predicts" became "qualitatively consistent with". Also corrected: conditions (ii)–(iv) can hold in every layer, but condition (i) holds only in layer 1.
+5. **§4.2.** Invariance defect and approximation error are now separated. A fixed grid removes the defect but not the approximation error.
+6. **"New information".** Restricted to changed observed values and input reconstruction. An artifact is defined operationally as a violation of the pre-declared same-held-path invariance.
+7. **Precision.** The 1e-4 threshold from the scalar 16,384-sub-step emulation is no longer used as a floor for the trained network. The checkpoint-specific fp32/fp64 comparison from the stored double-precision values is reported instead:
+   - mean-estimate difference ≤ 5.2e-6 (relative 3.8e-4);
+   - per-trajectory difference ≤ 1.8e-5;
+   - smallest per-trajectory discrepancy 1.6e-3.
+8. **"Removes".** "Time-weighted pooling removes the readout effect" was withdrawn. The paper now reports the reduction (mean |change| 0.60–0.62 → 0.013–0.023) and the residual. The "exact integral" is described as the time average computed in closed form in this implementation, not as a quantity defined only for exact ZOH.
+9. **Unproved sketches and reproducibility section.** Appendix F was removed and moved to `notes/unproved_sketches.md`. The reproducibility section now matches the packages: no checkpoints, no third-party code, checkpoint sha256 listed.
+
+**B. H8 signed decomposition** (`configs/p1_real_02_h8_decomp.json`, fixed at 2c4b865 before execution):
+
+- **Outputs not preserved.** P1-REAL-02 had not stored per-token outputs, so one frozen native forward per existing checkpoint was run on C0 and H8. This covered 5 checkpoints: training seeds 1–4 and the development checkpoint.
+- **Cost:** 7.7 s wall / 7.7 s CPU in the script, 13.5 s in the shell, 2 threads. There was no training and no timing.
+- **Validity check:** stored p_mean, p_time and p_C0 were reproduced exactly (maximum difference 0). The identity residual is ≤ 4.6e-15.
+- **Result (seeds 1–4):**
+
+  | Quantity | Value |
+  |---|---|
+  | mean signed change p_mean(H8) − p(C0) | +0.46 … +0.50 |
+  | density-weighting term W = (7/18)(A − B), from the C0 outputs alone | +0.48 … +0.49 |
+  | sign agreement of W with the change | ≥ 98 % of trajectories |
+  | model term M | −0.016 … +0.011 |
+  | \|M\| | 0.023–0.028 |
+  | \|M\| on interval-end tokens | 0.0005–0.0049 |
+  | time-weighted \|Q\| | 0.013–0.023 |
+
+- **Interpretation.** The primary D_s effect is therefore mostly the weighted-average identity of token-mean pooling applied to an output whose first-half mean is larger (A − B = 1.22–1.26). It is not a selective-SSM-specific failure.
+- **Limits.** The signed terms are not an additive decomposition of D_s.
+- **Outputs:**
+  - `results/raw/P1-REAL-02/h8_decomposition/`;
+  - per-token outputs stored as gzip JSON, so later analyses need no forward pass.
+
+**C. P1-HAR-01 (UCI HAR, DOI 10.24432/C54S4K): BLOCKED / NOT_RUN.**
+
+- No resource-approval block was delivered for this round.
+- Nothing was downloaded; the dataset page, zip, README and license were not accessed.
+- No config was written, because the round-5 instruction says to stop producing documents automatically.
+- Running it needs explicit approval for:
+  - downloading the official zip and recording its hash;
+  - CPU training of one TIDES classifier with one seed.
+
+**D. Manuscript v4.**
+
+- The title was kept.
+- The abstract and conclusion now separate three effects: model coupling, pooled weighting and task risk.
+- The scope is stated as one selective SSM (TIDES) on one synthetic task.
+- `claims.csv`: 13 rows updated (K1, K2, K3, C14, C17, C18, C19–C22, C27, C37, C38); no other row changed.
+- PDF: 16 pages. The body's last sentence is on page 7, references start on page 7, the appendix starts on page 9. There are 0 overfull boxes and 0 undefined references, and the anonymity check of the PDF is clean.
+- ICML 2027: the conference page, its CallForPapers page and the `icml2027.zip` style URL all returned 404 on 2026-09-27. The unmodified ICML 2026 style is therefore kept, with TARGET_YEAR=2027, TEMPLATE_YEAR=2026 and SUBMISSION_READY=false.
+
+**Packages.**
+
+- **`export_bundle/`** is the internal evidence package, built by `scripts/make_export_bundle.py`.
+- **`anon_submission/`** is the anonymous review package, built by `scripts/make_anon_package.py`, with its check in `results/anon_check.json`.
+  - Repository commit ids were replaced by `<commit>`.
+  - The internal checker and packaging scripts, the internal documents and the claims ledger are excluded.
+  - Checks passed:
+    - no identifying pattern, with patterns derived from the git remote, the authors, the commit hashes and the local paths;
+    - every README "Included" path exists;
+    - the generator re-run on a copy of the package reproduces `paper/generated/` byte for byte.
+  - Checkpoints and third-party code are not included in either package; the reproduction commands and sha256 are given instead.
 
 ## Session 4: what was done
 
@@ -71,7 +159,7 @@ Last updated: 2026-09-27 (UTC), session 4. Branch: `claude/intelligent-maxwell-t
 **Manuscript v3.**
 
 - `paper/main.tex` (v2 at dce4d30) and `paper/main.pdf`, 12 pages.
-- The main body ends on page 6 (Conclusion). Impact Statement and References follow.
+- ~~The main body ends on page 6 (Conclusion).~~ **CORRECTED in session 5:** page 6 was where the Conclusion heading appeared, but the Conclusion text ran onto page 7. The v3 body ended on page 7, which is within the 8-page limit. `scripts/check_pdf.py` now counts the page of the last body sentence.
 - 0 undefined references or citations; 0 overfull boxes.
 - PDF metadata: Author "Anonymous Authors"; Subject is the unmodified ICML 2026 style default.
 - Title kept.
@@ -98,10 +186,14 @@ Last updated: 2026-09-27 (UTC), session 4. Branch: `claude/intelligent-maxwell-t
 
 ## Next research decision (not run)
 
-Decide whether an **independent real irregular time-series dataset** is needed and admissible, rather than extending this synthetic repetition.
+**Session 5:** the owner fixed the dataset for the first real-sensor comparison: UCI HAR, P1-HAR-01, a synthetic refinement applied to real sensor signals. The remaining decision is whether to give the resource approval that P1-HAR-01 needs:
 
-- The decision needs the owner to name a dataset with a known license, entity-level split and sampling process.
-- Importing any dataset requires explicit approval; none is assumed.
+- download of the official zip, with its hash recorded;
+- CPU training of one TIDES classifier with one seed.
+
+Nothing is assumed approved.
+
+*Session 4 record (superseded):* decide whether an independent real irregular time-series dataset is needed and admissible. The decision needed the owner to name a dataset with a known license, entity-level split and sampling process, and importing any dataset requires explicit approval.
 
 ## Session 3: what was done
 
@@ -160,7 +252,7 @@ This was recorded as approval R-A0 for A-R1..A-R4 plus a TeX toolchain.
   - PDF: `paper/main.pdf`, built with the official ICML 2026 style (unmodified, review mode) by `scripts/build_paper.sh`. The kit is downloaded or copied and sha256-checked into gitignored `paper/build/`, not vendored.
   - TARGET_YEAR = 2027, TEMPLATE_YEAR = 2026, SUBMISSION_READY = false.
 - **Build checks.**
-  - 11 pages in total; the main body ends on page 6, within the 8-page limit.
+  - 11 pages in total; the main body was reported to end on page 6, within the 8-page limit. This was counted by heading, not by last sentence, and was not re-verified in session 5.
   - 0 undefined citations or references; 0 overfull boxes after fixes.
   - No identifying strings.
   - Visual check of the rendered pages: tables and the figure are not clipped. The figure legend was moved off the data.
