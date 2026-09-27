@@ -1,0 +1,48 @@
+{
+  "run_id": "P1-COMP-01",
+  "preregistered_utc": "2026-09-26T21:40:00Z",
+  "preregistration_note": "Written and committed before the cascade code was run. The expected outcomes follow from standard linear ODE theory; this is a STANDARD-PROPERTY CHECK, not a new architecture and not a discovery.",
+  "question": "In a two-layer linear cascade driven by the same piecewise-constant external input, does a layerwise computation that holds layer 1's endpoint value (ZOH) as the input of layer 2 change when the held input interval is split, although the coupled continuous-time solution does not?",
+  "system": {
+    "layer1": "dh1/dt = -a*h1 + b*u(t)",
+    "layer2": "dh2/dt = -c*h2 + d*h1(t)",
+    "outputs": "h1, h2 at the common base times",
+    "cases": {
+      "distinct": {"a": 1.0, "b": 1.0, "c": 0.5, "d": 1.0},
+      "equal": {"a": 1.0, "b": 1.0, "c": 1.0, "d": 1.0}
+    },
+    "equal_case_note": "a=c makes the 2x2 generator a Jordan block (t*exp(-a t) term); the closed form uses phi1((c-a)*tau), which is continuous at a=c"
+  },
+  "input": {
+    "external_input": "right-held piecewise-constant path of FIRST_RUN unit seed 0 on the FIRST_RUN uniform base grid (T=8, K=16); no new seed, no new grid family",
+    "splitting": "every base interval split into m equal sub-intervals, each sub-step repeating the held base value (physical time and original input preserved)",
+    "m_values": [1, 2, 4, 8]
+  },
+  "computations": {
+    "coupled_exact": "closed-form flow of the 2x2 linear system over each held sub-interval",
+    "coupled_rk4": "independent classical RK4 on the coupled system with the held input, 4096 sub-steps per base interval",
+    "layerwise": "layer 1: exact ZOH of the held external input; layer 2: exact ZOH whose input on (s_{j-1}, s_j] is held at the layer-1 endpoint value h1(s_j) (right-endpoint convention, as in the FIRST_RUN recurrences)"
+  },
+  "metrics": {
+    "rel_l2": "||a-b||_2/||b||_2 over the 17 base times (t_0..t_16)",
+    "coupled_invariance": "rel_l2(h2_exact(m), h2_exact(1))",
+    "coupled_vs_rk4": "rel_l2(h2_exact(m), h2_rk4)",
+    "layer1_identity": "rel_l2(h1_layerwise(m), h1_exact(m))",
+    "layerwise_error": "rel_l2(h2_layerwise(m), h2_exact(m))",
+    "layerwise_change": "rel_l2(h2_layerwise(m), h2_layerwise(1))",
+    "slope": "least-squares log-log slope of layerwise_error over m in {1,2,4,8}"
+  },
+  "hypotheses": {
+    "COMP-H1": "coupled_invariance <= 1e-12 for m in {2,4,8}, both cases (engineering check of flow composition)",
+    "COMP-H2": "coupled_vs_rk4 <= 1e-9 for all m, both cases (engineering check)",
+    "COMP-H3": "layer1_identity <= 1e-12 for all m, both cases",
+    "COMP-H4": "layerwise_error slope in [-1.2, -0.8], both cases (first-order inter-layer hold error)",
+    "COMP-H5": "layerwise_error at m=1 >= 1e-3, both cases (the inter-layer hold error is not negligible at the base step)"
+  },
+  "interpretation_rule": "Any layerwise change across m is a change of the inter-layer reconstruction of an INTERNAL signal. No external observation is added; it must not be called new information.",
+  "budget": {"cpu_threads": 2, "wall_clock_seconds_total": 60, "gpu": false, "installs": false, "downloads": false},
+  "stop_conditions": {
+    "S1_bug": "If COMP-H1 or COMP-H2 fails, treat it as an implementation bug; do not interpret.",
+    "S3_no_sweep": "No additional parameter, seed or grid values."
+  }
+}

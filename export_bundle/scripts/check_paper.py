@@ -49,7 +49,7 @@ def main():
                 refs.update(k.strip() for k in g.split(","))
     numbers = read(os.path.join(PAPER, "generated", "numbers.tex"))
     defined = set(re.findall(r"\\newcommand\{\\(\w+)\}", numbers + main_tex))
-    used_macros = set(re.findall(r"\\(E(?:one|two|three)\w+|Fac\w+|Comp\w+|N(?:one|two|three|four)\w+|H(?:four|seven)\w+|Nunits\w+|FirstRun\w+|Real\w+|Rtwo\w+|Conv\w+|Adapter\w+)", full))
+    used_macros = set(re.findall(r"\\(E(?:one|two|three)\w+|Fac\w+|Comp\w+|N(?:one|two|three|four)\w+|H(?:four|seven)\w+|Nunits\w+|FirstRun\w+|Real\w+|Rtwo\w+|Dec\w+|Conv\w+|Adapter\w+)", full))
     envs_open = re.findall(r"\\begin\{(\w+\*?)\}", full)
     envs_close = re.findall(r"\\end\{(\w+\*?)\}", full)
     env_balance = {e: envs_open.count(e) - envs_close.count(e) for e in set(envs_open + envs_close)
@@ -65,6 +65,12 @@ def main():
     anon_hits = [w for w in ("github.com", "donggil", "pusan", "TaylanSoydan", "Sampling-Consistent-Selective")
                  if w.lower() in main_tex.lower()]
     todos = re.findall(r"\\todo\{([^}]*)\}", main_tex)
+    shrunk = {}
+    for f in sorted(os.listdir(os.path.join(PAPER, "generated"))):
+        t = read(os.path.join(PAPER, "generated", f))
+        hits = sorted(set(re.findall(r"\\(resizebox|scalebox|tiny|scriptsize)\b", t)))
+        if hits:
+            shrunk[f] = hits
     report = {
         "compile_status": "static check only; the PDF is built by scripts/build_paper.sh (see paper/build/main.log)",
         "missing_inputs": missing_inputs,
@@ -77,6 +83,7 @@ def main():
         "brace_balance": brace,
         "anonymity_hits_in_main_tex": anon_hits,
         "todo_count": len(todos),
+        "shrinking_commands_in_generated_files": shrunk,
         "todos": todos,
         "main_body_word_estimate": words,
         "main_body_page_estimate": "UNVERIFIED (compile required); ICML limit is 8 pages excluding references and appendix",
@@ -87,7 +94,7 @@ def main():
     print(json.dumps(report, indent=2))
     bad = report["missing_inputs"] or report["undefined_citations"] or report["undefined_refs"] or \
         report["undefined_number_macros"] or report["environment_imbalance"] or report["brace_balance"] or \
-        report["anonymity_hits_in_main_tex"]
+        report["anonymity_hits_in_main_tex"] or any(f.startswith("tab_") for f in shrunk)
     sys.exit(1 if bad else 0)
 
 

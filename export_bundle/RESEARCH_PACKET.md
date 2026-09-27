@@ -1,6 +1,6 @@
 # Research packet: Sampling-grid dependence in selective SSMs (P1)
 
-Last updated: 2026-09-27 (fourth session). Branch: `claude/intelligent-maxwell-t1lcda`.
+Last updated: 2026-09-27 (fifth session). Branch: `claude/intelligent-maxwell-t1lcda`.
 
 Runs covered:
 
@@ -283,4 +283,30 @@ Setup:
 - **Incident I-1.** A development-row evaluation crashed before writing output. It is recorded as INVALID, and only that row was rerun.
 - **Interpretation.** The grid effect (inter-layer resampling) and the readout effect (token-mean pooling) are stable across optimizer initializations in this task. The accuracy consequence is not.
   - None of this is evidence about other data, models or tasks, or about TIDES' benchmark results.
+
+## 11. Session 5: H8 cause, overclaim corrections, packages
+
+**H8 cause (derived analysis, post hoc).**
+
+- The P1-REAL-02 primary effect (D_s = 0.578–0.602) is mostly a weighted-average identity of token-mean pooling. Per trajectory:
+
+  p_mean(H8) − p(C0) = W + M, with W = (7/18)(A − B),
+
+  where W uses only the C0 outputs.
+- W averages +0.48 to +0.49 of the +0.46 to +0.50 signed change.
+- The model term M averages −0.016 to +0.011.
+- Time weighting leaves |Q| = 0.013–0.023.
+- Any per-token model whose outputs differ between the two halves shows the W part. It is not specific to selective SSMs.
+- The signed terms are not a decomposition of the absolute-value estimand.
+- Evidence: `results/raw/P1-REAL-02/h8_decomposition/`. The config was fixed at 2c4b865, before the one frozen forward pass per checkpoint.
+
+**Manuscript v4.**
+
+- The three effects are stated separately:
+  - model coupling: the S8 discrepancy, 4.3e-3–0.022 in every seed, not a float32 rounding effect of these checkpoints;
+  - pooled weighting;
+  - task risk: the loss contrast is not stable.
+- Overclaims corrected: "only … together", the scope of Prop. 4.2, invariance defect vs approximation error, "new information", the float floor, "removes", "exact integral", the unproved sketches (moved to `notes/`), and the reproducibility statement.
+
+**P1-HAR-01 (UCI HAR).** Specified by the owner. BLOCKED on resource approval; nothing was downloaded or run.
 

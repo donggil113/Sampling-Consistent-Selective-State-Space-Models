@@ -1,6 +1,8 @@
-# Export bundle: "Where Sampling-Grid Dependence Enters Selective State-Space Models" (manuscript v3)
+# Internal evidence bundle: "Where Sampling-Grid Dependence Enters Selective State-Space Models" (manuscript v4)
 
-This bundle is for review. It is not a submission.
+This bundle is the INTERNAL evidence package for the owner's review. It is not a submission and it is not anonymous.
+
+The separate anonymous review package is `anon_submission/` (built by `scripts/make_anon_package.py`; checks in `results/anon_check.json`).
 
 - `TARGET_YEAR = 2027`, `TEMPLATE_YEAR = 2026` (official ICML 2026 style, unmodified, anonymous review mode).
 - `SUBMISSION_READY = false`.
@@ -11,15 +13,16 @@ This bundle is for review. It is not a submission.
 
 | Path | What it is |
 |---|---|
-| `paper/main.tex`, `paper/generated/*.tex` | Manuscript v3 source. Every number in the tables and in the `\R...` macros is generated from `results/raw` by `scripts/make_paper_assets.py`. |
+| `paper/main.tex`, `paper/generated/*.tex` | Manuscript v4 source. Every number in the tables and in the `\R...` macros is generated from `results/raw` by `scripts/make_paper_assets.py`. |
 | `paper/main.pdf` | Built PDF. Built by `scripts/build_paper.sh`. Checks are in `results/pdf_check.json`. |
-| `paper/claims.csv` | Claim ledger. Core claims are K1–K3 (`core = yes`). Development-run claims are relabelled DEVELOPMENT, NOT REPLICATED or SUPERSEDED. |
+| `paper/claims.csv` | Claim ledger. Core claims are K1–K3 (`core = yes`): model coupling, pooled weighting (mostly a weighted-average identity) and task risk. Rows changed in v4 carry a `v4:` note. |
 | `paper/references.bib`, `paper/bib_provenance.json` | Bibliography. Metadata comes from arXiv abs pages. |
 | `configs/*.json` | Pre-registered configurations. `p1_real_02.json` was committed at `5a587b7`, before any P1-REAL-02 execution. |
 | `src/`, `scripts/`, `tests/` | Code, including the TIDES adapter, protocol, bootstrap helpers, runners, asset generator, paper and PDF checks, and unit tests. |
 | `results/raw/` | Small raw results. See the next table. |
 | `results/*.json`, `results/first_run_summary.*` | Aggregates, static paper check (`paper_check.json`) and built-PDF check (`pdf_check.json`). |
 | `run_manifest.json` | Environment, commits, data/test-set hashes, wall and CPU seconds, and checkpoint and output hashes for every run. |
+| `notes/unproved_sketches.md` | Unproved sketches removed from the manuscript in v4 (internal research note). |
 | `STATUS.md`, `RESEARCH_PACKET.md`, `RELATED_WORK.md` | Status per session, research packet, and related-work access log (`FULL_TEXT_SECTIONS` / `KEYWORD_CHECK` / `ABSTRACT_ONLY`). |
 
 ### Raw results
@@ -30,6 +33,7 @@ This bundle is for review. It is not a submission.
 | P1-COMP-01 | `results/raw/P1-COMP-01*` | Two-layer cascade check. |
 | P1-REAL-01 | `results/raw/P1-REAL-01*` (no checkpoint) | DEVELOPMENT run: seed 0 on its own test set, plus the convention check, adapter check and exploratory layer diagnostic. |
 | P1-REAL-02 | `results/raw/P1-REAL-02/` | Fixed-protocol repetition: training seeds 1–4 plus the development row, on one new shared test set (ids 10000–10255). |
+| P1-REAL-02-H8DECOMP | `results/raw/P1-REAL-02/h8_decomposition/` | Derived signed decomposition of the H8 pooled change. Built from one frozen forward per existing checkpoint, because per-token outputs had not been stored. Per-token outputs are in gzip JSON. |
 
 The P1-REAL-02 files are:
 
@@ -49,12 +53,13 @@ The P1-REAL-02 files are:
 
 No patient, clinical or other sensitive data is used anywhere in this project; all data are synthetic.
 
-**Anonymity warning.** This bundle is for the owner's review, not for anonymous upload.
+**Anonymity.** This bundle contains identifying material:
 
-- `scripts/check_paper.py` and `scripts/check_pdf.py` contain identifying strings (owner and affiliation names) as search patterns for the anonymity check.
-- Raw logs and manifests contain local paths and git metadata.
-- Before any use as anonymous supplementary material, remove or replace these.
-- The manuscript source and PDF contain none of these strings: `anonymity_hits_*` in `results/paper_check.json` and `results/pdf_check.json` are empty.
+- the checker scripts' search patterns;
+- git commit ids;
+- internal documents.
+
+Use `anon_submission/` for anonymous review.
 
 ## Reproduce
 
@@ -80,5 +85,7 @@ Rules for running:
 
 - **K1–K3** come from one synthetic continuous-time teacher task, one model (the official TIDES code), and four training seeds. These seeds are repetitions of the same task. They are not evidence about other data, sensors or models, and they give no population-level confidence interval over training runs.
 - **Seed 0 is the development run.** The primary estimand was chosen after seeing that run.
+- **The primary H8 effect is mostly a weighted-average identity.** The density-weighting term W = (7/18)(A − B) of the unchanged C0 outputs accounts for almost all of the token-mean change. The model term is small, and time weighting reduces the change but leaves a residual. This is not a selective-SSM-specific failure (derived, post hoc).
+- **P1-HAR-01 (UCI HAR) is BLOCKED.** It needs resource approval; nothing was downloaded or run.
 - **The loss contrast is not stable across seeds**, and J1 depends on the test draw. Both are reported in the main text.
 - **The paper-vs-code interval convention** is a difference between the printed equations and the pinned implementation. It is not a claim that TIDES' benchmark results are affected.

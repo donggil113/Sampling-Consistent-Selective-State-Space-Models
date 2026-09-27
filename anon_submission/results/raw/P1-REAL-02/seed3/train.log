@@ -1,0 +1,22 @@
+[    0.05s] seed 3; git HEAD <commit> dirty=True; data dad632e9431bbd62
+[    3.33s] step 100 train_loss(norm) 0.01060 dev_mse 0.035982 best@100
+[    5.74s] step 200 train_loss(norm) 0.02527 dev_mse 0.072294 best@100
+[    8.19s] step 300 train_loss(norm) 0.00928 dev_mse 0.241251 best@100
+[   10.62s] step 400 train_loss(norm) 0.00825 dev_mse 0.036702 best@100
+[   13.07s] step 500 train_loss(norm) 0.06810 dev_mse 0.022527 best@500
+[   15.38s] step 600 train_loss(norm) 0.01435 dev_mse 0.186010 best@500
+[   17.88s] step 700 train_loss(norm) 0.00420 dev_mse 0.084577 best@500
+[   20.47s] step 800 train_loss(norm) 0.02064 dev_mse 0.016758 best@800
+[   22.76s] step 900 train_loss(norm) 0.01397 dev_mse 0.040770 best@800
+[   25.20s] step 1000 train_loss(norm) 0.01785 dev_mse 0.112379 best@800
+[   27.68s] step 1100 train_loss(norm) 0.00771 dev_mse 0.068397 best@800
+[   30.02s] step 1200 train_loss(norm) 0.01426 dev_mse 0.109727 best@800
+[   32.28s] step 1300 train_loss(norm) 0.00788 dev_mse 0.057719 best@800
+[   34.61s] step 1400 train_loss(norm) 0.04348 dev_mse 0.031761 best@800
+[   36.88s] step 1500 train_loss(norm) 0.02720 dev_mse 0.258771 best@800
+[   39.20s] step 1600 train_loss(norm) 0.00916 dev_mse 0.024335 best@800
+[   41.54s] step 1700 train_loss(norm) 0.01137 dev_mse 0.060844 best@800
+[   43.94s] step 1800 train_loss(norm) 0.05253 dev_mse 0.039202 best@800
+[   46.33s] step 1900 train_loss(norm) 0.02635 dev_mse 0.106076 best@800
+[   48.66s] step 2000 train_loss(norm) 0.01647 dev_mse 0.049924 best@800
+[   48.67s] FROZEN seed 3 step 800 dev_mse 0.016758

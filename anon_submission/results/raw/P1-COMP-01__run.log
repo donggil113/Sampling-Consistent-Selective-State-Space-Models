@@ -1,0 +1,12 @@
+[   0.002s] git HEAD <commit> dirty=False; affinity [0, 1]
+[   0.108s] COMP-H1 [distinct]: PASS {"max_coupled_invariance": 1.6639288779182477e-15}
+[   0.108s] COMP-H2 [distinct]: PASS {"max_coupled_vs_rk4": 6.0620885753137735e-15}
+[   0.108s] COMP-H3 [distinct]: PASS {"max_layer1_identity": 0.0}
+[   0.108s] COMP-H4 [distinct]: PASS {"slope": -0.9493324877674603, "errors": {"1": 0.18847363892145685, "2": 0.10011896362893875, "4": 0.05162333158862923, "8": 0.026214940254325372}}
+[   0.108s] COMP-H5 [distinct]: PASS {"layerwise_error_m1": 0.18847363892145685}
+[   0.108s] COMP-H1 [equal]: PASS {"max_coupled_invariance": 7.104916997936565e-16}
+[   0.108s] COMP-H2 [equal]: PASS {"max_coupled_vs_rk4": 2.7899886436429144e-15}
+[   0.108s] COMP-H3 [equal]: PASS {"max_layer1_identity": 0.0}
+[   0.108s] COMP-H4 [equal]: PASS {"slope": -0.9339463415966863, "errors": {"1": 0.1966501082963907, "2": 0.10632952288647034, "4": 0.055355583420773465, "8": 0.028251322987212998}}
+[   0.108s] COMP-H5 [equal]: PASS {"layerwise_error_m1": 0.1966501082963907}
+[   0.108s] wall clock 0.108s (budget 60s) within=True

@@ -1,0 +1,53 @@
+{
+  "status": "ADAPTER CHECK with UNTRAINED weights on 4 train trajectories; not a model result",
+  "torch": "2.14.0+cpu",
+  "threads": 2,
+  "n_parameters": 23397,
+  "forward_shape": [
+    4,
+    32
+  ],
+  "forward_finite": true,
+  "loss_before": 0.8237142562866211,
+  "params_with_grad": 54,
+  "params_total": 60,
+  "params_without_grad": [
+    "backbone.blocks.0.ssm.Lambda_re",
+    "backbone.blocks.0.ssm.B",
+    "backbone.blocks.0.ssm.C",
+    "backbone.blocks.1.ssm.Lambda_re",
+    "backbone.blocks.1.ssm.B",
+    "backbone.blocks.1.ssm.C"
+  ],
+  "grads_finite": true,
+  "grad_norm": 2.1875569820404053,
+  "params_with_all_zero_grad_at_init": [
+    "backbone.blocks.0.ssm.lambda_re_proj.glu_layers.0.w1.weight",
+    "backbone.blocks.0.ssm.lambda_re_proj.glu_layers.0.w1.bias",
+    "backbone.blocks.0.ssm.lambda_re_proj.glu_layers.0.w2.weight",
+    "backbone.blocks.0.ssm.lambda_re_proj.glu_layers.0.w2.bias",
+    "backbone.blocks.0.ssm.b_proj.down.weight",
+    "backbone.blocks.0.ssm.b_proj.down.bias",
+    "backbone.blocks.0.ssm.c_proj.down.weight",
+    "backbone.blocks.0.ssm.c_proj.down.bias",
+    "backbone.blocks.1.ssm.lambda_re_proj.glu_layers.0.w1.weight",
+    "backbone.blocks.1.ssm.lambda_re_proj.glu_layers.0.w1.bias",
+    "backbone.blocks.1.ssm.lambda_re_proj.glu_layers.0.w2.weight",
+    "backbone.blocks.1.ssm.lambda_re_proj.glu_layers.0.w2.bias",
+    "backbone.blocks.1.ssm.b_proj.down.weight",
+    "backbone.blocks.1.ssm.b_proj.down.bias",
+    "backbone.blocks.1.ssm.c_proj.down.weight",
+    "backbone.blocks.1.ssm.c_proj.down.bias"
+  ],
+  "explanations": {
+    "params_without_grad": "static Lambda_re, B, C are not used when lambda_re_mode and bc_mode are 'input_dependent' (the projection heads with HiPPO biases replace them)",
+    "params_with_all_zero_grad_at_init": "the heads' output projections are zero-initialized (proj_init_method='zeros', TIDES Sec. 3.2), so parameters upstream of them receive zero gradient at step 0 only"
+  },
+  "params_changed_by_step": 38,
+  "loss_after_one_step_same_batch": 0.7256649136543274,
+  "eval_repeat_max_abs_diff": 0.0,
+  "tensor_vs_scalar_step_max_abs_diff": 0.0,
+  "train_seconds_per_step_batch32": 0.031191110610961914,
+  "projected_train_seconds_for_configured_steps": 62.38222122192383,
+  "eval_seconds_batch4_L256": 0.010887461999971038
+}

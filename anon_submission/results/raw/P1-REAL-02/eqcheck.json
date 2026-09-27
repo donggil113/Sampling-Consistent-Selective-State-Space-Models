@@ -1,0 +1,9 @@
+{
+  "what": "engineering check: seed 0 retrained with the P1-REAL-02 runner vs the frozen pilot checkpoint",
+  "same_keys": true,
+  "max_abs_tensor_diff": 0.0,
+  "all_tensors_equal": true,
+  "selected_step_runner": 1500,
+  "selected_step_pilot": 1500,
+  "dev_curve_equal": true
+}

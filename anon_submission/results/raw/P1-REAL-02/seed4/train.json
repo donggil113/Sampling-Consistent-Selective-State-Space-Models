@@ -1,0 +1,139 @@
+{
+  "seed": 4,
+  "status": "COMPLETED",
+  "data_sha256": "dad632e9431bbd62efad3486477fc0526627bc5a59c98330a09a771f8926dccb",
+  "torch": "2.14.0+cpu",
+  "threads": 2,
+  "curve": [
+    {
+      "step": 0,
+      "dev_mse": 10.127609576524353
+    },
+    {
+      "step": 100,
+      "train_loss_norm": 0.012753807008266449,
+      "dev_mse": 0.05815003901236827
+    },
+    {
+      "step": 200,
+      "train_loss_norm": 0.011479685083031654,
+      "dev_mse": 0.14911922108438924
+    },
+    {
+      "step": 300,
+      "train_loss_norm": 0.006320318207144737,
+      "dev_mse": 0.18760775212573852
+    },
+    {
+      "step": 400,
+      "train_loss_norm": 0.009717673994600773,
+      "dev_mse": 0.03456667279845651
+    },
+    {
+      "step": 500,
+      "train_loss_norm": 0.005061701871454716,
+      "dev_mse": 0.023905251385808676
+    },
+    {
+      "step": 600,
+      "train_loss_norm": 0.004611525684595108,
+      "dev_mse": 0.027302227079913314
+    },
+    {
+      "step": 700,
+      "train_loss_norm": 0.00634014094248414,
+      "dev_mse": 0.02595046989068801
+    },
+    {
+      "step": 800,
+      "train_loss_norm": 0.005125846713781357,
+      "dev_mse": 0.06896538132287557
+    },
+    {
+      "step": 900,
+      "train_loss_norm": 0.008126193657517433,
+      "dev_mse": 0.05390850224626048
+    },
+    {
+      "step": 1000,
+      "train_loss_norm": 0.011088766157627106,
+      "dev_mse": 0.016973999775804414
+    },
+    {
+      "step": 1100,
+      "train_loss_norm": 0.020344417542219162,
+      "dev_mse": 0.03145948685200098
+    },
+    {
+      "step": 1200,
+      "train_loss_norm": 0.013006639666855335,
+      "dev_mse": 0.019891639284802306
+    },
+    {
+      "step": 1300,
+      "train_loss_norm": 0.005403552670031786,
+      "dev_mse": 0.018038828680375537
+    },
+    {
+      "step": 1400,
+      "train_loss_norm": 0.008726215921342373,
+      "dev_mse": 0.04164272946557294
+    },
+    {
+      "step": 1500,
+      "train_loss_norm": 0.014121975749731064,
+      "dev_mse": 0.03108222743031261
+    },
+    {
+      "step": 1600,
+      "train_loss_norm": 0.0027919395361095667,
+      "dev_mse": 0.014670320055102729
+    },
+    {
+      "step": 1700,
+      "train_loss_norm": 0.01813950389623642,
+      "dev_mse": 0.02493466514943894
+    },
+    {
+      "step": 1800,
+      "train_loss_norm": 0.017020581290125847,
+      "dev_mse": 0.012470621865994238
+    },
+    {
+      "step": 1900,
+      "train_loss_norm": 0.014921838417649269,
+      "dev_mse": 0.01588965506756593
+    },
+    {
+      "step": 2000,
+      "train_loss_norm": 0.014397472143173218,
+      "dev_mse": 0.015129390511560379
+    }
+  ],
+  "x_stats": [
+    -0.002271382512342679,
+    0.838558915877303
+  ],
+  "y_stats": [
+    -1.5974852947346299,
+    2.353312798674186
+  ],
+  "eval_mode_checks_all_ok": true,
+  "eval_mode_check_example": {
+    "all_modules_eval": true,
+    "dropout_p": [
+      0.0
+    ],
+    "batchnorm_running_stats": true,
+    "n_batchnorm": 2
+  },
+  "min_train_step_scale": 1.0,
+  "train_loop_wall_seconds": 44.694,
+  "train_loop_cpu_seconds": 88.745,
+  "git_head": "<commit>",
+  "selected_step": 1800,
+  "selected_dev_mse": 0.012470621865994238,
+  "checkpoint_sha256": "84e963b5c17e5a45ba5040f7ce1b1b8407a5cdcdae404c2d5f2cc69d9e6c393e",
+  "total_wall_seconds": 45.563,
+  "total_cpu_seconds": 89.649
+}

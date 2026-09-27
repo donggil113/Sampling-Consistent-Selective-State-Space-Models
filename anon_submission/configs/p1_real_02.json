@@ -1,0 +1,126 @@
+{
+  "run_id": "P1-REAL-02",
+  "status": "FIXED BEFORE EXECUTION (no P1-REAL-02 training, test generation or evaluation had run when this file was committed)",
+  "created_utc": "2026-09-27",
+  "authorization": {
+    "user_instruction_quoted": "P1 \u2014 P1-REAL-02: \uace0\uc815 \uacfc\uc81c\uc5d0\uc11c\uc758 seed \ubc18\ubcf5 ... training seeds\ub294 1,2,3,4 \ub124 \uac1c\uc774\uba70 seed 0\uc740 \uac1c\ubc1c pilot\uc73c\ub85c \ubcc4\ub3c4 \ud45c\uc2dc\ud55c\ub2e4.",
+    "environment": "reuses the CPU environment installed in session 3 (torch 2.14.0+cpu, numpy 2.4.6, scipy 1.17.1, TeX Live) and the pinned TIDES clone in gitignored third_party/TIDES; no new installation, download, GPU, paid API or remote publication",
+    "note_on_past_approval": "The session-3 install was based on Claude's interpretation (R-A0 in configs/p1_real_01.json) of a user instruction to verify the adapter in a real CPU tensor environment, train and build the PDF; it was not a separate approval block. This run uses only already-installed software and CPU time requested by the quoted instruction."
+  },
+  "question": "Do the grid and readout effects observed in the seed-0 pilot persist across optimizer initializations (training seeds) under the identical fixed task and protocol?",
+  "scope": "Same-task repetition only (same generator, distribution and sample size). Not a new task, dataset, model, loss or baseline; not evidence about other sensors, data or models.",
+  "preserved": [
+    "P1-REAL-01 seed-0 pilot, its checkpoint (sha256 e4784897f5d507f0fa2bc29b2fb8d5fd7e7d81f8ad6498ce3a6f3fe9331bb455) and all its raw files are kept unchanged",
+    "ARCHITECTURE_CLAIM = STOPPED (S2); H7c_original FAIL; H7c_restated WEAK_PASS",
+    "pinned implementation TIDES @ 4b51adce2060e7209e002a6a2fd6691a2f6fcc5e"
+  ],
+  "fixed_protocol": {
+    "identical_to": "configs/p1_real_01.json (task, train/dev IDs 0-511 / 512-639, labels, normalization from train split, model config, Adam lr 0.003, 2000 steps, batch 32, calibration evaluation every 100 steps, lowest-calibration-MSE checkpoint with earliest step on ties including step 0)",
+    "data_identity_check": "train/dev inputs and labels are generated once, sha256-hashed, cached, and their normalization statistics must equal the stored seed-0 pilot statistics exactly; every seed loads and re-verifies the same hash",
+    "eval_mode_checks": "per seed: model.training is False for every submodule during calibration and test; dropout p = 0; BatchNorm uses running statistics (track_running_stats True, eval mode); every batch has equal sequence lengths (no padding, no mask); every step_scale > 0"
+  },
+  "seeds": {
+    "training_seeds": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "training_seed_meaning": "seed s is set in python random, numpy's global RNG and torch immediately before model construction (parameter initialization; TIDES also draws from numpy) and seeds the minibatch sampler random.Random(s); it does not touch data",
+    "data_seeds": "input path of trajectory id = random.Random(1_000_000 + id); labels are deterministic RK4 of the fixed teacher",
+    "test_sampling_seed": "J1 random observation times = random.Random(2_000_000 + test_id)",
+    "bootstrap_seed": 0,
+    "development_seed": "seed 0 (P1-REAL-01) is the development pilot. It is (a) evaluated on the new test set as a separately marked development row and (b) retrained once with this runner only as a code-equivalence check. Neither enters the replication criterion.",
+    "replacement_runs": "none; failed, diverged or timed-out seeds are reported as rows",
+    "further_seeds": "none in this run"
+  },
+  "test_set": {
+    "ids": [
+      10000,
+      10255
+    ],
+    "n": 256,
+    "generator": "same as P1-REAL-01 (scssm.real.protocol.trajectory_path, training grid T=8, K=32, labels by ct_true with 128 RK4 sub-steps per interval, pooled label = Simpson time average)",
+    "shared_by": "all seeds and the development row",
+    "generated": "after this file is committed. Path seeds 1_010_000-1_010_255 and J1 seeds 2_010_000-2_010_255 are disjoint from every seed used before: FIRST_RUN 0-31, 999 and jitter-grid seeds 10_000-10_031; pilot path seeds 1_000_000-1_000_895 and pilot J1 seeds 2_000_640-2_000_895."
+  },
+  "conditions": {
+    "held_path_refinements": [
+      "C0",
+      "S2",
+      "S4",
+      "S8",
+      "H8"
+    ],
+    "secondary_not_refinement": [
+      "J1"
+    ],
+    "rule": "S and H conditions keep the right-held path; J1 changes the observed path and is reported in a separate table"
+  },
+  "arms": {
+    "native": "the condition's grid with step_scale = dt_k / dt_train; per-step outputs read at the 32 training-grid times via the grid's base index (J1: last native output at or before each time)",
+    "resampled": "last observation carried forward onto the training grid using only observed times and values; step_scale = 1; on S/H this reproduces the C0 input exactly, so its zero discrepancy is an identity control, not evidence of superiority",
+    "pooling_only": "a readout ablation that is not part of the official model: the SAME native per-step outputs pooled by the right-endpoint time-weighted sum instead of the token mean; it is not an exact integral"
+  },
+  "estimands": {
+    "definitions": {
+      "yhat": "per-step model output in label units",
+      "pooled_label": "ybar_i = (1/T) * integral_0^T y_true_i(t) dt (Simpson on RK4 nodes of the continuous-path teacher)",
+      "p_mean": "p_mean_{s,i}(c) = (1/L_c) * sum_k yhat_{s,i,k}(c) over the L_c native tokens of condition c (token mean, as TIDESClassifier's h.mean(dim=1) followed by a linear head)",
+      "p_time": "p_time_{s,i}(c) = (1/T) * sum_k yhat_{s,i,k}(c) * dt_k(c) (right-endpoint time-weighted sum over the same native tokens)",
+      "p_res": "p_res_{s,i}(c) = (1/K) * sum_k yhat^res_{s,i,k}(c) over the 32 resampled tokens",
+      "on_C0": "the C0 grid is uniform, so p_mean(C0) = p_time(C0) = p_res(C0) =: p_{s,i}(C0)",
+      "disc": "disc_{s,i}(c) = ||yhat_{s,i}(c) - yhat_{s,i}(C0)||_2 / ||yhat_{s,i}(C0)||_2 over the 32 training-grid times (final outputs, label units)",
+      "loss": "L_{s,i}(arm, c) = (1/32) * sum_k (yhat_{s,i,k} - y_true_{i,k})^2 at the 32 training-grid times (label units squared)"
+    },
+    "primary": {
+      "name": "H8 pooled-readout effect",
+      "formula": "D_s = mean_i ( |p_mean_{s,i}(H8) - p_{s,i}(C0)| - |p_time_{s,i}(H8) - p_{s,i}(C0)| ), label units",
+      "why_chosen": "Recommended in the user instruction; this is P1-REAL-01 prediction R-P5. It was chosen AFTER seeing the seed-0 results, so it is not a blind choice.",
+      "conflict_with_existing_protocol": "P1-REAL-01 did not designate a single primary estimand (it had four predictions R-P1..R-P5). The superseded, never-run NX1 draft named splitting consistency at m=8 as primary; that quantity is kept here as the first secondary estimand rather than silently dropped."
+    },
+    "secondary": {
+      "S8_discrepancy": "mean_i disc_{s,i}(S8) in float32; precision diagnostic: the same computed with weights and inputs cast to float64",
+      "loss_contrast": "r_s(c) = (mean_i L_{s,i}(native,c) - mean_i L_{s,i}(resampled,c)) / mean_i L_{s,i}(resampled,c) for c in S2,S4,S8,H8 (and J1 in the secondary table); absolute difference also reported",
+      "pooled_error": "mean_i |p_arm_{s,i}(c) - ybar_i| for each arm and c in C0,S8,H8,J1; E_s = mean_i (|p_mean(H8) - ybar| - |p_time(H8) - ybar|)",
+      "cost": "end-to-end and forward-only wall time and process CPU time per condition batch"
+    }
+  },
+  "statistics": {
+    "design": "seed x trajectory is a crossed design (all seeds share the same 256 test trajectories); the 4 x 256 values are NOT treated as iid",
+    "within_seed_uncertainty": "paired percentile bootstrap over test trajectories with the seed fixed (2000 draws, seed 0; the same trajectory draws are reused for every estimand and seed); ratios are recomputed with numerator and denominator in every draw",
+    "across_seeds": "the four per-seed estimates are reported individually with their min, max and mean; no pooled CI and no claim about the population of training runs",
+    "margin_rule_for_r": "'no practical difference' only if the 95% CI of r_s lies inside (-0.05, +0.05); 'native lower/higher' if the CI excludes 0 on one side, with 'beyond margin' only if it also excludes the margin; otherwise inconclusive. The 5% is a convention (about 2.5% in RMSE), not an application-derived tolerance; a non-significant difference is never read as equivalence.",
+    "small_denominator": "if mean_i L_resampled < 1e-12, r_s is NA and only the absolute difference is reported",
+    "exploratory_previous_analysis": "the P1-REAL-01 fixed-estimated-margin analysis (margin = 5% of the point-estimated resampled MSE) is kept as an exploratory seed-0 result; the seed-0 pilot is additionally re-summarized from its raw with the r_s estimator as a derived file, clearly marked as the old test set"
+  },
+  "replication_criterion": {
+    "primary": "the H8 pooled-readout effect is called replicated within this task if D_s > 0 with the 95% CI excluding 0 for every seed s in {1,2,3,4}; otherwise it is reported as not replicated or unstable, as observed",
+    "secondary_S8": "the S8 discrepancy is called above the float32 floor for a seed if its CI lower bound exceeds 1e-4"
+  },
+  "timing_protocol": {
+    "mode": "torch.inference_mode(), model.eval(), float32, torch.set_num_threads(2)",
+    "batch": "all 256 test sequences of one condition in one batch",
+    "warm_up_calls": 2,
+    "timed_repeats": 5,
+    "end_to_end_boundary": "from the list of observed grids (times, values) to per-step predictions at the 32 training-grid times, including LOCF resampling (resampled arm), tensor construction, forward, de-normalization and readout mapping",
+    "forward_only_boundary": "model forward on already-built tensors",
+    "reported": "median and min wall seconds (time.perf_counter) and median process CPU seconds (time.process_time, summed over threads) per condition, arm and seed; tokens per sequence; batch size; threads. Timed repeats are not independent performance samples.",
+    "cost_ratio_naming": "ratios are written as numerator/denominator with both names, e.g. native_S8_end_to_end / resampled_S8_end_to_end"
+  },
+  "additional_diagnostics": {
+    "layer_precision": "the stored seed-0 layer diagnostic is reused; a per-seed layer diagnostic is run only if some training seed has mean S8 discrepancy below 1e-3 (within 10x of the float32 floor)",
+    "equivalence_check": "retrain seed 0 with this runner and compare every tensor of the selected state with the frozen pilot checkpoint (expected exactly equal); an engineering check, reported separately"
+  },
+  "budget": {
+    "cpu_threads": 2,
+    "gpu": false,
+    "train_wall_clock_seconds_per_seed": 900,
+    "eval_wall_clock_seconds_per_seed": 900,
+    "total_wall_clock_seconds": 3600
+  },
+  "outputs": {
+    "dir": "results/raw/P1-REAL-02/",
+    "files": "data_cache.json + data_hash.json, testset_cache.json, seed{s}/train.json, seed{s}/train.log, seed{s}/checkpoint.pt (not exported), seed{s}/eval.jsonl, seed{s}/eval_summary.json, eqcheck.json, aggregate.json"
+  }
+}

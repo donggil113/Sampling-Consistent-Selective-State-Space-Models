@@ -1,0 +1,78 @@
+{
+  "run_id": "NX1-STEM-BACKBONE",
+  "status": "DESIGN_ONLY / NOT_RUN",
+  "drafted_utc": "2026-09-26",
+  "blocked_on": [
+    "Approval to install a CPU tensor library (e.g. torch CPU or numpy+autograd). Training in pure Python is not feasible at this size.",
+    "Approval of the CPU budget below."
+  ],
+  "decision_question": "In a trained, multi-layer selective SSM, does simple time handling (Delta = dt*g, exact ZOH B, time-weighted readout) or resampling onto a fixed time grid with the SAME backbone remove the grid artifact of the Mamba-style recipe? If yes, the new-architecture claim is dropped for good.",
+  "why_this_is_the_decision_experiment": "FIRST_RUN showed that in a single fixed-parameter layer the simple fix removes the splitting artifact to float64 precision (stop condition S2 triggered at toy level). TIDES (arXiv 2605.09742) already occupies the architecture of physical Delta + exact ZOH + selectivity on Lambda. The only remaining question that could matter is whether residual artifacts (conv1d over tokens, inter-layer hold in deep stacks, learned gates evaluated at new samples) survive the simple fixes in trained models.",
+  "data": {
+    "source": "synthetic, generated in-repo from integer seeds; no external data",
+    "teachers": [
+      "T1: the FIRST_RUN continuous-time selective system with fixed teacher parameters (favours ZOH-type students; reported separately)",
+      "T2: a nonlinear system not in any student class (e.g. forced damped Duffing oscillator), to avoid a teacher-student match"
+    ],
+    "independent_unit": "trajectory = (initial state, input path draw)",
+    "split": "split trajectory IDs FIRST into train/dev/test = 512/128/256; only THEN build grids for each split independently; no trajectory appears in two splits in any grid form",
+    "train_grids": "one base density (K=16 on [0,8]) with jitter; optional second arm trained on mixed densities, reported separately",
+    "test_grids": [
+      "pure splitting m in {1,2,4,8} (held values repeated)",
+      "uniform new observations m in {1,2,4,8}",
+      "nonuniform new observations (first half dense)"
+    ]
+  },
+  "factors": {
+    "stem": [
+      "linear interpolation of the observations (exact first-order-hold integration)",
+      "exact ZOH of the held observations"
+    ],
+    "backbone": [
+      "observed grid (per-step dt_k)",
+      "fixed time grid (uniform delta_fixed, independent of observations)"
+    ]
+  },
+  "required_baselines": [
+    "S5: MIMO LTI, exact ZOH with per-step dt (strongest direct LTI baseline)",
+    "S4D-ZOH (LTI) on the fixed time grid after resampling",
+    "resampling onto the fixed grid + the SAME selective backbone (simplest alternative)",
+    "Mamba-style recipe on the observed grid: Delta = softplus(.), Euler B, depthwise conv1d k=4, no dt (grid-dependent reference)",
+    "Mamba-style + dt appended as an input channel (S5-append analogue)",
+    "simple-fix selective: Delta = dt*g, exact ZOH B, time-weighted readout, conv1d removed or replaced by a time-indexed kernel",
+    "TIDES-like: physical Delta, selectivity on Re(Lambda), B, C (closest prior work)"
+  ],
+  "metrics": {
+    "primary_consistency": "rel_l2 of outputs at common times under pure splitting, m=8 vs m=1, per test trajectory",
+    "primary_accuracy": "rel_l2 to the continuous-time teacher at the training density, per test trajectory",
+    "secondary": [
+      "error to teacher under new observations, m in {2,4,8}",
+      "time-average readout error under density change",
+      "per-component ablation: conv1d on/off, readout sample-mean vs time-exact"
+    ],
+    "aggregation": "mean over test trajectories with a bootstrap 95% CI over trajectories; 3 training seeds reported separately (seeds are not independent data units)",
+    "numerical_floor": "float32 composition drift measured in FR-E4-N4 (emulated): about 1e-7 to 1e-4 relative for 16 to 16384 sub-steps; consistency differences below 1e-4 are treated as numerically indistinguishable in float32"
+  },
+  "budget": {
+    "cpu_threads": 2,
+    "gpu": false,
+    "max_wall_clock_minutes_total": 30,
+    "hyperparameters": "one shared setting per model family; learning rate chosen on dev from at most 3 values, the same grid for every model; no further sweep"
+  },
+  "hypotheses_draft": {
+    "NX1-H1": "The Mamba-style recipe on the observed grid has splitting inconsistency >= 1e-1 at m=8 (toy analogue: FR-E1 eulerB_nodt median 1.18).",
+    "NX1-H2": "The simple-fix selective model OR resampling + same backbone reaches splitting inconsistency <= 1e-3 at m=8 with primary accuracy no worse than the best baseline by more than 5% relative.",
+    "NX1-H3 (CONJECTURE)": "With depth >= 2 on the observed grid, the simple-fix model keeps a residual O(dt) splitting inconsistency because the input of layer 2 becomes a finer held sampling of layer 1's continuous output; the fixed-time-grid backbone removes it."
+  },
+  "stop_conditions": {
+    "S-arch": "If NX1-H2 holds for either simple fix, stop any new-architecture claim; at most an analysis note remains.",
+    "S-null": "If no model, including the Mamba-style recipe, shows splitting inconsistency above the float32 floor after training, stop the project question (the effect is not practically relevant in this setting).",
+    "S-budget": "Wall clock > 30 min -> abort, NOT_RUN(TIMEOUT)."
+  },
+  "status_update_2026-09-26": {
+    "note": "Append-only update; the original design above is kept unchanged.",
+    "budget_claim": "The 30-minute CPU budget for training all baselines was never measured and is NOT confirmed.",
+    "first_real_model_step": "Replaced as the next step by configs/p1_real_01.json (one official implementation, TIDES @ 4b51adc, native-grid vs training-grid resampling, one small task).",
+    "depth_hypothesis": "NX1-H3 wording ('new observations' for layer 2) is corrected: layer 2 receives additional INTERNAL samples of layer 1's output; no external information is added (see P1-COMP-01)."
+  }
+}
