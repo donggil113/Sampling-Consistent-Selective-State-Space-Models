@@ -8,9 +8,7 @@
   "files_with_local_paths_redacted": 0,
   "readme_listed_paths_missing": [],
   "generator_rerun_ok": true,
-  "generated_files_differing": [
-    "numbers.tex"
-  ],
+  "generated_files_differing": [],
   "checkpoints_included": true,
   "third_party_code_included": false
 }

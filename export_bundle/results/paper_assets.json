@@ -3580,12 +3580,18 @@
     "S8_direct_forward_vs_native_mean_first256_max_abs": 0.0,
     "H8_direct_forward_vs_native_mean_first256_max_abs": 0.0
    },
+   "eval_provenance": "not recorded by the eval code version that ran (runner as of commit 60536b3; see run_manifest.json)",
    "identity_checks": {
     "W_vs_7_18_AB_max_abs": 2.350999662326103e-05,
     "pmean_minus_pC0_vs_W_plus_M_max_abs": 2.4775146613364996e-05,
     "ptime_minus_pC0_vs_Q_max_abs": 2.724613295868039e-05
    },
-   "config_sha256": "e603cf75e6472a20547afe22b6056f8e940de93120bc9fd2e6f66806a7dc44fc",
+   "provenance": {
+    "git_head": "1f18b50f6fec2b979df750e5a0b177b17351a7c2",
+    "git_dirty": true,
+    "runner_sha256": "8d06bbd81dfd9f4e8aacec465f98d2d2dde110ba39ef725a822faa1b72c75116",
+    "config_sha256": "e603cf75e6472a20547afe22b6056f8e940de93120bc9fd2e6f66806a7dc44fc"
+   },
    "checkpoint": {
     "sha256": "e3b414f5bdf55541d84a2f3abaf5a1c04faddfd6e2fdfd38dd79a20be049910d",
     "selected_update": 1200,
@@ -3723,8 +3729,8 @@
     "signs": "8 of 9 subjects positive, 1 negative",
     "scope": "one dataset, one model, one seed; conditional on this checkpoint; 9 subject clusters"
    },
-   "aggregate_wall_seconds": 0.352,
-   "aggregate_cpu_seconds": 0.602
+   "aggregate_wall_seconds": 0.372,
+   "aggregate_cpu_seconds": 0.572
   },
   "train": {
    "status": "COMPLETED",
@@ -3834,6 +3840,15 @@
     "started_utc": "2026-10-02T16:37:33Z",
     "wall_seconds": 0.352,
     "cpu_seconds": 0.602,
+    "threads": 2,
+    "status": "COMPLETED"
+   },
+   {
+    "stage": "aggregate",
+    "started_utc": "2026-10-02T16:45:57Z",
+    "finished_utc": "2026-10-02T16:45:57Z",
+    "wall_seconds": 0.372,
+    "cpu_seconds": 0.572,
     "threads": 2,
     "status": "COMPLETED"
    }
