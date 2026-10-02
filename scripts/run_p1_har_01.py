@@ -495,6 +495,9 @@ def stage_eval():
             h = features(torch, model, u, s)                       # (N, L, 16) features from the official backbone
             z = (h @ W_head.T + b_head)                             # (N, L, 6) per-token logits (affine head), stored for re-aggregation
             tok[cn] = z.numpy().astype(np.float32)
+            if not np.isfinite(tok[cn]).all():
+                ledger_add("eval", *since(t), f"FAIL(non-finite output on {cn})")
+                raise SystemExit(f"FAIL(non-finite output on {cn})")
             w = torch.tensor(g["w_time"], dtype=torch.float32)
             # arms pool FEATURES at the official pooling location and apply the same affine head
             pooled[(cn, "native_mean")] = model.head(h.mean(1)).numpy().astype(np.float64)
@@ -661,9 +664,15 @@ def stage_control():
             ce_w = torch.nn.functional.cross_entropy(logits, yte, reduction="none").numpy()
             acc_w = (logits.argmax(1) == yte).numpy().astype(float)
             subs = sorted(set(d["ste"].tolist()))
+            if cn == "C0":
+                ce_C0, logits_C0 = ce_w.copy(), logits.numpy().copy()
             per_cond[cn] = {"max_abs_feature_diff_vs_C0": float(np.abs(F - F0).max()),
+                            "max_abs_logit_diff_vs_C0": float(np.abs(logits.numpy() - logits_C0).max()),
+                            "max_abs_ce_diff_vs_C0": float(np.abs(ce_w - ce_C0).max()),
+                            "ce_diff_vs_C0_subject_means": {str(s_): float((ce_w - ce_C0)[d["ste"] == s_].mean()) for s_ in subs},
                             "subject_mean_ce": {str(s_): float(ce_w[d["ste"] == s_].mean()) for s_ in subs},
                             "subject_mean_acc": {str(s_): float(acc_w[d["ste"] == s_].mean()) for s_ in subs}}
+            per_cond[cn]["ce_diff_vs_C0_equal_weight_subjects"] = float(np.mean(list(per_cond[cn]["ce_diff_vs_C0_subject_means"].values())))
             per_cond[cn]["ce_equal_weight_subjects"] = float(np.mean(list(per_cond[cn]["subject_mean_ce"].values())))
             per_cond[cn]["acc_equal_weight_subjects"] = float(np.mean(list(per_cond[cn]["subject_mean_acc"].values())))
     wall, cpu_s = since(t)
@@ -682,20 +691,34 @@ def stage_aggregate():
     ledger_guard("aggregate", 120, 240)
     t = clock()
     recs = [json.loads(l) for l in open(os.path.join(OUT, "eval.jsonl"))]
+    ev = json.load(open(os.path.join(OUT, "eval_summary.json")))
+    tr = json.load(open(os.path.join(OUT, "train.json")))
     subs = sorted(set(r["subject"] for r in recs))
+    assert len(recs) == 2947, len(recs)
+    assert subs == c["data"]["test_subjects"], subs
+    assert ev["status"] == "COMPLETED" and ev["checkpoint_sha256"] == tr["checkpoint_sha256"] == sha256_file(os.path.join(OUT, "checkpoint.pt"))
+    finite = all(math.isfinite(v) for r in recs for cn in CONDS for arm in ARMS
+                 for v in ([r[f"{cn}/{arm}"]["ce"], r[f"{cn}/{arm}"]["tv_vs_C0"]] + r[f"{cn}/{arm}"]["logits"]))
+    if not finite:
+        wjson(os.path.join(OUT, "aggregate.json"), {"status": "FAIL(non-finite evaluation)"})
+        ledger_add("aggregate", *since(t), "FAIL(non-finite evaluation)")
+        raise SystemExit("FAIL(non-finite evaluation)")
     by = {s_: [r for r in recs if r["subject"] == s_] for s_ in subs}
-    idx = S.draws(len(subs), 2000, 0)
+    n_draws, boot_seed = 2000, 0
+    idx = S.draws(len(subs), n_draws, boot_seed)
 
     def subj_means(fn):
         return [float(np.mean([fn(r) for r in by[s_]])) for s_ in subs]
 
     def summarize(vals):
+        assert all(math.isfinite(v) for v in vals), "non-finite subject mean"
         est, ci = S.mean_ci(vals, idx)
         return {"per_subject": dict(zip(map(str, subs), vals)), "mean_over_subjects": est, "ci95_subject_bootstrap": ci,
                 "n_positive": int(sum(v > 0 for v in vals)), "n_negative": int(sum(v < 0 for v in vals)),
                 "min": min(vals), "max": max(vals), "degenerate_interval": bool(ci[0] == ci[1])}
-    out = {"n_subjects": len(subs), "n_windows": len(recs), "subjects": subs, "windows_per_subject": {str(s_): len(by[s_]) for s_ in subs},
-           "note": "all quantities are subject means first, then equal-weight means over the 9 test subjects; intervals are subject-level paired percentile bootstraps (2000 draws, seed 0) and are coarse with 9 clusters"}
+    out = {"status": "COMPLETED", "n_subjects": len(subs), "n_windows": len(recs), "subjects": subs, "windows_per_subject": {str(s_): len(by[s_]) for s_ in subs},
+           "bootstrap": {"draws": n_draws, "seed": boot_seed, "unit": "subject"},
+           "note": f"all quantities are subject means first, then equal-weight means over the {len(subs)} test subjects; intervals are subject-level paired percentile bootstraps ({n_draws} draws, seed {boot_seed}) and are coarse with {len(subs)} clusters"}
     out["primary_D"] = summarize(subj_means(lambda r: r["H8/native_mean"]["ce"] - r["H8/native_time"]["ce"]))
     out["primary_D"]["definition"] = "d_s = mean_windows[CE(native_mean,H8) - CE(native_time,H8)]; D = mean over subjects (nats); D > 0: token mean worse"
     out["ce"] = {f"{cn}/{arm}": summarize(subj_means(lambda r, cn=cn, arm=arm: r[f"{cn}/{arm}"]["ce"])) for cn in CONDS for arm in ARMS}
@@ -708,12 +731,16 @@ def stage_aggregate():
     def cl_mean(r, key):
         v = r[key]["centered_logit_rel_vs_C0"]
         return v
-    excl = sum(1 for r in recs if r["excluded_centered_logit_distance"])
-    out["centered_logit_rel_vs_C0"] = {"excluded_windows": excl}
-    for cn in ("S8", "H8"):
-        for arm in ARMS:
-            vals = [float(np.mean([r[f"{cn}/{arm}"]["centered_logit_rel_vs_C0"] for r in by[s_] if not r["excluded_centered_logit_distance"]])) for s_ in subs]
-            out["centered_logit_rel_vs_C0"][f"{cn}/{arm}"] = summarize(vals)
+    excl_by = {str(s_): sum(1 for r in by[s_] if r["excluded_centered_logit_distance"]) for s_ in subs}
+    out["centered_logit_rel_vs_C0"] = {"excluded_windows": sum(excl_by.values()), "excluded_windows_per_subject": excl_by,
+                                       "retained_windows_per_subject": {str(s_): len(by[s_]) - excl_by[str(s_)] for s_ in subs}}
+    if any(v == 0 for v in out["centered_logit_rel_vs_C0"]["retained_windows_per_subject"].values()):
+        out["centered_logit_rel_vs_C0"]["status"] = "NA (a subject retained no window; estimand not computed)"
+    else:
+        for cn in ("S8", "H8"):
+            for arm in ARMS:
+                vals = [float(np.mean([r[f"{cn}/{arm}"]["centered_logit_rel_vs_C0"] for r in by[s_] if not r["excluded_centered_logit_distance"]])) for s_ in subs]
+                out["centered_logit_rel_vs_C0"][f"{cn}/{arm}"] = summarize(vals)
     dec = {}
     dec["note"] = "W, M, Q, A_minus_B are pre-registered; M_end (M restricted to the 128 interval-end tokens) is a pre-registered secondary split of M"
     for key in ("W", "M", "M_end", "Q", "A_minus_B"):
@@ -722,11 +749,9 @@ def stage_aggregate():
     dec["pmean_minus_pC0_norm"] = summarize(subj_means(lambda r: float(np.linalg.norm(np.asarray(r["H8/native_mean"]["logits"]) - np.asarray(r["C0/native_mean"]["logits"])))))
     dec["ptime_minus_pC0_norm"] = summarize(subj_means(lambda r: float(np.linalg.norm(np.asarray(r["H8/native_time"]["logits"]) - np.asarray(r["C0/native_mean"]["logits"])))))
     out["H8_logit_decomposition"] = dec
-    ev = json.load(open(os.path.join(OUT, "eval_summary.json")))
     out["numerical_checks"] = ev["numerical_checks"]
     out["identity_checks"] = ev["identity_checks"]
     out["timing"] = ev["timing"]
-    tr = json.load(open(os.path.join(OUT, "train.json")))
     if tr["config_sha256"] != config_sha():
         raise SystemExit("config changed since training")
     out["config_sha256"] = config_sha()
@@ -735,10 +760,18 @@ def stage_aggregate():
     if os.path.exists(os.path.join(OUT, "control.json")):
         out["control"] = json.load(open(os.path.join(OUT, "control.json")))["conditions"]
     pd = out["primary_D"]
-    out["verdict"] = {"primary": ("D > 0 with the subject-level interval excluding 0" if pd["ci95_subject_bootstrap"][0] > 0 else
-                                  "D < 0 with the subject-level interval excluding 0" if pd["ci95_subject_bootstrap"][1] < 0 else
-                                  "interval includes 0"), "signs": f"{pd['n_positive']} of {len(subs)} subjects positive",
-                      "scope": "one dataset, one model, one seed; conditional on this checkpoint; 9 subject clusters"}
+    lo, hi, D = pd["ci95_subject_bootstrap"][0], pd["ci95_subject_bootstrap"][1], pd["mean_over_subjects"]
+    assert all(math.isfinite(v) for v in (lo, hi, D))
+    if pd["degenerate_interval"]:
+        primary = "degenerate subject-level interval (all subject values equal): no inference"
+    elif lo > 0 and D > 0:
+        primary = "D > 0 with the subject-level interval excluding 0"
+    elif hi < 0 and D < 0:
+        primary = "D < 0 with the subject-level interval excluding 0"
+    else:
+        primary = "interval includes 0"
+    out["verdict"] = {"primary": primary, "signs": f"{pd['n_positive']} of {len(subs)} subjects positive, {pd['n_negative']} negative",
+                      "scope": f"one dataset, one model, one seed; conditional on this checkpoint; {len(subs)} subject clusters"}
     wall, cpu_s = since(t)
     out["aggregate_wall_seconds"], out["aggregate_cpu_seconds"] = wall, cpu_s
     wjson(os.path.join(OUT, "aggregate.json"), out)
