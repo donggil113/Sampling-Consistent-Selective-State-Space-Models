@@ -958,7 +958,8 @@ cond. & tokens & nat.\ e2e & nat.\ fwd & res.\ e2e & res.\ fwd & nat.\ e2e CPU \
         macros["HarExcluded"] = str(HA["centered_logit_rel_vs_C0"]["excluded_windows"])
         nc = HA["numerical_checks"]
         macros["HarResIdent"] = sci(max(nc[f"{cn}_resampled_input_vs_C0_max_abs"] for cn in ("C0", "S8", "H8"))) if max(nc[f"{cn}_resampled_input_vs_C0_max_abs"] for cn in ("C0", "S8", "H8")) else "0"
-        macros["HarPoolIdent"] = sci(nc["C0_native_mean_vs_native_time_max_abs"]) if nc["C0_native_mean_vs_native_time_max_abs"] else "0"
+        macros["HarPoolIdent"] = sci(nc["C0_head_of_mean_vs_mean_of_token_logits_max_abs"]) if nc["C0_head_of_mean_vs_mean_of_token_logits_max_abs"] else "0"
+        macros["HarArmIdent"] = sci(nc["C0_native_mean_vs_native_time_max_abs"]) if nc["C0_native_mean_vs_native_time_max_abs"] else "0"
         macros["HarDecIdent"] = sci(max(HA["identity_checks"].values()))
         ck = HA["checkpoint"]
         macros["HarUpdate"] = str(ck["selected_update"])
