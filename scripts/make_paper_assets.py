@@ -841,6 +841,149 @@ seed & cond. & tokens & nat.\ e2e & nat.\ fwd & res.\ e2e & res.\ fwd & nat.\ e2
     macros["RtwoEqMax"] = sci(eq2["max_abs_tensor_diff"]) if eq2["max_abs_tensor_diff"] else "0"
     macros["RtwoEqEqual"] = r"\text{exactly equal}" if eq2["all_tensors_equal"] else r"\text{different}"
 
+    # ------------------------------------------------------------------ P1-HAR-01 (real sensor windows; one checkpoint)
+    hd = os.path.join(rdir, "P1-HAR-01")
+    if os.path.exists(os.path.join(hd, "aggregate.json")):
+        HA = json.load(open(os.path.join(hd, "aggregate.json")))
+        HT = json.load(open(os.path.join(hd, "train.json")))
+        HL = json.load(open(os.path.join(hd, "cost_ledger.json")))
+        HS = json.load(open(os.path.join(hd, "smoke.json")))
+        A["HAR"] = {"aggregate": {k: v for k, v in HA.items() if k not in ("timing",)}, "train": {k: HT[k] for k in HT if k != "curve"},
+                    "ledger": HL, "smoke": {k: v for k, v in HS.items() if k != "rule"}}
+        subs = HA["subjects"]
+
+        def f3(x):
+            return f"{x:+.3f}"
+
+        def fci(c):
+            return f"$[{c[0]:+.3f},\\,{c[1]:+.3f}]$"
+        rows = []
+        for s_ in subs:
+            k = str(s_)
+            rows.append(f"{s_} & {HA['windows_per_subject'][k]} & ${HA['ce']['C0/native_mean']['per_subject'][k]:.3f}$ & "
+                        f"${HA['ce']['H8/native_mean']['per_subject'][k]:.3f}$ & ${HA['ce']['H8/native_time']['per_subject'][k]:.3f}$ & "
+                        f"${HA['primary_D']['per_subject'][k]:+.3f}$ & ${HA['accuracy']['C0/native_mean']['per_subject'][k]:.3f}$ & "
+                        f"${HA['accuracy']['H8/native_mean']['per_subject'][k]:.3f}$ & ${HA['accuracy']['H8/native_time']['per_subject'][k]:.3f}$ & "
+                        f"${HA['flip_vs_C0']['H8/native_mean']['per_subject'][k]:.3f}$ \\\\")
+        pd = HA["primary_D"]
+        rows.append(r"\midrule")
+        rows.append(f"mean & {HA['n_windows']} & ${HA['ce']['C0/native_mean']['mean_over_subjects']:.3f}$ & ${HA['ce']['H8/native_mean']['mean_over_subjects']:.3f}$ & "
+                    f"${HA['ce']['H8/native_time']['mean_over_subjects']:.3f}$ & ${pd['mean_over_subjects']:+.3f}$ {fci(pd['ci95_subject_bootstrap'])} & "
+                    f"${HA['accuracy']['C0/native_mean']['mean_over_subjects']:.3f}$ & ${HA['accuracy']['H8/native_mean']['mean_over_subjects']:.3f}$ & "
+                    f"${HA['accuracy']['H8/native_time']['mean_over_subjects']:.3f}$ & ${HA['flip_vs_C0']['H8/native_mean']['mean_over_subjects']:.3f}$ \\\\")
+        write("tab_har_subjects.tex", r"""\begin{table*}[t]
+\caption{P1-HAR-01: one official TIDES classifier (one model seed) on UCI HAR inertial windows, per official test subject (windows overlap by 50\%, so the subject is the analysis unit). C0: the 128 distributed values as 128 held intervals of $1/50$\,s; H8: the first 64 intervals split by 8 (576 tokens), same held values and labels. CE: mean cross-entropy (nats) of the window label under token-mean pooling (official head) and time-weighted pooling of the same features (inference ablation). $d_s$: primary difference CE(mean, H8) $-$ CE(time, H8) per subject; the last row is the equal-weight mean over the 9 subjects with a subject-level paired percentile bootstrap interval (2000 draws), which is coarse with 9 clusters. acc.: accuracy. flip: fraction of windows whose predicted class under H8 (token mean) differs from C0.}
+\label{tab:har-subjects}
+\centering\small
+\begin{tabular}{rrccccccccc}
+\toprule
+subject & windows & CE C0 & CE H8 mean & CE H8 time & $d_s$ & acc.\ C0 & acc.\ H8 mean & acc.\ H8 time & flip H8 mean \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}
+\end{table*}
+""")
+        rows = []
+        arm_name = {"native_mean": "native, token mean", "native_time": "native, time-weighted", "resampled": "resampled (identity)"}
+        for cn in ("S8", "H8"):
+            for arm in ("native_mean", "native_time", "resampled"):
+                kk = f"{cn}/{arm}"
+                rc = HA["risk_change_vs_C0"][kk]
+                rows.append(f"{cn} & {arm_name[arm]} & ${rc['mean_over_subjects']:+.4f}$ {fci(rc['ci95_subject_bootstrap'])} & "
+                            f"${HA['flip_vs_C0'][kk]['mean_over_subjects']:.3f}$ & ${HA['tv_vs_C0'][kk]['mean_over_subjects']:.3f}$ & "
+                            f"${HA['centered_logit_rel_vs_C0'][kk]['mean_over_subjects']:.3f}$ \\\\")
+            if cn == "S8":
+                rows.append(r"\midrule")
+        write("tab_har_effects.tex", r"""\begin{table}[t]
+\caption{P1-HAR-01 effects of the same-held-path refinement, equal-weight means over the 9 test subjects (subject means first). $\Delta$CE: cross-entropy of the arm on the condition minus cross-entropy of the official token-mean readout on C0, with the subject-level bootstrap interval. flip: fraction of windows whose predicted class differs from C0. TV: total variation $\tfrac12\sum_c|p_c-p_c^{\mathrm{C0}}|$ between the class probabilities. c.-logit: $\|\tilde z-\tilde z^{\mathrm{C0}}\|_2/\|\tilde z^{\mathrm{C0}}\|_2$ with class-centered logits (""" + str(HA["centered_logit_rel_vs_C0"]["excluded_windows"]) + r""" windows excluded by the $10^{-6}$ rule). The resampled arm reproduces the C0 input exactly (identity control).}
+\label{tab:har-effects}
+\centering\small
+\begin{tabular}{llcccc}
+\toprule
+cond. & arm & $\Delta$CE vs.\ C0 [95\% CI] & flip & TV & c.-logit \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+""")
+        trows = []
+        for cn in ("C0", "S8", "H8"):
+            tm = HA["timing"][cn]
+            trows.append(f"{cn} & {tm['tokens_native']} & ${tm['native_end_to_end']['median_wall_s']:.3f}$ & ${tm['native_forward_only']['median_wall_s']:.3f}$ & "
+                         f"${tm['resampled_end_to_end']['median_wall_s']:.3f}$ & ${tm['resampled_forward_only']['median_wall_s']:.3f}$ & ${tm['native_end_to_end']['median_cpu_s']:.2f}$ \\\\")
+        write("tab_har_timing.tex", r"""\begin{table}[h]
+\caption{P1-HAR-01 timing (one batch of the first 256 test windows; median of 5 timed calls after 2 warm-ups; \texttt{inference\_mode}; 2 threads). End-to-end includes tensor construction, LOCF resampling for the resampled arm, forward and pooling; forward-only is the model call on prebuilt tensors. CPU seconds are process CPU time summed over threads. Timed repeats are not independent samples.}
+\label{tab:har-timing}
+\centering\small
+\begin{tabular}{rrccccc}
+\toprule
+cond. & tokens & nat.\ e2e & nat.\ fwd & res.\ e2e & res.\ fwd & nat.\ e2e CPU \\
+\midrule
+""" + "\n".join(trows) + r"""
+\bottomrule
+\end{tabular}
+\end{table}
+""")
+        macros["HarD"] = f3(pd["mean_over_subjects"])
+        macros["HarDlo"], macros["HarDhi"] = f3(pd["ci95_subject_bootstrap"][0]), f3(pd["ci95_subject_bootstrap"][1])
+        macros["HarDmin"], macros["HarDmax"] = f3(pd["min"]), f3(pd["max"])
+        macros["HarDpos"] = str(pd["n_positive"])
+        macros["HarNsub"] = str(HA["n_subjects"])
+        macros["HarNwin"] = str(HA["n_windows"])
+        macros["HarCEczero"] = f"{HA['ce']['C0/native_mean']['mean_over_subjects']:.3f}"
+        macros["HarAccCzero"] = f"{HA['accuracy']['C0/native_mean']['mean_over_subjects']:.3f}"
+        macros["HarAccCzeroMin"] = f"{HA['accuracy']['C0/native_mean']['min']:.2f}"
+        macros["HarAccCzeroMax"] = f"{HA['accuracy']['C0/native_mean']['max']:.2f}"
+        for cn in ("S8", "H8"):
+            for arm, nm in (("native_mean", "Mean"), ("native_time", "Time"), ("resampled", "Res")):
+                kk = f"{cn}/{arm}"
+                tag = ("Seight" if cn == "S8" else "Height") + nm
+                macros[f"HarDCE{tag}"] = f3(HA["risk_change_vs_C0"][kk]["mean_over_subjects"])
+                macros[f"HarDCE{tag}lo"] = f3(HA["risk_change_vs_C0"][kk]["ci95_subject_bootstrap"][0])
+                macros[f"HarDCE{tag}hi"] = f3(HA["risk_change_vs_C0"][kk]["ci95_subject_bootstrap"][1])
+                macros[f"HarFlip{tag}"] = f"{HA['flip_vs_C0'][kk]['mean_over_subjects']:.3f}"
+                macros[f"HarTV{tag}"] = f"{HA['tv_vs_C0'][kk]['mean_over_subjects']:.3f}"
+                macros[f"HarCL{tag}"] = f"{HA['centered_logit_rel_vs_C0'][kk]['mean_over_subjects']:.3f}"
+                macros[f"HarAcc{tag}"] = f"{HA['accuracy'][kk]['mean_over_subjects']:.3f}"
+        dec = HA["H8_logit_decomposition"]
+        for key, nm in (("pmean_minus_pC0_norm", "Delta"), ("W_norm", "W"), ("M_norm", "M"), ("M_end_norm", "Mend"), ("Q_norm", "Q"), ("ptime_minus_pC0_norm", "Qt"), ("A_minus_B_norm", "AB")):
+            macros[f"HarDec{nm}"] = f"{dec[key]['mean_over_subjects']:.3f}"
+            macros[f"HarDec{nm}min"] = f"{dec[key]['min']:.3f}"
+            macros[f"HarDec{nm}max"] = f"{dec[key]['max']:.3f}"
+        macros["HarExcluded"] = str(HA["centered_logit_rel_vs_C0"]["excluded_windows"])
+        nc = HA["numerical_checks"]
+        macros["HarResIdent"] = sci(max(nc[f"{cn}_resampled_input_vs_C0_max_abs"] for cn in ("C0", "S8", "H8"))) if max(nc[f"{cn}_resampled_input_vs_C0_max_abs"] for cn in ("C0", "S8", "H8")) else "0"
+        macros["HarPoolIdent"] = sci(nc["C0_native_mean_vs_native_time_max_abs"]) if nc["C0_native_mean_vs_native_time_max_abs"] else "0"
+        macros["HarDecIdent"] = sci(max(HA["identity_checks"].values()))
+        ck = HA["checkpoint"]
+        macros["HarUpdate"] = str(ck["selected_update"])
+        macros["HarUpdatesRun"] = str(ck["updates_run"])
+        macros["HarCalCE"] = f"{ck['selected_cal_ce']:.3f}"
+        macros["HarCalAcc"] = f"{ck['selected_cal_acc']:.3f}"
+        macros["HarParams"] = f"{HT['n_parameters']:,}".replace(",", "{,}")
+        macros["HarNfit"] = str(HT["n_fit_windows"])
+        macros["HarNcal"] = str(HT["n_cal_windows"])
+        if "control" in HA:
+            ctl = HA["control"]
+            macros["HarCtlCE"] = f"{ctl['C0']['ce_equal_weight_subjects']:.3f}"
+            macros["HarCtlAcc"] = f"{ctl['C0']['acc_equal_weight_subjects']:.3f}"
+            macros["HarCtlFeat"] = sci(max(ctl[cn]["max_abs_feature_diff_vs_C0"] for cn in ("S8", "H8")))
+            macros["HarCtlCEdiff"] = sci(max(abs(ctl[cn]["ce_equal_weight_subjects"] - ctl["C0"]["ce_equal_weight_subjects"]) for cn in ("S8", "H8")))
+        tm = HA["timing"]["S8"]
+        macros["HarRatioSeight"] = f"{tm['native_end_to_end']['median_wall_s'] / tm['resampled_end_to_end']['median_wall_s']:.1f}"
+        macros["HarFratioSeight"] = f"{tm['native_forward_only']['median_wall_s'] / tm['resampled_forward_only']['median_wall_s']:.1f}"
+        tmh = HA["timing"]["H8"]
+        macros["HarRatioHeight"] = f"{tmh['native_end_to_end']['median_wall_s'] / tmh['resampled_end_to_end']['median_wall_s']:.1f}"
+        led = {r["stage"]: r for r in HL}
+        macros["HarSmokeWall"] = f"{led['smoke']['wall_seconds']:.0f}" if "smoke" in led else "NA"
+        macros["HarTrainWall"] = f"{led['train']['wall_seconds']:.0f}" if "train" in led else "NA"
+        macros["HarTrainCPU"] = f"{led['train']['cpu_seconds']:.0f}" if "train" in led else "NA"
+        macros["HarEvalWall"] = f"{led['eval']['wall_seconds']:.0f}" if "eval" in led else "NA"
+        macros["HarTotalWall"] = f"{sum(r['wall_seconds'] for r in HL):.0f}"
+        macros["HarTotalCPU"] = f"{sum(r['cpu_seconds'] for r in HL):.0f}"
+
     # ------------------------------------------------------------------ macros + json
     lines = [f"\\newcommand{{\\{k}}}{{\\ensuremath{{{v}}}}}" for k, v in sorted(macros.items())]
     write("numbers.tex", "\n".join(lines) + "\n")
