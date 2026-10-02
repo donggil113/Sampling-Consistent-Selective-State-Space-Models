@@ -87,6 +87,25 @@ def config_sha():
     return sha256_file(CFG)
 
 
+def provenance():
+    return {"git_head": git("rev-parse", "HEAD"), "git_dirty": bool(git("status", "--porcelain")),
+            "runner_sha256": sha256_file(os.path.abspath(__file__)), "config_sha256": config_sha()}
+
+
+def run_stage(name, fn):
+    """Run a stage body under a timer that starts before any import or hashing; a crash is recorded as a FAIL ledger row."""
+    t0 = clock()
+    started = utc()
+    try:
+        fn(t0, started)
+    except SystemExit:
+        raise
+    except BaseException as e:  # noqa: BLE001  (every failure must leave a ledger row)
+        w, c_ = since(t0)
+        ledger_add(name, w, c_, f"FAIL({type(e).__name__}: {str(e)[:200]})", started=started)
+        raise
+
+
 def check_calibration_rule(c):
     """Re-derive the ID-only calibration rule (ascending hex digest) and compare with the frozen lists."""
     tr = c["data"]["train_subjects"]
@@ -98,6 +117,8 @@ def check_calibration_rule(c):
 def refuse_if_test_opened(stage):
     lock = os.path.join(OUT, "test_opened.json")
     if os.path.exists(lock):
+        if stage == "eval" and json.load(open(lock)).get("eval_status") != "COMPLETED":
+            return  # a crashed evaluation of the SAME frozen checkpoint may be repeated; the ledger keeps the failed attempt
         ledger_add(stage, 0.0, 0.0, "REFUSED: test already opened (no replacement run)")
         raise SystemExit("REFUSED: test already opened")
     if stage == "train" and os.path.exists(os.path.join(OUT, "checkpoint.pt")):
@@ -105,9 +126,9 @@ def refuse_if_test_opened(stage):
         raise SystemExit("REFUSED: checkpoint exists")
 
 
-def ledger_add(stage, wall, cpu_s, status, extra=None):
+def ledger_add(stage, wall, cpu_s, status, extra=None, started=None):
     _, _, rows = ledger_totals()
-    row = {"stage": stage, "started_utc": utc(), "wall_seconds": round(wall, 3), "cpu_seconds": round(cpu_s, 3),
+    row = {"stage": stage, "started_utc": started or utc(), "finished_utc": utc(), "wall_seconds": round(wall, 3), "cpu_seconds": round(cpu_s, 3),
            "threads": 2, "status": status}
     if extra:
         row.update(extra)
@@ -140,6 +161,8 @@ def arr_sha(a):
 def stage_data():
     import numpy as np
     c = cfg()
+    refuse_if_test_opened("data")
+    ledger_guard("data", 30, 60)
     t = clock()
     ch = c["data"]["channels"]
     Xtr, str_, ytr = load_split("train", ch)
@@ -166,7 +189,10 @@ def stage_data():
            "channel_value_ranges_train": {cn: [float(Xtr[..., i].min()), float(Xtr[..., i].max())] for i, cn in enumerate(ch)}}
     wall, cpu_s = since(t)
     rep.update({"wall_seconds": wall, "cpu_seconds": cpu_s})
-    wjson(os.path.join(OUT, "data_hash.json"), rep)
+    old = os.path.join(OUT, "data_hash.json")
+    if os.path.exists(old) and json.load(open(old))["sha256"] != rep["sha256"]:
+        raise SystemExit("data_hash.json exists with different hashes; refusing to overwrite")
+    wjson(old, rep)
     ledger_add("data", wall, cpu_s, "COMPLETED")
     print(json.dumps({k: rep[k] for k in ("train_shape", "test_shape", "n_fit_windows", "n_calibration_windows", "n_test_windows")}))
 
@@ -358,7 +384,7 @@ def stage_smoke():
         s8_wall, _ = since(tS)
     wall, cpu_s = since(t)
     smoke_ok = r["status"] == "COMPLETED" and len(r["upd_times"]) == 20
-    s_upd = sum(r["upd_times"][2:]) / 18 if smoke_ok else float("nan")
+    s_upd = sum(r["upd_times"][2:]) / 18 if smoke_ok else None
     s_cal = sum(r["cal_times"]) / len(r["cal_times"])
     n_cal = r["n_cal"]
     rate_cal = s_cal / (n_cal * 128)
@@ -372,7 +398,7 @@ def stage_smoke():
     proj_eval = 1.5 * rate * (tokens_main + tokens_timing)
 
     def proj_train(u):
-        return u * s_upd + (u / 100 + 1) * s_cal
+        return (u * s_upd + (u / 100 + 1) * s_cal) if smoke_ok else 0.0
     B = c["budget"]
     w_used, p_used, _ = ledger_totals()
 
@@ -474,7 +500,7 @@ def stage_eval():
         raise SystemExit("FAIL(eval-mode check)")
     # the test arrays are read (and their hash verified) only from here on
     d, dh = load_cache(need_test=True)
-    wjson(os.path.join(OUT, "test_opened.json"), {"utc": utc(), "checkpoint_sha256": tj["checkpoint_sha256"], "config_sha256": config_sha()})
+    wjson(os.path.join(OUT, "test_opened.json"), {"utc": utc(), "checkpoint_sha256": tj["checkpoint_sha256"], "config_sha256": config_sha(), "eval_status": "in_progress"})
     tj["test_opened"] = True
     wjson(os.path.join(OUT, "train.json"), tj)
     wall_cap = ledger_totals()[0]
@@ -614,10 +640,13 @@ def stage_eval():
                "n_test_windows": int(N), "test_subjects": sorted(set(subj.tolist())), "eval_mode_checks": checks,
                "numerical_checks": resample_check, "identity_checks": ident, "excluded_windows_centered_logit": excluded,
                "timing": timing, "threads": torch.get_num_threads(), "eval_wall_seconds": wall, "eval_cpu_seconds": cpu_s,
-               "stored_sizes_mb": sizes_mb, "config_sha256": config_sha(),
+               "stored_sizes_mb": sizes_mb, "provenance": provenance(),
                "stored": {"eval_jsonl": "per-window pooled logits (float64), CE, predictions, distances, H8 decomposition",
                           "C0_token_logits": "results (float16 gz)", "S8_H8_token_logits": "data/har/derived (local only, float16)"}}
     wjson(os.path.join(OUT, "eval_summary.json"), summary)
+    lock = json.load(open(os.path.join(OUT, "test_opened.json")))
+    lock["eval_status"] = "COMPLETED"
+    wjson(os.path.join(OUT, "test_opened.json"), lock)
     ledger_add("eval", wall, cpu_s, "COMPLETED")
     print(json.dumps({"numerical_checks": resample_check, "identity_checks": ident, "excluded": excluded, "wall": wall, "cpu": cpu_s}, indent=1))
 
@@ -676,7 +705,7 @@ def stage_control():
             per_cond[cn]["ce_equal_weight_subjects"] = float(np.mean(list(per_cond[cn]["subject_mean_ce"].values())))
             per_cond[cn]["acc_equal_weight_subjects"] = float(np.mean(list(per_cond[cn]["subject_mean_acc"].values())))
     wall, cpu_s = since(t)
-    res.update({"conditions": per_cond, "wall_seconds": wall, "cpu_seconds": cpu_s, "status": "COMPLETED",
+    res.update({"conditions": per_cond, "wall_seconds": wall, "cpu_seconds": cpu_s, "status": "COMPLETED", "provenance": provenance(),
                 "role": "representation-invariance control; not a task ceiling, SOTA or capacity-matched baseline"})
     wjson(os.path.join(OUT, "control.json"), res)
     ledger_add("control", wall, cpu_s, "COMPLETED")
@@ -750,11 +779,12 @@ def stage_aggregate():
     dec["ptime_minus_pC0_norm"] = summarize(subj_means(lambda r: float(np.linalg.norm(np.asarray(r["H8/native_time"]["logits"]) - np.asarray(r["C0/native_mean"]["logits"])))))
     out["H8_logit_decomposition"] = dec
     out["numerical_checks"] = ev["numerical_checks"]
+    out["eval_provenance"] = ev.get("provenance", "not recorded by the eval code version that ran (runner as of commit 60536b3; see run_manifest.json)")
     out["identity_checks"] = ev["identity_checks"]
     out["timing"] = ev["timing"]
     if tr["config_sha256"] != config_sha():
         raise SystemExit("config changed since training")
-    out["config_sha256"] = config_sha()
+    out["provenance"] = provenance()
     out["checkpoint"] = {"sha256": tr["checkpoint_sha256"], "selected_update": tr["selected_update"], "selected_cal_ce": tr["selected_cal_ce"],
                          "selected_cal_acc": tr["selected_cal_acc"], "updates_run": tr["updates_run"]}
     if os.path.exists(os.path.join(OUT, "control.json")):

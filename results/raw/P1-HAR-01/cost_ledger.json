@@ -68,5 +68,14 @@
     "cpu_seconds": 0.602,
     "threads": 2,
     "status": "COMPLETED"
+  },
+  {
+    "stage": "aggregate",
+    "started_utc": "2026-10-02T16:45:57Z",
+    "finished_utc": "2026-10-02T16:45:57Z",
+    "wall_seconds": 0.372,
+    "cpu_seconds": 0.572,
+    "threads": 2,
+    "status": "COMPLETED"
   }
 ]
