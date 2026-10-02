@@ -19,5 +19,54 @@
       "status": "OK",
       "train_wall_allowance_seconds": 589.5
     }
+  },
+  {
+    "stage": "smoke",
+    "started_utc": "2026-10-02T16:30:09Z",
+    "wall_seconds": 13.365,
+    "cpu_seconds": 24.07,
+    "threads": 2,
+    "status": "COMPLETED",
+    "decision": {
+      "updates": 2000,
+      "status": "OK",
+      "train_wall_allowance_seconds": 481.6,
+      "projected_eval_wall_seconds": 531.9,
+      "projected_eval_cpu_seconds": 958.0
+    }
+  },
+  {
+    "stage": "train",
+    "started_utc": "2026-10-02T16:33:45Z",
+    "wall_seconds": 182.984,
+    "cpu_seconds": 354.205,
+    "threads": 2,
+    "status": "COMPLETED",
+    "updates_run": 2000,
+    "selected_update": 1200
+  },
+  {
+    "stage": "eval",
+    "started_utc": "2026-10-02T16:37:06Z",
+    "wall_seconds": 169.633,
+    "cpu_seconds": 317.744,
+    "threads": 2,
+    "status": "COMPLETED"
+  },
+  {
+    "stage": "control",
+    "started_utc": "2026-10-02T16:37:32Z",
+    "wall_seconds": 3.733,
+    "cpu_seconds": 4.633,
+    "threads": 2,
+    "status": "COMPLETED"
+  },
+  {
+    "stage": "aggregate",
+    "started_utc": "2026-10-02T16:37:33Z",
+    "wall_seconds": 0.352,
+    "cpu_seconds": 0.602,
+    "threads": 2,
+    "status": "COMPLETED"
   }
 ]
