@@ -396,7 +396,7 @@ def stage_smoke():
            "config_sha256": config_sha(), "rule": c["training"]["feasible_budget_rule"]}
     wjson(os.path.join(OUT, "smoke.json"), rep)
     ledger_add("smoke", wall, cpu_s, r["status"], {"decision": decision})
-    print(json.dumps({k: rep[k] for k in ("s_per_update_mean_3_to_20", "s_per_calibration_pass", "projected_train_seconds_2000", "projected_eval_seconds", "decision")}, indent=1))
+    print(json.dumps({k: rep[k] for k in ("s_per_update_mean_3_to_20", "s_per_calibration_pass_mean_of_2", "rate_used", "projected_train_seconds_2000", "projected_eval_seconds", "decision")}, indent=1))
 
 
 def stage_train():
