@@ -74,12 +74,35 @@ def ledger_totals():
     return sum(r["wall_seconds"] for r in rows), sum(r["cpu_seconds"] for r in rows), rows
 
 
-def ledger_guard(stage):
+def ledger_guard(stage, projected_wall, projected_cpu):
+    """Refuse to start a stage when the cumulative ledger plus the stage's projected cost would exceed a cap."""
     c = cfg()["budget"]
     w, p, _ = ledger_totals()
-    if w >= c["total_wall_seconds"] or p >= c["total_process_cpu_seconds"]:
-        ledger_add(stage, 0.0, 0.0, f"BLOCKED: cumulative budget reached before start (wall {w:.0f}s, cpu {p:.0f}s)")
-        raise SystemExit(f"BLOCKED: budget reached (wall {w:.0f}s, cpu {p:.0f}s)")
+    if w + projected_wall > c["total_wall_seconds"] or p + projected_cpu > c["total_process_cpu_seconds"]:
+        ledger_add(stage, 0.0, 0.0, f"BLOCKED: cumulative {w:.0f}s wall / {p:.0f}s cpu plus projected {projected_wall:.0f}s / {projected_cpu:.0f}s would exceed the cap")
+        raise SystemExit(f"BLOCKED: budget (wall {w:.0f}+{projected_wall:.0f}s, cpu {p:.0f}+{projected_cpu:.0f}s)")
+
+
+def config_sha():
+    return sha256_file(CFG)
+
+
+def check_calibration_rule(c):
+    """Re-derive the ID-only calibration rule (ascending hex digest) and compare with the frozen lists."""
+    tr = c["data"]["train_subjects"]
+    ranked = sorted(tr, key=lambda s_: hashlib.sha256(f"P1-HAR-01:calibration:{s_}".encode()).hexdigest())
+    assert sorted(ranked[:4]) == c["data"]["calibration_subjects"], "calibration subjects differ from the rule"
+    assert sorted(set(tr) - set(ranked[:4])) == c["data"]["fit_subjects"], "fit subjects are not the complement"
+
+
+def refuse_if_test_opened(stage):
+    lock = os.path.join(OUT, "test_opened.json")
+    if os.path.exists(lock):
+        ledger_add(stage, 0.0, 0.0, "REFUSED: test already opened (no replacement run)")
+        raise SystemExit("REFUSED: test already opened")
+    if stage == "train" and os.path.exists(os.path.join(OUT, "checkpoint.pt")):
+        ledger_add(stage, 0.0, 0.0, "REFUSED: checkpoint.pt already exists (no replacement run)")
+        raise SystemExit("REFUSED: checkpoint exists")
 
 
 def ledger_add(stage, wall, cpu_s, status, extra=None):
@@ -148,12 +171,15 @@ def stage_data():
     print(json.dumps({k: rep[k] for k in ("train_shape", "test_shape", "n_fit_windows", "n_calibration_windows", "n_test_windows")}))
 
 
-def load_cache():
+def load_cache(need_test=False):
+    """Smoke and train verify only the train arrays; the test arrays are hashed (and used) by eval and control only."""
     import numpy as np
     d = np.load(os.path.join(DERIVED, "cache.npz"))
     rep = json.load(open(os.path.join(OUT, "data_hash.json")))
-    if arr_sha(d["Xtr"]) != rep["sha256"]["Xtr"] or arr_sha(d["Xte"]) != rep["sha256"]["Xte"]:
-        raise SystemExit("data cache hash mismatch")
+    if arr_sha(d["Xtr"]) != rep["sha256"]["Xtr"] or arr_sha(d["ytr"]) != rep["sha256"]["ytr"]:
+        raise SystemExit("data cache hash mismatch (train)")
+    if need_test and (arr_sha(d["Xte"]) != rep["sha256"]["Xte"] or arr_sha(d["yte"]) != rep["sha256"]["yte"]):
+        raise SystemExit("data cache hash mismatch (test)")
     return d, rep
 
 
@@ -195,7 +221,9 @@ def locf_resample(X_cond_values, g, K=128, dt_train=0.02):
     for k in range(1, K + 1):
         t = k * dt_train
         j = int(np.searchsorted(obs_t, t + 1e-9, side="right")) - 1
-        idx.append(max(j, 0))
+        assert j >= 0, ("no observation at or before", t)
+        idx.append(j)
+    assert X_cond_values.shape[1] == len(obs_t)
     return X_cond_values[:, idx, :]
 
 
@@ -250,7 +278,7 @@ def train_loop(torch, tides, c, d, updates, log, cal_every=100, time_cap=None, s
     y_c = torch.tensor(yc)
     seed_all(torch, seed)
     model = build(torch, tides, c)
-    opt = torch.optim.Adam(model.parameters(), lr=c["training"]["lr"] if "lr" in c["training"] else 0.003)
+    opt = torch.optim.Adam(model.parameters(), lr=c["training"]["lr"])
     rng = random.Random(seed)
     bsz = 32
     checks, upd_times, cal_times = [], [], []
@@ -302,24 +330,46 @@ def train_loop(torch, tides, c, d, updates, log, cal_every=100, time_cap=None, s
 
 
 def stage_smoke():
+    import numpy as np
     c = cfg()
-    ledger_guard("smoke")
+    refuse_if_test_opened("smoke")
+    ledger_guard("smoke", c["budget"]["smoke_wall_seconds_max"], 2 * c["budget"]["smoke_wall_seconds_max"])
+    check_calibration_rule(c)
     torch, tides = setup(c)
-    d, _ = load_cache()
+    d, _ = load_cache(need_test=False)
     t = clock()
     lines = []
 
     def log(m):
         lines.append(m)
         print(m, flush=True)
-    r = train_loop(torch, tides, c, d, updates=20, log=log, cal_every=10**9, time_cap=c["budget"]["smoke_wall_seconds_max"] - 5, smoke=True)
+    r = train_loop(torch, tides, c, d, updates=20, log=log, cal_every=10**9, time_cap=c["budget"]["smoke_wall_seconds_max"] - 15, smoke=True)
+    # one inference batch of 256 fit windows on the S8 grid (L = 1024) for a long-sequence per-token rate
+    seed_all(torch, c["training"]["model_seed"])
+    probe = build(torch, tides, c)
+    probe.eval()
+    gS = grid("S8")
+    fit_idx = np.where(np.isin(d["str_"], c["data"]["fit_subjects"]))[0][:256]
+    uS, sS = native_batch(torch, d["Xtr"][fit_idx], gS, d["mu"], d["sd"])
+    with torch.inference_mode():
+        probe(uS[:8], step_scale=sS[:8])
+        tS = clock()
+        probe(uS, step_scale=sS)
+        s8_wall, _ = since(tS)
     wall, cpu_s = since(t)
-    s_upd = sum(r["upd_times"][2:]) / max(len(r["upd_times"][2:]), 1)
+    smoke_ok = r["status"] == "COMPLETED" and len(r["upd_times"]) == 20
+    s_upd = sum(r["upd_times"][2:]) / 18 if smoke_ok else float("nan")
     s_cal = sum(r["cal_times"]) / len(r["cal_times"])
+    n_cal = r["n_cal"]
+    rate_cal = s_cal / (n_cal * 128)
+    rate_s8 = s8_wall / (256 * 1024)
+    rate = max(rate_cal, rate_s8)
     cpu_ratio = cpu_s / max(wall, 1e-9)
     n_test = 2947
     U = c["training"]["updates_planned"]
-    proj_eval = 3 * s_cal * (n_test * (128 + 1024 + 576) + 3 * n_test * 128) / (r["n_cal"] * 128)
+    tokens_main = n_test * (128 + 1024 + 576) + n_test * 128 + 3 * n_test * 128
+    tokens_timing = 7 * 256 * sum(2 * grid(cn)["L"] + 2 * 128 for cn in CONDS)
+    proj_eval = 1.5 * rate * (tokens_main + tokens_timing)
 
     def proj_train(u):
         return u * s_upd + (u / 100 + 1) * s_cal
@@ -330,14 +380,20 @@ def stage_smoke():
         w = w_used + wall + proj_train(u) + proj_eval + 300
         p = p_used + cpu_s + cpu_ratio * (proj_train(u) + proj_eval) + 600
         return w <= B["total_wall_seconds"] and p <= B["total_process_cpu_seconds"]
-    feasible = U if ok(U) else max((u for u in range(0, U, 100) if ok(u)), default=0)
-    decision = {"updates": feasible, "status": "OK" if feasible >= 500 else "INCOMPLETE_BUDGET",
-                "train_wall_allowance_seconds": round(proj_train(feasible) + 300, 1)}
+    if smoke_ok:
+        feasible = U if ok(U) else max((u for u in range(0, U, 100) if ok(u)), default=0)
+        status = "OK" if feasible >= 500 else "INCOMPLETE_BUDGET"
+    else:
+        feasible, status = 0, f"FAIL(smoke: {r['status']}, {len(r['upd_times'])} updates)"
+    decision = {"updates": feasible, "status": status, "train_wall_allowance_seconds": round(proj_train(feasible) + 300, 1) if smoke_ok else 0,
+                "projected_eval_wall_seconds": round(proj_eval, 1), "projected_eval_cpu_seconds": round(cpu_ratio * proj_eval, 1)}
     rep = {"smoke_updates": 20, "status": r["status"], "wall_seconds": wall, "cpu_seconds": cpu_s, "cpu_to_wall_ratio": round(cpu_ratio, 3),
-           "s_per_update_mean_3_to_20": s_upd, "s_per_calibration_pass": s_cal, "n_fit": r["n_fit"], "n_cal": r["n_cal"],
-           "n_parameters": r["n_params"], "projected_train_seconds_2000": round(proj_train(U), 1),
-           "projected_eval_seconds": round(proj_eval, 1), "ledger_before": {"wall": w_used, "cpu": p_used},
-           "decision": decision, "model_discarded": True, "rule": c["training"]["feasible_budget_rule"]}
+           "s_per_update_mean_3_to_20": s_upd, "s_per_calibration_pass_mean_of_2": s_cal, "n_fit": r["n_fit"], "n_cal": n_cal,
+           "s_per_token_calibration_L128": rate_cal, "s_per_token_S8_batch256_L1024": rate_s8, "rate_used": rate,
+           "n_parameters": r["n_params"], "projected_train_seconds_2000": round(proj_train(U), 1) if smoke_ok else None,
+           "projected_eval_tokens": {"main": tokens_main, "timing_block": tokens_timing}, "projected_eval_seconds": round(proj_eval, 1),
+           "ledger_before": {"wall": w_used, "cpu": p_used}, "decision": decision, "model_discarded": True,
+           "config_sha256": config_sha(), "rule": c["training"]["feasible_budget_rule"]}
     wjson(os.path.join(OUT, "smoke.json"), rep)
     ledger_add("smoke", wall, cpu_s, r["status"], {"decision": decision})
     print(json.dumps({k: rep[k] for k in ("s_per_update_mean_3_to_20", "s_per_calibration_pass", "projected_train_seconds_2000", "projected_eval_seconds", "decision")}, indent=1))
@@ -345,14 +401,18 @@ def stage_smoke():
 
 def stage_train():
     c = cfg()
-    ledger_guard("train")
+    refuse_if_test_opened("train")
     sm = json.load(open(os.path.join(OUT, "smoke.json")))
     dec = sm["decision"]
+    if sm["config_sha256"] != config_sha():
+        raise SystemExit("config changed since the smoke decision")
     if dec["status"] != "OK":
-        ledger_add("train", 0.0, 0.0, "NOT_RUN(INCOMPLETE_BUDGET per smoke decision)")
-        raise SystemExit("INCOMPLETE_BUDGET: not training")
+        ledger_add("train", 0.0, 0.0, f"NOT_RUN({dec['status']} per smoke decision)")
+        raise SystemExit(f"{dec['status']}: not training")
+    ledger_guard("train", dec["train_wall_allowance_seconds"], sm["cpu_to_wall_ratio"] * dec["train_wall_allowance_seconds"] + 60)
+    check_calibration_rule(c)
     torch, tides = setup(c)
-    d, dh = load_cache()
+    d, dh = load_cache(need_test=False)
     t = clock()
     lines = [f"git HEAD {git('rev-parse', 'HEAD')} dirty={bool(git('status', '--porcelain'))}; updates {dec['updates']}; allowance {dec['train_wall_allowance_seconds']}s"]
     print(lines[0])
@@ -376,7 +436,7 @@ def stage_train():
            "min_train_step_scale": r["min_train_step_scale"], "n_parameters": r["n_params"], "n_fit_windows": r["n_fit"], "n_cal_windows": r["n_cal"],
            "train_loop_wall_seconds": r["loop_wall"], "train_loop_cpu_seconds": r["loop_cpu"], "stage_wall_seconds": wall, "stage_cpu_seconds": cpu_s,
            "checkpoint_sha256": sha, "data_sha256": dh["sha256"], "torch": torch.__version__, "threads": torch.get_num_threads(),
-           "git_head": git("rev-parse", "HEAD"), "test_opened": False}
+           "git_head": git("rev-parse", "HEAD"), "config_sha256": config_sha(), "test_opened": False}
     wjson(os.path.join(OUT, "train.json"), out)
     with open(os.path.join(OUT, "train.log"), "w") as f:
         f.write("\n".join(lines) + "\n")
@@ -389,13 +449,17 @@ def stage_train():
 def stage_eval():
     import numpy as np
     c = cfg()
-    ledger_guard("eval")
+    refuse_if_test_opened("eval")
     tj = json.load(open(os.path.join(OUT, "train.json")))
+    sm = json.load(open(os.path.join(OUT, "smoke.json")))
+    if tj["config_sha256"] != config_sha():
+        raise SystemExit("config changed since training")
     if tj["status"] != "COMPLETED":
         ledger_add("eval", 0.0, 0.0, f"NOT_RUN(train status {tj['status']})")
         raise SystemExit("test not opened")
+    ledger_guard("eval", sm["decision"]["projected_eval_wall_seconds"], sm["decision"]["projected_eval_cpu_seconds"])
+    check_calibration_rule(c)
     torch, tides = setup(c)
-    d, dh = load_cache()
     ckpt = os.path.join(OUT, "checkpoint.pt")
     if sha256_file(ckpt) != tj["checkpoint_sha256"]:
         raise SystemExit("checkpoint hash mismatch")
@@ -405,6 +469,15 @@ def stage_eval():
     model.load_state_dict(torch.load(ckpt))
     model.eval()
     checks = eval_mode_checks(torch, model)
+    if not (checks["all_modules_eval"] and checks["dropout_p"] in ([0.0], []) and checks["batchnorm_running_stats"]):
+        ledger_add("eval", *since(t), "FAIL(eval-mode check)")
+        raise SystemExit("FAIL(eval-mode check)")
+    # the test arrays are read (and their hash verified) only from here on
+    d, dh = load_cache(need_test=True)
+    wjson(os.path.join(OUT, "test_opened.json"), {"utc": utc(), "checkpoint_sha256": tj["checkpoint_sha256"], "config_sha256": config_sha()})
+    tj["test_opened"] = True
+    wjson(os.path.join(OUT, "train.json"), tj)
+    wall_cap = ledger_totals()[0]
     X, subj, y = d["Xte"], d["ste"], d["yte"]
     mu, sd = d["mu"], d["sd"]
     N = X.shape[0]
@@ -419,24 +492,31 @@ def stage_eval():
             g = gs[cn]
             u, s = native_batch(torch, X, g, mu, sd)
             assert float(s.min()) > 0
-            h = features(torch, model, u, s)                       # (N, L, 16)
-            z = (h @ W_head.T + b_head)                             # (N, L, 6) per-token logits
+            h = features(torch, model, u, s)                       # (N, L, 16) features from the official backbone
+            z = (h @ W_head.T + b_head)                             # (N, L, 6) per-token logits (affine head), stored for re-aggregation
             tok[cn] = z.numpy().astype(np.float32)
             w = torch.tensor(g["w_time"], dtype=torch.float32)
-            pooled[(cn, "native_mean")] = z.mean(1).numpy()
-            pooled[(cn, "native_time")] = torch.einsum("nlc,l->nc", z, w).numpy()
+            # arms pool FEATURES at the official pooling location and apply the same affine head
+            pooled[(cn, "native_mean")] = model.head(h.mean(1)).numpy().astype(np.float64)
+            pooled[(cn, "native_time")] = model.head(torch.einsum("nlc,l->nc", h, w)).numpy().astype(np.float64)
+            resample_check[f"{cn}_head_of_mean_vs_mean_of_token_logits_max_abs"] = float(np.abs(pooled[(cn, "native_mean")] - z.mean(1).numpy()).max())
             if cn == "C0":
                 direct = torch.cat([model(u[i:i + 256], step_scale=s[i:i + 256]) for i in range(0, N, 256)], 0).numpy()
-                resample_check["C0_direct_forward_vs_head_of_mean_max_abs"] = float(np.abs(direct - pooled[(cn, "native_mean")]).max())
+                resample_check["C0_direct_forward_vs_native_mean_max_abs"] = float(np.abs(direct - pooled[(cn, "native_mean")]).max())
                 resample_check["C0_native_mean_vs_native_time_max_abs"] = float(np.abs(pooled[(cn, "native_mean")] - pooled[(cn, "native_time")]).max())
             Xr = locf_resample(X[:, g["base"], :], g)
             resample_check[f"{cn}_resampled_input_vs_C0_max_abs"] = float(np.abs(Xr - X).max())
             ur, sr = native_batch(torch, Xr, gs["C0"], mu, sd)
-            zr = torch.cat([model(ur[i:i + 256], step_scale=sr[i:i + 256]) for i in range(0, N, 256)], 0).numpy()
+            zr = torch.cat([model(ur[i:i + 256], step_scale=sr[i:i + 256]) for i in range(0, N, 256)], 0).numpy().astype(np.float64)
             pooled[(cn, "resampled")] = zr
-        # timing on the first 256 test windows
+            resample_check[f"{cn}_resampled_logits_vs_C0_native_mean_max_abs"] = float(np.abs(zr - pooled[("C0", "native_mean")]).max()) if ("C0", "native_mean") in pooled else None
+        # timing on the first 256 test windows (skipped, not run, if it would exceed the wall cap)
         timing = {}
-        for cn in CONDS:
+        elapsed = since(t)[0]
+        proj_timing = sm["decision"]["projected_eval_wall_seconds"] * sm["projected_eval_tokens"]["timing_block"] / (sm["projected_eval_tokens"]["main"] + sm["projected_eval_tokens"]["timing_block"])
+        if wall_cap + elapsed + proj_timing > c["budget"]["total_wall_seconds"]:
+            timing = {"status": f"SKIPPED (budget): elapsed {elapsed:.0f}s + projected {proj_timing:.0f}s would exceed the cap"}
+        for cn in (CONDS if "status" not in timing else ()):
             g = gs[cn]
             Xb = X[:256]
             ub, sb = native_batch(torch, Xb, g, mu, sd)
@@ -455,6 +535,8 @@ def stage_eval():
                 return model(uu, step_scale=ss)
             jobs = {"native_end_to_end": native_e2e, "resampled_end_to_end": res_e2e,
                     "native_forward_only": lambda: model(ub, step_scale=sb), "resampled_forward_only": lambda: model(urb, step_scale=srb)}
+            direct256 = model(ub, step_scale=sb).numpy().astype(np.float64)
+            resample_check[f"{cn}_direct_forward_vs_native_mean_first256_max_abs"] = float(np.abs(direct256 - pooled[(cn, "native_mean")][:256]).max())
             timing[cn] = {"tokens_native": g["L"], "tokens_resampled": 128, "batch": 256}
             for jn, fn in jobs.items():
                 for _ in range(2):
@@ -521,12 +603,16 @@ def stage_eval():
     os.makedirs(DERIVED, exist_ok=True)
     for cn in ("S8", "H8"):
         np.save(os.path.join(DERIVED, f"{cn}_token_logits.f16.npy"), tok[cn].astype(np.float16))
+    sizes_mb = {f: round(os.path.getsize(os.path.join(OUT, f)) / 1e6, 3) for f in ("eval.jsonl", "C0_token_logits.f16.npy.gz")}
+    if sum(sizes_mb.values()) > c["stored_outputs"]["size_cap_mb_in_git"]:
+        raise SystemExit(f"stored outputs exceed the size cap: {sizes_mb}")
     wall, cpu_s = since(t)
     summary = {"status": "COMPLETED", "checkpoint_sha256": tj["checkpoint_sha256"], "selected_update": tj["selected_update"],
                "n_test_windows": int(N), "test_subjects": sorted(set(subj.tolist())), "eval_mode_checks": checks,
                "numerical_checks": resample_check, "identity_checks": ident, "excluded_windows_centered_logit": excluded,
                "timing": timing, "threads": torch.get_num_threads(), "eval_wall_seconds": wall, "eval_cpu_seconds": cpu_s,
-               "stored": {"eval_jsonl": "per-window pooled logits, CE, predictions, distances, H8 decomposition",
+               "stored_sizes_mb": sizes_mb, "config_sha256": config_sha(),
+               "stored": {"eval_jsonl": "per-window pooled logits (float64), CE, predictions, distances, H8 decomposition",
                           "C0_token_logits": "results (float16 gz)", "S8_H8_token_logits": "data/har/derived (local only, float16)"}}
     wjson(os.path.join(OUT, "eval_summary.json"), summary)
     ledger_add("eval", wall, cpu_s, "COMPLETED")
@@ -538,9 +624,9 @@ def stage_eval():
 def stage_control():
     import numpy as np
     c = cfg()
-    ledger_guard("control")
+    ledger_guard("control", 120, 240)
     torch, _ = setup(c)
-    d, _ = load_cache()
+    d, _ = load_cache(need_test=True)
     t = clock()
 
     def feats(X, g):
@@ -593,7 +679,7 @@ def stage_control():
 def stage_aggregate():
     import numpy as np
     c = cfg()
-    ledger_guard("aggregate")
+    ledger_guard("aggregate", 120, 240)
     t = clock()
     recs = [json.loads(l) for l in open(os.path.join(OUT, "eval.jsonl"))]
     subs = sorted(set(r["subject"] for r in recs))
@@ -629,6 +715,7 @@ def stage_aggregate():
             vals = [float(np.mean([r[f"{cn}/{arm}"]["centered_logit_rel_vs_C0"] for r in by[s_] if not r["excluded_centered_logit_distance"]])) for s_ in subs]
             out["centered_logit_rel_vs_C0"][f"{cn}/{arm}"] = summarize(vals)
     dec = {}
+    dec["note"] = "W, M, Q, A_minus_B are pre-registered; M_end (M restricted to the 128 interval-end tokens) is a pre-registered secondary split of M"
     for key in ("W", "M", "M_end", "Q", "A_minus_B"):
         dec[key + "_norm"] = summarize(subj_means(lambda r, key=key: float(np.linalg.norm(r["H8_decomposition"][key]))))
         dec[key + "_vector_mean_over_subjects"] = np.mean([np.mean([r["H8_decomposition"][key] for r in by[s_]], axis=0) for s_ in subs], axis=0).tolist()
@@ -640,6 +727,9 @@ def stage_aggregate():
     out["identity_checks"] = ev["identity_checks"]
     out["timing"] = ev["timing"]
     tr = json.load(open(os.path.join(OUT, "train.json")))
+    if tr["config_sha256"] != config_sha():
+        raise SystemExit("config changed since training")
+    out["config_sha256"] = config_sha()
     out["checkpoint"] = {"sha256": tr["checkpoint_sha256"], "selected_update": tr["selected_update"], "selected_cal_ce": tr["selected_cal_ce"],
                          "selected_cal_acc": tr["selected_cal_acc"], "updates_run": tr["updates_run"]}
     if os.path.exists(os.path.join(OUT, "control.json")):

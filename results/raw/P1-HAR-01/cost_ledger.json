@@ -1,0 +1,23 @@
+[
+  {
+    "stage": "data",
+    "started_utc": "2026-10-02T16:20:54Z",
+    "wall_seconds": 1.985,
+    "cpu_seconds": 2.154,
+    "threads": 2,
+    "status": "COMPLETED"
+  },
+  {
+    "stage": "smoke",
+    "started_utc": "2026-10-02T16:21:30Z",
+    "wall_seconds": 16.001,
+    "cpu_seconds": 14.63,
+    "threads": 2,
+    "status": "COMPLETED",
+    "decision": {
+      "updates": 2000,
+      "status": "OK",
+      "train_wall_allowance_seconds": 589.5
+    }
+  }
+]

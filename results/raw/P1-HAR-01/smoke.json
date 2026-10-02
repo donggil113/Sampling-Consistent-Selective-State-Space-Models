@@ -1,0 +1,25 @@
+{
+  "smoke_updates": 20,
+  "status": "COMPLETED",
+  "wall_seconds": 16.001,
+  "cpu_seconds": 14.63,
+  "cpu_to_wall_ratio": 0.914,
+  "s_per_update_mean_3_to_20": 0.1045836636666877,
+  "s_per_calibration_pass": 3.8274999999999997,
+  "n_fit": 5988,
+  "n_cal": 1364,
+  "n_parameters": 23786,
+  "projected_train_seconds_2000": 289.5,
+  "projected_eval_seconds": 409.3,
+  "ledger_before": {
+    "wall": 1.985,
+    "cpu": 2.154
+  },
+  "decision": {
+    "updates": 2000,
+    "status": "OK",
+    "train_wall_allowance_seconds": 589.5
+  },
+  "model_discarded": true,
+  "rule": "the smoke run measures s_upd (mean wall seconds per update over updates 3..20) and s_cal (wall seconds of one calibration pass); projected_train = U*s_upd + (U/100 + 1)*s_cal; projected_eval = 3 * s_cal * (N_test * (128 + 1024 + 576) + 3 * N_test * 128) / (N_cal * 128); with margin 300 s, U = 2000 if smoke_wall + projected_train + projected_eval + 300 <= 3600 and the analogous CPU projection (measured process_time scaled the same way) + 600 <= 7200; otherwise U = the largest multiple of 100 that satisfies both; if U < 500 the run is INCOMPLETE_BUDGET and test is not opened. The decision is written by the smoke stage and read by the train stage; it is not changed after seeing any performance"
+}

@@ -1,6 +1,6 @@
 {
   "run_id": "P1-HAR-01",
-  "status": "FIXED BEFORE EXECUTION (no smoke, training or evaluation had run when this file was committed)",
+  "status": "FIXED BEFORE EXECUTION; amended once after a pre-execution review (before training; the data and smoke stages had run under the first version and smoke is re-run after the amendment) -- see amendment_log",
   "created_utc": "2026-10-02",
   "authorization": {
     "scope_quoted": "UCI official HAR ZIP (one download) + metadata/license; existing torch CPU / TIDES / TeX reused; one TIDES classifier, one model seed, one simple linear control; at most 2 CPU threads, 16 GiB RAM, total wall 3600 s / total process CPU 7200 s for smoke + train/dev/test + bootstrap (installation and PDF builds counted separately); applies to P1-HAR-01 only",
@@ -11,15 +11,80 @@
   "what_this_is": "an evaluation that applies an ARTIFICIAL same-held-path refinement to real sensor windows; it is not a validation on naturally irregular acquisitions",
   "data": {
     "acquisition_record": "results/raw/P1-HAR-01/acquisition.json",
-    "channels": ["total_acc_x", "total_acc_y", "total_acc_z", "body_acc_x", "body_acc_y", "body_acc_z", "body_gyro_x", "body_gyro_y", "body_gyro_z"],
+    "channels": [
+      "total_acc_x",
+      "total_acc_y",
+      "total_acc_z",
+      "body_acc_x",
+      "body_acc_y",
+      "body_acc_z",
+      "body_gyro_x",
+      "body_gyro_y",
+      "body_gyro_z"
+    ],
     "not_used": "561-dimensional engineered features",
     "window": "distributor windows of 128 readings at 50 Hz (2.56 s) with 50% overlap between consecutive windows of the same subject; windows are therefore not independent and the analysis unit is the subject",
     "official_partition_preserved": true,
-    "test_subjects": [2, 4, 9, 10, 12, 13, 18, 20, 24],
-    "train_subjects": [1, 3, 5, 6, 7, 8, 11, 14, 15, 16, 17, 19, 21, 22, 23, 25, 26, 27, 28, 29, 30],
-    "calibration_rule": "rank the 21 official train subjects by sha256('P1-HAR-01:calibration:<id>') and take the first 4; this rule uses only subject identifiers (no labels, no signals, no performance)",
-    "calibration_subjects": [7, 15, 17, 19],
-    "fit_subjects": [1, 3, 5, 6, 8, 11, 14, 16, 21, 22, 23, 25, 26, 27, 28, 29, 30],
+    "test_subjects": [
+      2,
+      4,
+      9,
+      10,
+      12,
+      13,
+      18,
+      20,
+      24
+    ],
+    "train_subjects": [
+      1,
+      3,
+      5,
+      6,
+      7,
+      8,
+      11,
+      14,
+      15,
+      16,
+      17,
+      19,
+      21,
+      22,
+      23,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30
+    ],
+    "calibration_rule": "rank the 21 official train subjects by the hex digest sha256('P1-HAR-01:calibration:<id>') in ascending lexicographic order and take the first 4; this rule uses only subject identifiers (no labels, no signals, no performance); the runner re-derives it and refuses to run if the frozen lists differ",
+    "calibration_subjects": [
+      7,
+      15,
+      17,
+      19
+    ],
+    "fit_subjects": [
+      1,
+      3,
+      5,
+      6,
+      8,
+      11,
+      14,
+      16,
+      21,
+      22,
+      23,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30
+    ],
     "normalization": "per-channel mean and standard deviation over all tokens of the fit-subject windows; applied unchanged to calibration, test and every refined grid (never re-fitted after refinement)",
     "labels": "6 classes (1..6 mapped to 0..5); window labels are kept unchanged under every grid condition"
   },
@@ -35,17 +100,36 @@
     },
     "held_values_horizon_labels": "unchanged under every condition; repeated values are not new sensor observations",
     "masking": "none: every batch has equal lengths, no padding and no mask",
-    "resampler": "last observation carried forward from the condition's observed (time, value) pairs onto the 128-point training grid; it reads only observed values; on S8 and H8 it reproduces the C0 input exactly (identity control, reported as a numerical check, not as evidence of superiority)"
+    "resampler": "last observation carried forward from the condition's observed (time, value) pairs onto the 128-point training grid; it reads only observed values at or before each grid time (an unobserved prefix is an error, not a fill); on S8 and H8 it reproduces the C0 input exactly (identity control: the maximum absolute input difference is reported, and its logits equal the C0 logits up to float32 rounding, with the maximum absolute logit difference reported); it is not evidence of superiority"
   },
   "model": {
     "class": "tides.TIDESClassifier (pinned official source, commit 4b51adce2060e7209e002a6a2fd6691a2f6fcc5e; signature read, not guessed)",
     "kwargs": {
-      "d_input": 9, "num_classes": 6, "d_hidden": 16, "ssm_size": 16, "ssm_blocks": 1, "num_blocks": 2,
-      "conj_sym": true, "clip_eigs": false, "discretization": "zoh", "dt_min": 0.001, "dt_max": 0.1,
-      "lambda_re_mode": "input_dependent", "lambda_im_mode": "lti", "bc_mode": "input_dependent",
-      "learn_lambda": "standard", "liquid": false, "bidir": false, "drop_rate": 0.0,
-      "encoder_depth": 1, "lambda_encoder_depth": 1, "bc_rank": 8, "ff_mult": 1.0, "conv_kernel_size": 0,
-      "proj_init_method": "zeros", "proj_norm": null
+      "d_input": 9,
+      "num_classes": 6,
+      "d_hidden": 16,
+      "ssm_size": 16,
+      "ssm_blocks": 1,
+      "num_blocks": 2,
+      "conj_sym": true,
+      "clip_eigs": false,
+      "discretization": "zoh",
+      "dt_min": 0.001,
+      "dt_max": 0.1,
+      "lambda_re_mode": "input_dependent",
+      "lambda_im_mode": "lti",
+      "bc_mode": "input_dependent",
+      "learn_lambda": "standard",
+      "liquid": false,
+      "bidir": false,
+      "drop_rate": 0.0,
+      "encoder_depth": 1,
+      "lambda_encoder_depth": 1,
+      "bc_rank": 8,
+      "ff_mult": 1.0,
+      "conv_kernel_size": 0,
+      "proj_init_method": "zeros",
+      "proj_norm": null
     },
     "why": "the backbone keyword arguments reproduce the P1-REAL-01/02 backbone setting (tides.TIDES with d_hidden 16, ssm_size 16, 1 SSM block, 2 blocks, input-dependent Re Lambda/B/C, exact ZOH, no convolution, no dropout, TIDES defaults otherwise); only d_input (1 -> 9) and the head (per-step linear regression head -> the official mean-pool + Linear(16, 6) classifier head) change. TIDESClassifier's own defaults differ in conj_sym (False), encoder_depth (0) and proj_norm ('rmsnorm'); they are overridden to reuse the existing setting. No other architecture is created.",
     "head": "official: logits = head(mean_j h_j) with head = nn.Linear(d_hidden, num_classes) (affine), so mean_j head(h_j) = head(mean_j h_j) exactly up to rounding; the pooling-only ablation replaces mean_j by the time-weighted sum sum_j (dt_j/T) h_j at the SAME pooling location and applies the same head; softmax outputs are never averaged",
@@ -58,15 +142,16 @@
     "optimizer": "Adam, lr 0.003, batch 32 windows sampled uniformly from fit-subject windows (as in the synthetic runs)",
     "updates_planned": 2000,
     "calibration": "every 100 updates (and at update 0) mean cross-entropy on all calibration-subject windows in eval mode; the state with the lowest calibration cross-entropy is kept (earliest on ties); accuracy is logged but not used for selection; test subjects are never used for selection",
-    "eval_mode_checks": "every module in eval mode during calibration and test; dropout p = 0; batch normalization with running statistics; equal lengths; all step scales > 0 (recorded per run)",
-    "checkpoint": "saved once with its sha256 before any test window is read; test evaluation verifies the hash",
-    "feasible_budget_rule": "the smoke run measures s_upd (mean wall seconds per update over updates 3..20) and s_cal (wall seconds of one calibration pass); projected_train = U*s_upd + (U/100 + 1)*s_cal; projected_eval = 3 * s_cal * (N_test * (128 + 1024 + 576) + 3 * N_test * 128) / (N_cal * 128); with margin 300 s, U = 2000 if smoke_wall + projected_train + projected_eval + 300 <= 3600 and the analogous CPU projection (measured process_time scaled the same way) + 600 <= 7200; otherwise U = the largest multiple of 100 that satisfies both; if U < 500 the run is INCOMPLETE_BUDGET and test is not opened. The decision is written by the smoke stage and read by the train stage; it is not changed after seeing any performance",
-    "cap_during_training": "the train stage stops and keeps the best-so-far state if its own wall time exceeds its projected allowance plus 300 s; status INCOMPLETE_BUDGET(train) and test is not opened"
+    "eval_mode_checks": "every module in eval mode during calibration and test; dropout p = 0; batch normalization with running statistics; equal lengths; all step scales > 0; enforced: a failing check is FAIL in training and in evaluation",
+    "checkpoint": "saved once with its sha256 before any test window is read: smoke and train hash and use only the train arrays; eval verifies the checkpoint hash, then reads the test arrays and writes test_opened.json; after that, smoke and train refuse to run (no replacement run)",
+    "feasible_budget_rule": "the smoke run measures s_upd (mean wall seconds per update over updates 3..20; the run must complete all 20 updates, else FAIL), s_cal (mean wall seconds of its two calibration passes, at update 0 and 20) and the per-token inference rate as the larger of s_cal/(N_cal*128) and the rate of one S8 batch of 256 fit windows (L = 1024); projected_train(U) = U*s_upd + (U/100 + 1)*s_cal; projected_eval = 1.5 * rate * (tokens_main + tokens_timing) with tokens_main = N_test*(128+1024+576) + N_test*128 + 3*N_test*128 and tokens_timing = 7*256*sum_cond(2*L_cond + 256); with the ledger total so far (data + smoke) and margins 300 s wall / 600 s CPU (CPU projected with the smoke's cpu/wall ratio), U = 2000 if the wall and CPU sums are within 3600 s / 7200 s; otherwise U = the largest multiple of 100 that satisfies both; if U < 500 the run is INCOMPLETE_BUDGET and test is not opened. The decision is written by the smoke stage and read by the train stage; it is not changed after seeing any performance",
+    "cap_during_training": "the train stage stops and keeps the best-so-far state if its own wall time exceeds its projected allowance plus 300 s; status INCOMPLETE_BUDGET(train) and test is not opened",
+    "lr": 0.003
   },
   "arms_same_checkpoint": {
-    "native_mean": "official forward on the condition's grid with physical step scales; token-mean pooling",
-    "native_time": "same native features, pooled with weights dt_j/T (pooling-only ablation)",
-    "resampled": "official forward on the LOCF-resampled training grid (step scale 1)",
+    "native_mean": "official forward on the condition's grid with physical step scales: features from the official backbone, token-mean pooled, affine head (the direct TIDESClassifier forward is compared on C0 for all windows and on the first 256 windows of every condition; maximum absolute differences reported)",
+    "native_time": "the same native features pooled with weights dt_j/T at the same pooling location, then the same affine head (pooling-only ablation)",
+    "resampled": "official forward on the LOCF-resampled training grid (step scale 1); on S8 and H8 the input is identical to C0, so its logits equal the C0 native_mean logits up to float32 rounding (maximum absolute difference reported)",
     "check_on_C0": "native_mean and native_time coincide on the uniform grid up to rounding; the maximum absolute logit difference is reported"
   },
   "estimands": {
@@ -78,15 +163,15 @@
       "direction": "D > 0 means token-mean pooling has higher cross-entropy than time-weighted pooling of the same features on H8"
     },
     "secondary": {
-      "risk_change_vs_C0": "for arms native_mean, native_time and resampled on S8 and H8: subject means of CE(arm, cond) - CE(native_mean, C0); the resampled arm is an identity control (expected exactly 0)",
+      "risk_change_vs_C0": "for arms native_mean, native_time and resampled on S8 and H8: subject means of CE(arm, cond) - CE(native_mean, C0); the resampled arm is an identity control (identical input; its values are float32 rounding noise and are reported as such, not interpreted)",
       "absolute_CE_and_accuracy": "per arm and condition, subject means; accuracy is reported separately from cross-entropy",
       "prediction_flips": "fraction of windows (subject mean) whose argmax under (arm, cond) differs from the argmax under native_mean on C0",
       "output_discrepancy": {
         "probability": "total variation 0.5 * sum_c |softmax(z) - softmax(z_C0)| (bounded in [0,1]; no denominator)",
         "centered_logits": "||ztilde - ztilde_C0||_2 / ||ztilde_C0||_2 with ztilde = z - mean_c z (removes the constant shift that softmax ignores); windows with ||ztilde_C0||_2 < 1e-6 are excluded by this pre-specified rule and their number is reported"
       },
-      "H8_logit_decomposition": "per window, on logits (head is affine): p_mean(H8) - p(C0) = W + M with W = sum_j (a_j - w_j) b_j, M = sum_j a_j (z_j - b_j); p_time(H8) - p(C0) = Q = sum_j w_j (z_j - b_j); b_j = C0 token logits of the base interval containing token j, z_j = H8 token logits, a_j = 1/576, w_j = dt_j/T; W equals (7/18)(A - B) per class with A, B the mean C0 token logits over the two halves; reported as subject means of the per-class vectors and of their Euclidean norms; the signed terms are not an additive decomposition of any absolute-value quantity",
-      "cost": "end-to-end and forward-only wall and process-CPU seconds per condition for one batch of the first 256 test windows (2 warm-up, 5 timed calls, inference mode, 2 threads); timed repeats are not independent samples"
+      "H8_logit_decomposition": "per window, on logits (head is affine): p_mean(H8) - p(C0) = W + M with W = sum_j (a_j - w_j) b_j, M = sum_j a_j (z_j - b_j); p_time(H8) - p(C0) = Q = sum_j w_j (z_j - b_j); b_j = C0 token logits of the base interval containing token j, z_j = H8 token logits, a_j = 1/576, w_j = dt_j/T; W equals (7/18)(A - B) per class with A, B the mean C0 token logits over the two halves; reported as subject means of the per-class vectors and of their Euclidean norms; the signed terms are not an additive decomposition of any absolute-value quantity; M_end = the part of M on the 128 interval-end tokens (the model-coupling change evaluated at the base-time states) is a pre-registered split of M; all identities are checked numerically (residuals reported; the pooled arms use head-of-pooled-features, so residuals are at float32 rounding level)",
+      "cost": "end-to-end and forward-only wall and process-CPU seconds per condition for one batch of the first 256 test windows (2 warm-up, 5 timed calls, inference mode, 2 threads); timed repeats are not independent samples; the timing block is skipped (recorded as SKIPPED) if running it would exceed the wall cap"
     },
     "uncertainty": "subject-level paired percentile bootstrap: 2000 draws of 9 subjects with replacement (random.Random(0)); the same draws are reused for every quantity; no window-level interval is reported; the 9 d_s values are all shown with their sign count; 9 clusters give only a coarse interval and a degenerate interval is reported as such",
     "multiplicity": "one primary; secondary quantities are descriptive and not corrected; no margin rule is imported from the synthetic runs",
@@ -99,20 +184,41 @@
     "purpose": "a representation-invariance control: its features are identical on C0, S8 and H8 up to rounding (the maximum absolute difference and the CE difference are reported); it is NOT a task ceiling, SOTA or capacity-matched baseline"
   },
   "stored_outputs": {
-    "in_git": "results/raw/P1-HAR-01/: acquisition.json, data_hash.json, smoke.json, train.json, train.log, checkpoint.pt (about 30 KB) + sha256, eval.jsonl (per-window: subject, label, pooled logits of every arm and condition, CE, prediction, distances, H8 decomposition vectors), C0_token_logits.f16.npy.gz (2947 x 128 x 6, float16), eval_summary.json, control.json, aggregate.json, cost_ledger.json",
+    "in_git": "results/raw/P1-HAR-01/: acquisition.json, data_hash.json, smoke.json, train.json, train.log, checkpoint.pt (about 30 KB) + sha256, eval.jsonl (per-window: subject, label, pooled logits of every arm and condition, CE, prediction, distances, H8 decomposition vectors), C0_token_logits.f16.npy.gz (2947 x 128 x 6, float16), eval_summary.json, control.json, aggregate.json, cost_ledger.json; pooled logits are stored in float64; the in-git outputs of eval (eval.jsonl + C0 token logits) must stay under size_cap_mb_in_git",
     "local_only": "data/har/derived/: cached arrays and S8/H8 per-token logits (float16); regenerable from the checkpoint",
-    "why": "pooled logits and the decomposition terms allow every reported statistic to be recomputed without a forward pass"
+    "why": "pooled logits and the decomposition terms allow every reported statistic to be recomputed without a forward pass",
+    "size_cap_mb_in_git": 25
   },
   "budget": {
-    "cpu_threads": 2, "gpu": false, "ram_gib": 16,
-    "total_wall_seconds": 3600, "total_process_cpu_seconds": 7200,
+    "cpu_threads": 2,
+    "gpu": false,
+    "ram_gib": 16,
+    "total_wall_seconds": 3600,
+    "total_process_cpu_seconds": 7200,
     "smoke_wall_seconds_max": 60,
-    "ledger": "results/raw/P1-HAR-01/cost_ledger.json (every stage, including smoke, failed attempts and bootstrap; wall and process CPU separately); a stage refuses to start when the cumulative total would exceed either cap",
-    "excluded_from_this_budget": "the data download (32.97 s), extraction, PDF builds and package builds (recorded elsewhere)"
+    "ledger": "results/raw/P1-HAR-01/cost_ledger.json (every stage, including data parsing, smoke, refused/failed attempts and bootstrap; wall and process CPU separately); a stage refuses to start when the cumulative total plus its projected cost would exceed either cap",
+    "excluded_from_this_budget": "the data download (32.97 s), extraction, PDF builds and package builds (recorded elsewhere)",
+    "smoke_note": "the smoke training loop is capped at 45 s so that the whole stage (model build, two calibration passes, one S8 probe batch) stays near 60 s; the stage wall is what the ledger records"
   },
   "stop_conditions": {
     "INCOMPLETE_BUDGET": "feasible updates < 500, or training exceeds its allowance: the checkpoint is kept, test is not opened, the status is reported",
     "FAIL": "non-finite loss or an eval-mode check failing: reported as FAIL, no replacement run",
-    "no_changes_after_test": "no change of seed, loss, estimand, head, dataset, H8 strength or budget after any test window is read"
-  }
+    "no_changes_after_test": "no change of seed, loss, estimand, head, dataset, H8 strength or budget after any test window is read; enforced by test_opened.json and the config sha256 recorded in train.json"
+  },
+  "amendment_log": [
+    {
+      "when": "2026-10-02, before training (after data stage and first smoke, both recorded in the ledger)",
+      "reason": "independent pre-execution review of config and runner (4 lenses); no result was seen",
+      "changes": [
+        "stage guards use cumulative ledger + projected stage cost (not only 'cap already reached'); eval has a pre-timing wall check and skips the timing block instead of exceeding the cap",
+        "the eval projection covers the main pass (incl. the C0 direct forward and 3 resampled passes) and the timing block, and uses the larger of the L=128 calibration rate and a measured L=1024 batch rate (factor 1.5 margin)",
+        "the smoke decision carries the smoke status (a smoke that did not complete 20 updates yields FAIL, not OK)",
+        "the train arrays only are hashed by smoke/train; test arrays are hashed and read by eval/control only; eval writes test_opened.json and train/smoke refuse to run again (no replacement run); train.json records the config sha256 and later stages refuse on a changed config",
+        "eval-mode checks are enforced (FAIL) at test time, not only recorded",
+        "arms pool FEATURES and apply the affine head (the official pooling location); per-token logits are stored only for re-aggregation; pooled logits are cast to float64 before CE; identity-control wording corrected (identical input; logits equal up to float32 rounding, max abs reported)",
+        "calibration rule stated as ascending hex order and re-derived in code; lr made an explicit key; locf asserts a past observation instead of clamping; M_end stated; an in-git size cap added",
+        "smoke: two calibration passes (update 0 and 20) are averaged; its loop cap is 45 s and the stage wall is recorded; the data stage is inside the ledger"
+      ]
+    }
+  ]
 }
