@@ -1,4 +1,4 @@
-%%%%%%%% Manuscript v4 (v3: git commit 1bca23e; v2: dce4d30; v1: 8fb0368) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%% Manuscript v5 (v4: git commit dc426eb; v3: 1bca23e; v2: dce4d30; v1: 8fb0368) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TARGET_YEAR      = 2027  (ICML 2027; icml.cc/Conferences/2027, its CallForPapers page and the icml2027.zip style URL returned 404 on 2026-09-27)
 % TEMPLATE_YEAR    = 2026  (official ICML 2026 style kit, review/anonymous mode, unmodified)
 % SUBMISSION_READY = false
@@ -248,8 +248,11 @@ The released code, not the printed equations, defines the model behind TIDES' re
 We make no claim that this affects TIDES' results.
 
 %=====================================================================================
-\section{Trained Official TIDES: Fixed-Protocol Seed Repetition}
+\section{Trained Official TIDES: Synthetic Seed Repetition and One Real-Sensor Evaluation}
 \label{sec:real}
+
+\subsection{Synthetic task: fixed-protocol seed repetition}
+\label{sec:real-syn}
 
 \paragraph{Setup.}
 \emph{Model:} official TIDES at a pinned commit (MIT), $\AdapterParams$ parameters, two blocks, input-dependent $\mathrm{Re}\,\Lambda$, $B$, $C$, exact ZOH, causal, no convolution, a linear per-step head; CPU, float32, 2 threads.
@@ -317,6 +320,26 @@ The repetition pre-specified a per-seed layer diagnostic only if some seed's S8 
 Four training seeds of one two-block model on one synthetic task give a replication within that task, not evidence about other data, sensors, models or tasks, about TIDES' benchmarks, about selective SSMs in general, or a precise statement about the distribution of training runs.
 The teacher is from the model's own continuous-time family, the primary estimand was chosen after the development run, and the calibration curves were unstable in every seed (up to $\RealDevMax$ in the development run), so the selected checkpoints depend on the evaluation schedule.
 
+\subsection{Real sensor windows: UCI HAR, one checkpoint}
+\label{sec:har}
+
+\paragraph{Data and representation.}
+We use the Human Activity Recognition Using Smartphones data~\citep{anguita2013har}: 30 subjects, six activities, 3-axis total acceleration, body acceleration and gyroscope at 50\,Hz, distributed as noise-filtered windows of 128 readings (2.56\,s) with 50\% overlap between consecutive windows of a subject; we use the nine inertial channels, not the 561 engineered features.
+These are distributor-preprocessed windows, not a raw sensor stream, and the refinement below is artificial: it does not validate behaviour on naturally irregular acquisitions.
+The official subject partition is kept (21 training subjects, 9 test subjects, $\HarNwin$ test windows); four of the 21 training subjects, chosen before the run by a hash of their identifiers, are the calibration subjects ($\HarNcal$ windows), and the remaining 17 ($\HarNfit$ windows) fit the model and the per-channel normalization, which is never re-fitted.
+A window's 128 values are represented as 128 held intervals of $1/50$\,s ($T{=}2.56$\,s), a chosen reconstruction of the distributed window: C0 keeps them; S8 splits every interval into 8 (1024 tokens); H8 splits the first 64 (576 tokens); held values, horizon and label are unchanged, and the repeated values are not new observations.
+Because windows overlap, the analysis unit is the subject: every quantity is averaged within a subject first, and the 9 subject values are averaged with equal weight.
+
+\paragraph{Model, training and arms.}
+The model is the official \texttt{TIDESClassifier} of the pinned code with the backbone setting of \cref{sec:real-syn} ($\HarParams$ parameters), nine input channels and the official head, a token mean of the features followed by a linear map to six classes.
+One model seed; Adam, batch 32, $\HarUpdatesRun$ updates; the state with the lowest calibration cross-entropy (every 100 updates) is frozen and hashed before any test window is read: update $\HarUpdate$, calibration cross-entropy $\HarCalCE$, accuracy $\HarCalAcc$.
+The same checkpoint is evaluated with three arms: the official token-mean readout on the condition's grid (\emph{native mean}); the same features pooled with weights $dt_j/T$ at the same location and passed through the same affine head (\emph{native time}, an inference-time ablation, not a trained baseline); and the official readout on the training grid rebuilt from the observed values (\emph{resampled}), which on S8 and H8 is the identity control (input difference $\HarResIdent$).
+Because the head is affine, the token mean of the features equals the mean of the per-token logits (checked, maximum difference $\HarPoolIdent$ on C0); softmax outputs are never averaged.
+The primary estimand, fixed before the run, is $d_s$, the mean over the windows of test subject $s$ of CE(native mean, H8) $-$ CE(native time, H8), and $D$, its equal-weight mean over the 9 subjects, with a subject-level paired percentile bootstrap (2000 draws); cross-entropy, accuracy, prediction flips, output distances and cost are secondary and reported separately.
+A representation-invariance control, time-weighted per-channel means and second moments with a multinomial linear classifier fitted on the fit subjects, is reported only to show that a readout that integrates over time is unchanged by the refinement; it is not a task ceiling or a capacity-matched baseline.
+
+%%HAR_RESULTS%%
+
 %=====================================================================================
 \section{Controlled Toy Results}
 \label{sec:toy}
@@ -353,7 +376,7 @@ For \eqref{eq:cascade} (P1-COMP-01; held input of FIRST\_RUN unit~0; \CompSecond
 \section{Limitations}
 \label{sec:limits}
 
-\emph{Trained evidence:} four training seeds and a development seed of one small two-block model (one selective SSM) on one synthetic task whose teacher is from the model's own family; no statement about other tasks, real data, the population of training runs, TIDES' benchmarks, Mamba, S4 or S5 is supported, and the accuracy contrast was not stable. A first evaluation on real sensor signals has not been run.
+\emph{Trained evidence:} four training seeds and a development seed of one small two-block model (one selective SSM) on one synthetic task whose teacher is from the model's own family; no statement about other tasks, real data, the population of training runs, TIDES' benchmarks, Mamba, S4 or S5 is supported, and the accuracy contrast was not stable. \emph{Real-sensor evidence:} one dataset (UCI HAR), one checkpoint and one model seed; 9 test subjects give a coarse subject-level interval; the windows are distributor-preprocessed and the refinement is artificial, so nothing is shown about naturally irregular acquisitions, other sensors, or the population of training runs.
 \emph{Margin:} the $\pm5\%$ equivalence margin is a convention, not an application-derived tolerance; all intervals are reported.
 \emph{Entry points not measured:} token-indexed convolution, normalization in training mode, and deeper or wider stacks.
 \emph{Analysis:} \cref{prop:split,prop:cascade} are standard; \cref{prop:cascade} is an upper bound for a linear time-invariant scalar cascade (\cref{rem:scope}) and gives no lower bound and no statement about deep selective networks; no global hold-error or Euler-$B$ bound is claimed.
@@ -374,7 +397,7 @@ Whether these effects matter on real sensor data and for other selective SSMs is
 \section*{Impact Statement}
 
 This paper presents work whose goal is to advance the field of Machine Learning, specifically the understanding of how sequence models respond to changes in sampling.
-All experiments use synthetic data and small CPU computations; the trained-model results come from four training seeds and a development seed on one synthetic task.
+The experiments use synthetic data and one public, anonymized activity-recognition dataset (UCI HAR, distributed for research with a citation requirement), all on small CPU computations; the trained-model results come from four training seeds and a development seed on one synthetic task and from one checkpoint on the public dataset. No clinical or otherwise sensitive data were used.
 The main risk we see is over-reading such results: a model that behaves consistently in a controlled setting may still behave differently on irregularly sampled real data, for example clinical or sensor streams, so any use in such settings needs evaluation on the actual data and sampling process.
 We are not aware of other societal consequences that must be specifically highlighted here.
 
@@ -446,6 +469,18 @@ Its runtimes are forward-only model calls on prebuilt tensors (no warm-up, outsi
 \input{generated/tab_real}
 \input{generated/tab_pool}
 \input{generated/tab_layers}
+
+\FloatBarrier
+\section{P1-HAR-01: data, protocol and cost}
+\label{app:har}
+
+\emph{Data.} The official archive (61,005,872 bytes; sha256 recorded with the per-file hashes in the acquisition record) was downloaded once from the UCI repository, checked for path traversal before extraction, and kept outside version control. The repository page states a CC BY 4.0 license; the README requires citing \citet{anguita2013har} and prohibits commercial use; both statements are recorded. Channels: total acceleration (g), body acceleration (g, gravity removed by the distributors' 0.3\,Hz filter) and angular velocity (rad/s). Train 7352 windows / test 2947 windows, as distributed.
+\emph{Calibration rule.} The 21 training subjects are ranked by the SHA-256 digest of ``P1-HAR-01:calibration:$\langle$id$\rangle$'' and the first four (7, 15, 17, 19) are the calibration subjects; the runner re-derives the rule.
+\emph{Budget rule.} A 20-update smoke run (model discarded) measured $\HarSmokeWall$\,s and projected the training and evaluation cost; the pre-registered rule allowed the planned 2000 updates. Ledger: training $\HarTrainWall$\,s wall ($\HarTrainCPU$\,s process CPU), evaluation $\HarEvalWall$\,s wall; all stages together $\HarTotalWall$\,s wall and $\HarTotalCPU$\,s process CPU on 2 threads, against a cap of 3600\,s / 7200\,s.
+\emph{Checks.} Eval mode enforced at calibration and test (no dropout, running batch statistics); all step scales positive; no padding or mask; the resampled input equals C0 on S8 and H8 to $\HarResIdent$; the identities of the logit decomposition hold to $\HarDecIdent$; $\HarExcluded$ windows excluded by the centered-logit rule.
+\emph{Timing (\cref{tab:har-timing}).} native\_S8\_end\_to\_end\,/\,resampled\_S8\_end\_to\_end $=\HarRatioSeight$; forward-only $\HarFratioSeight$; H8 end-to-end $\HarRatioHeight$.
+
+\input{generated/tab_har_timing}
 
 \FloatBarrier
 \section{Numerical floor}
