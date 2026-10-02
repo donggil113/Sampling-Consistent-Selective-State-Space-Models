@@ -30,7 +30,8 @@ INCLUDE = [
     "results/raw/P1-REAL-02/*.json",
     "results/raw/P1-REAL-02/*/train.json", "results/raw/P1-REAL-02/*/train.log",
     "results/raw/P1-REAL-02/*/eval.jsonl", "results/raw/P1-REAL-02/*/eval_summary.json",
-    "results/raw/P1-REAL-02/h8_decomposition/*", "results/anon_check.json",
+    "results/raw/P1-REAL-02/h8_decomposition/*",
+    "results/raw/P1-HAR-01/*", "results/anon_check.json",
     "paper/anon_README.md", "notes/*.md",
     "run_manifest.json", "STATUS.md", "RESEARCH_PACKET.md", "RELATED_WORK.md",
 ]
@@ -57,7 +58,7 @@ def main():
     for pat in INCLUDE:
         for src in sorted(glob.glob(os.path.join(ROOT, pat))):
             rel = os.path.relpath(src, ROOT)
-            if os.path.basename(rel) in EXCLUDE_NAMES or rel.endswith(".pt") or "__pycache__" in rel:
+            if os.path.basename(rel) in EXCLUDE_NAMES or (rel.endswith(".pt") and "P1-HAR-01" not in rel) or "__pycache__" in rel:
                 continue
             if rel in files:
                 continue

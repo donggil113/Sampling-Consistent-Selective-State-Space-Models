@@ -1,0 +1,21 @@
+git HEAD <commit> dirty=True; updates 2000; allowance 481.6s
+[   11.73s] update 100 train_ce 0.3715 cal_ce 0.5118 cal_acc 0.803 best@100
+[   21.29s] update 200 train_ce 0.2502 cal_ce 0.2441 cal_acc 0.918 best@200
+[   29.81s] update 300 train_ce 0.1846 cal_ce 0.2057 cal_acc 0.946 best@300
+[   38.58s] update 400 train_ce 0.0604 cal_ce 0.1183 cal_acc 0.962 best@400
+[   47.60s] update 500 train_ce 0.1229 cal_ce 0.2074 cal_acc 0.959 best@400
+[   56.36s] update 600 train_ce 0.1139 cal_ce 0.2117 cal_acc 0.956 best@400
+[   65.46s] update 700 train_ce 0.1982 cal_ce 0.1572 cal_acc 0.959 best@400
+[   75.82s] update 800 train_ce 0.0589 cal_ce 0.1618 cal_acc 0.963 best@400
+[   85.05s] update 900 train_ce 0.1765 cal_ce 0.1075 cal_acc 0.974 best@900
+[   93.41s] update 1000 train_ce 0.0809 cal_ce 0.0937 cal_acc 0.982 best@1000
+[  102.62s] update 1100 train_ce 0.0630 cal_ce 0.1251 cal_acc 0.957 best@1000
+[  111.68s] update 1200 train_ce 0.1271 cal_ce 0.0919 cal_acc 0.974 best@1200
+[  120.71s] update 1300 train_ce 0.1806 cal_ce 0.1312 cal_acc 0.964 best@1200
+[  129.66s] update 1400 train_ce 0.0890 cal_ce 0.1319 cal_acc 0.967 best@1200
+[  138.65s] update 1500 train_ce 0.0069 cal_ce 0.1821 cal_acc 0.970 best@1200
+[  147.69s] update 1600 train_ce 0.1109 cal_ce 0.1513 cal_acc 0.963 best@1200
+[  156.37s] update 1700 train_ce 0.1428 cal_ce 0.1880 cal_acc 0.941 best@1200
+[  165.75s] update 1800 train_ce 0.1449 cal_ce 0.2191 cal_acc 0.943 best@1200
+[  174.12s] update 1900 train_ce 0.0734 cal_ce 0.1379 cal_acc 0.957 best@1200
+[  182.98s] update 2000 train_ce 0.1827 cal_ce 0.1679 cal_acc 0.966 best@1200

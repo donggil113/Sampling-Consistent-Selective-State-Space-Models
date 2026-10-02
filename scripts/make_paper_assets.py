@@ -860,24 +860,25 @@ seed & cond. & tokens & nat.\ e2e & nat.\ fwd & res.\ e2e & res.\ fwd & nat.\ e2
         rows = []
         for s_ in subs:
             k = str(s_)
-            rows.append(f"{s_} & {HA['windows_per_subject'][k]} & ${HA['ce']['C0/native_mean']['per_subject'][k]:.3f}$ & "
+            rows.append(f"{s_} & ${HA['ce']['C0/native_mean']['per_subject'][k]:.3f}$ & "
                         f"${HA['ce']['H8/native_mean']['per_subject'][k]:.3f}$ & ${HA['ce']['H8/native_time']['per_subject'][k]:.3f}$ & "
                         f"${HA['primary_D']['per_subject'][k]:+.3f}$ & ${HA['accuracy']['C0/native_mean']['per_subject'][k]:.3f}$ & "
-                        f"${HA['accuracy']['H8/native_mean']['per_subject'][k]:.3f}$ & ${HA['accuracy']['H8/native_time']['per_subject'][k]:.3f}$ & "
+                        f"${HA['accuracy']['H8/native_mean']['per_subject'][k]:.3f}$ & "
                         f"${HA['flip_vs_C0']['H8/native_mean']['per_subject'][k]:.3f}$ \\\\")
         pd = HA["primary_D"]
         rows.append(r"\midrule")
-        rows.append(f"mean & {HA['n_windows']} & ${HA['ce']['C0/native_mean']['mean_over_subjects']:.3f}$ & ${HA['ce']['H8/native_mean']['mean_over_subjects']:.3f}$ & "
+        rows.append(f"mean & ${HA['ce']['C0/native_mean']['mean_over_subjects']:.3f}$ & ${HA['ce']['H8/native_mean']['mean_over_subjects']:.3f}$ & "
                     f"${HA['ce']['H8/native_time']['mean_over_subjects']:.3f}$ & ${pd['mean_over_subjects']:+.3f}$ {fci(pd['ci95_subject_bootstrap'])} & "
                     f"${HA['accuracy']['C0/native_mean']['mean_over_subjects']:.3f}$ & ${HA['accuracy']['H8/native_mean']['mean_over_subjects']:.3f}$ & "
-                    f"${HA['accuracy']['H8/native_time']['mean_over_subjects']:.3f}$ & ${HA['flip_vs_C0']['H8/native_mean']['mean_over_subjects']:.3f}$ \\\\")
+                    f"${HA['flip_vs_C0']['H8/native_mean']['mean_over_subjects']:.3f}$ \\\\")
         write("tab_har_subjects.tex", r"""\begin{table*}[t]
-\caption{P1-HAR-01: one official TIDES classifier (one model seed) on UCI HAR inertial windows, per official test subject (windows overlap by 50\%, so the subject is the analysis unit). C0: the 128 distributed values as 128 held intervals of $1/50$\,s; H8: the first 64 intervals split by 8 (576 tokens), same held values and labels. CE: mean cross-entropy (nats) of the window label under token-mean pooling (official head) and time-weighted pooling of the same features (inference ablation). $d_s$: primary difference CE(mean, H8) $-$ CE(time, H8) per subject; the last row is the equal-weight mean over the 9 subjects with a subject-level paired percentile bootstrap interval (2000 draws), which is coarse with 9 clusters. acc.: accuracy. flip: fraction of windows whose predicted class under H8 (token mean) differs from C0.}
+\caption{P1-HAR-01: one official TIDES classifier (one model seed) on UCI HAR inertial windows, per official test subject (288--381 windows each; windows overlap by 50\%, so the subject is the analysis unit). C0: the 128 distributed values as 128 held intervals of $1/50$\,s; H8: the first 64 intervals split by 8 (576 tokens), same held values and labels. CE: mean cross-entropy (nats) of the window label under token-mean pooling (official head) and time-weighted pooling of the same features (inference ablation). $d_s$: primary difference CE(mean, H8) $-$ CE(time, H8) per subject; the last row is the equal-weight mean over the 9 subjects with a subject-level paired percentile bootstrap interval (2000 draws), which is coarse with 9 clusters. acc.: accuracy (time-weighted pooling: $0.903$ on H8). flip: fraction of windows whose predicted class under H8 (token mean) differs from C0.}
 \label{tab:har-subjects}
 \centering\small
-\begin{tabular}{rrccccccccc}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{rccccccc}
 \toprule
-subject & windows & CE C0 & CE H8 mean & CE H8 time & $d_s$ & acc.\ C0 & acc.\ H8 mean & acc.\ H8 time & flip H8 mean \\
+subject & CE C0 & CE H8 mean & CE H8 time & $d_s$ & acc.\ C0 & acc.\ H8 mean & flip H8 mean \\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
@@ -885,7 +886,7 @@ subject & windows & CE C0 & CE H8 mean & CE H8 time & $d_s$ & acc.\ C0 & acc.\ H
 \end{table*}
 """)
         rows = []
-        arm_name = {"native_mean": "native, token mean", "native_time": "native, time-weighted", "resampled": "resampled (identity)"}
+        arm_name = {"native_mean": "native, token mean", "native_time": "native, time-weighted", "resampled": "resampled (identity control)"}
         for cn in ("S8", "H8"):
             for arm in ("native_mean", "native_time", "resampled"):
                 kk = f"{cn}/{arm}"
@@ -895,8 +896,8 @@ subject & windows & CE C0 & CE H8 mean & CE H8 time & $d_s$ & acc.\ C0 & acc.\ H
                             f"${HA['centered_logit_rel_vs_C0'][kk]['mean_over_subjects']:.3f}$ \\\\")
             if cn == "S8":
                 rows.append(r"\midrule")
-        write("tab_har_effects.tex", r"""\begin{table}[t]
-\caption{P1-HAR-01 effects of the same-held-path refinement, equal-weight means over the 9 test subjects (subject means first). $\Delta$CE: cross-entropy of the arm on the condition minus cross-entropy of the official token-mean readout on C0, with the subject-level bootstrap interval. flip: fraction of windows whose predicted class differs from C0. TV: total variation $\tfrac12\sum_c|p_c-p_c^{\mathrm{C0}}|$ between the class probabilities. c.-logit: $\|\tilde z-\tilde z^{\mathrm{C0}}\|_2/\|\tilde z^{\mathrm{C0}}\|_2$ with class-centered logits (""" + str(HA["centered_logit_rel_vs_C0"]["excluded_windows"]) + r""" windows excluded by the $10^{-6}$ rule). The resampled arm reproduces the C0 input exactly (identity control).}
+        write("tab_har_effects.tex", r"""\begin{table*}[t]
+\caption{P1-HAR-01 effects of the same-held-path refinement, equal-weight means over the 9 test subjects (subject means first). $\Delta$CE: cross-entropy of the arm on the condition minus cross-entropy of the official token-mean readout on C0, with the subject-level bootstrap interval. flip: fraction of windows whose predicted class differs from C0. TV: total variation $\tfrac12\sum_c|p_c-p_c^{\mathrm{C0}}|$ between the class probabilities. c.-logit: $\|\tilde z-\tilde z^{\mathrm{C0}}\|_2/\|\tilde z^{\mathrm{C0}}\|_2$ with class-centered logits (""" + str(HA["centered_logit_rel_vs_C0"]["excluded_windows"]) + r""" windows excluded by the $10^{-6}$ rule). The resampled arm reproduces the C0 input exactly (identity control). On S8 the grid is uniform, so the two native arms coincide.}
 \label{tab:har-effects}
 \centering\small
 \begin{tabular}{llcccc}
@@ -906,7 +907,7 @@ cond. & arm & $\Delta$CE vs.\ C0 [95\% CI] & flip & TV & c.-logit \\
 """ + "\n".join(rows) + r"""
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 """)
         trows = []
         for cn in ("C0", "S8", "H8"):
@@ -946,6 +947,8 @@ cond. & tokens & nat.\ e2e & nat.\ fwd & res.\ e2e & res.\ fwd & nat.\ e2e CPU \
                 macros[f"HarFlip{tag}"] = f"{HA['flip_vs_C0'][kk]['mean_over_subjects']:.3f}"
                 macros[f"HarTV{tag}"] = f"{HA['tv_vs_C0'][kk]['mean_over_subjects']:.3f}"
                 macros[f"HarCL{tag}"] = f"{HA['centered_logit_rel_vs_C0'][kk]['mean_over_subjects']:.3f}"
+                macros[f"HarCL{tag}Min"] = f"{HA['centered_logit_rel_vs_C0'][kk]['min']:.3f}"
+                macros[f"HarCL{tag}Max"] = f"{HA['centered_logit_rel_vs_C0'][kk]['max']:.3f}"
                 macros[f"HarAcc{tag}"] = f"{HA['accuracy'][kk]['mean_over_subjects']:.3f}"
         dec = HA["H8_logit_decomposition"]
         for key, nm in (("pmean_minus_pC0_norm", "Delta"), ("W_norm", "W"), ("M_norm", "M"), ("M_end_norm", "Mend"), ("Q_norm", "Q"), ("ptime_minus_pC0_norm", "Qt"), ("A_minus_B_norm", "AB")):

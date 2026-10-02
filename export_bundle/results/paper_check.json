@@ -8,6 +8,7 @@
   ],
   "undefined_refs": [],
   "unreferenced_labels": [
+    "app:har",
     "app:real",
     "app:repro",
     "body-end",
@@ -17,10 +18,7 @@
     "sec:limits",
     "sec:related",
     "sec:single",
-    "tab:newobs",
-    "tab:readout",
-    "tab:real",
-    "tab:stiff"
+    "tab:real"
   ],
   "undefined_number_macros": [],
   "environment_imbalance": {},
@@ -33,6 +31,6 @@
     ]
   },
   "todos": [],
-  "main_body_word_estimate": 4219,
+  "main_body_word_estimate": 4769,
   "main_body_page_estimate": "UNVERIFIED (compile required); ICML limit is 8 pages excluding references and appendix"
 }

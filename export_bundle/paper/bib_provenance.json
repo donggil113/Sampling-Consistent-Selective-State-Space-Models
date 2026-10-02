@@ -1,286 +1,298 @@
 {
- "source": "https://arxiv.org/abs/<id> citation_* meta tags (arXiv API returned HTTP 406 via proxy)",
- "fetched_utc": "2026-09-26T21:33:35Z",
- "entries": [
-  {
-   "id": "2005.08926",
-   "title": "Neural Controlled Differential Equations for Irregular Time Series",
-   "authors": [
-    "Kidger, Patrick",
-    "Morrill, James",
-    "Foster, James",
-    "Lyons, Terry"
-   ],
-   "citation_date": "2020/05/18",
-   "online_date": "2020/11/05",
-   "latest_version": "v2",
-   "journal_ref": null,
-   "comments": "Accepted at NeurIPS 2020 (Spotlight)",
-   "page_sha256": "6f6674c194ee10bc79594186670c52089fae6ff6cd977a550b4ba1b764e866da"
-  },
-  {
-   "id": "2110.13985",
-   "title": "Combining Recurrent, Convolutional, and Continuous-time Models with Linear State-Space Layers",
-   "authors": [
-    "Gu, Albert",
-    "Johnson, Isys",
-    "Goel, Karan",
-    "Saab, Khaled",
-    "Dao, Tri",
-    "Rudra, Atri",
-    "R\u00e9, Christopher"
-   ],
-   "citation_date": "2021/10/26",
-   "online_date": "2021/10/26",
-   "latest_version": "v1",
-   "journal_ref": null,
-   "comments": "NeurIPS 2021",
-   "page_sha256": "77f158933fa98df2b9cba09448b33a49be682f36434c43bb7fd59c6c3fcc6347"
-  },
-  {
-   "id": "2111.00396",
-   "title": "Efficiently Modeling Long Sequences with Structured State Spaces",
-   "authors": [
-    "Gu, Albert",
-    "Goel, Karan",
-    "R\u00e9, Christopher"
-   ],
-   "citation_date": "2021/10/31",
-   "online_date": "2022/08/05",
-   "latest_version": "v3",
-   "journal_ref": null,
-   "comments": "ICLR 2022 (Outstanding Paper HM)",
-   "page_sha256": "9723e49e0453de53b7f904a5b516fa18db5b0b025fd5c5b44cc43a7d1905bf03"
-  },
-  {
-   "id": "2206.11893",
-   "title": "On the Parameterization and Initialization of Diagonal State Space Models",
-   "authors": [
-    "Gu, Albert",
-    "Gupta, Ankit",
-    "Goel, Karan",
-    "R\u00e9, Christopher"
-   ],
-   "citation_date": "2022/06/23",
-   "online_date": "2022/08/05",
-   "latest_version": "v2",
-   "journal_ref": null,
-   "comments": null,
-   "page_sha256": "377b4fbd44a780d3e125697a3c200de4d46e854d0b39c0541303527f6f7c1548"
-  },
-  {
-   "id": "2208.04933",
-   "title": "Simplified State Space Layers for Sequence Modeling",
-   "authors": [
-    "Smith, Jimmy T. H.",
-    "Warrington, Andrew",
-    "Linderman, Scott W."
-   ],
-   "citation_date": "2022/08/09",
-   "online_date": "2023/03/03",
-   "latest_version": "v3",
-   "journal_ref": null,
-   "comments": null,
-   "page_sha256": "0597aee6bf80a8acf8e33edf959e2cf1b3499d8eb8020ec9cfb082ae478e73c4"
-  },
-  {
-   "id": "2209.12951",
-   "title": "Liquid Structural State-Space Models",
-   "authors": [
-    "Hasani, Ramin",
-    "Lechner, Mathias",
-    "Wang, Tsun-Hsuan",
-    "Chahine, Makram",
-    "Amini, Alexander",
-    "Rus, Daniela"
-   ],
-   "citation_date": "2022/09/26",
-   "online_date": "2022/09/26",
-   "latest_version": "v1",
-   "journal_ref": null,
-   "comments": null,
-   "page_sha256": "81295faa9bc21543b49d5a56f7050666b38783c0532e01bee9601a4c0432eecc"
-  },
-  {
-   "id": "2210.06583",
-   "title": "S4ND: Modeling Images and Videos as Multidimensional Signals Using State Spaces",
-   "authors": [
-    "Nguyen, Eric",
-    "Goel, Karan",
-    "Gu, Albert",
-    "Downs, Gordon W.",
-    "Shah, Preey",
-    "Dao, Tri",
-    "Baccus, Stephen A.",
-    "R\u00e9, Christopher"
-   ],
-   "citation_date": "2022/10/12",
-   "online_date": "2022/10/14",
-   "latest_version": "v2",
-   "journal_ref": null,
-   "comments": "NeurIPS 2022",
-   "page_sha256": "a04880d6987e205247113f044bcf5f69e7326cb0d7f0ed76b9b9df773f63e720"
-  },
-  {
-   "id": "2312.00752",
-   "title": "Mamba: Linear-Time Sequence Modeling with Selective State Spaces",
-   "authors": [
-    "Gu, Albert",
-    "Dao, Tri"
-   ],
-   "citation_date": "2023/12/01",
-   "online_date": "2024/05/31",
-   "latest_version": "v2",
-   "journal_ref": null,
-   "comments": null,
-   "page_sha256": "c46e80f9a7fb8d7f280bd5bf790e63d124321224d3902bafbaa185a484d2d4e3"
-  },
-  {
-   "id": "2402.15584",
-   "title": "State Space Models for Event Cameras",
-   "authors": [
-    "Zubi\u0107, Nikola",
-    "Gehrig, Mathias",
-    "Scaramuzza, Davide"
-   ],
-   "citation_date": "2024/02/23",
-   "online_date": "2024/04/18",
-   "latest_version": "v3",
-   "journal_ref": "IEEE Conference on Computer Vision and Pattern Recognition (CVPR), Seattle, 2024",
-   "comments": "18 pages, 5 figures, 6 tables, CVPR 2024 Camera Ready paper",
-   "page_sha256": "cf1417eb92ec0911482a4a29a0700db607848130774ebb41299fb31da06572ee"
-  },
-  {
-   "id": "2402.18512",
-   "title": "Log Neural Controlled Differential Equations: The Lie Brackets Make a Difference",
-   "authors": [
-    "Walker, Benjamin",
-    "McLeod, Andrew D.",
-    "Qin, Tiexin",
-    "Cheng, Yichuan",
-    "Li, Haoliang",
-    "Lyons, Terry"
-   ],
-   "citation_date": "2024/02/28",
-   "online_date": "2025/10/23",
-   "latest_version": "v4",
-   "journal_ref": "Proceedings of the 41st International Conference on Machine Learning, 2024",
-   "comments": "23 pages, 5 figures",
-   "page_sha256": "c0496cb1ae546b66f8b1c802967702afb53b932982dfb8aeaa22f99e571af96a"
-  },
-  {
-   "id": "2402.19047",
-   "title": "Theoretical Foundations of Deep Selective State-Space Models",
-   "authors": [
-    "Cirone, Nicola Muca",
-    "Orvieto, Antonio",
-    "Walker, Benjamin",
-    "Salvi, Cristopher",
-    "Lyons, Terry"
-   ],
-   "citation_date": "2024/02/29",
-   "online_date": "2025/01/06",
-   "latest_version": "v4",
-   "journal_ref": null,
-   "comments": "Fina NeurIPS Camera Ready Version w/ minor edits",
-   "page_sha256": "2919f06507527d53a2bf69d07969fc0592623f3ffdf56410cf32d56fa2681fe2"
-  },
-  {
-   "id": "2405.21060",
-   "title": "Transformers are SSMs: Generalized Models and Efficient Algorithms Through Structured State Space Duality",
-   "authors": [
-    "Dao, Tri",
-    "Gu, Albert"
-   ],
-   "citation_date": "2024/05/31",
-   "online_date": "2024/05/31",
-   "latest_version": "v1",
-   "journal_ref": null,
-   "comments": "ICML 2024",
-   "page_sha256": "b0b39c0ebc8d724c6a842550350643d48ea118368b5630c48ebaf59749b1ed2e"
-  },
-  {
-   "id": "2410.03464",
-   "title": "S7: Selective and Simplified State Space Layers for Sequence Modeling",
-   "authors": [
-    "Soydan, Taylan",
-    "Zubi\u0107, Nikola",
-    "Messikommer, Nico",
-    "Mishra, Siddhartha",
-    "Scaramuzza, Davide"
-   ],
-   "citation_date": "2024/10/04",
-   "online_date": "2024/10/04",
-   "latest_version": "v1",
-   "journal_ref": null,
-   "comments": "23 pages, 3 figures, 11 tables. Equal contribution by Taylan Soydan and Nikola Zubi\u0107",
-   "page_sha256": "7a310fc2205101e14dadb6c513bef0ae809a789b20e15b8628e36cb4e6584382"
-  },
-  {
-   "id": "2410.03943",
-   "title": "Oscillatory State-Space Models",
-   "authors": [
-    "Rusch, T. Konstantin",
-    "Rus, Daniela"
-   ],
-   "citation_date": "2024/10/04",
-   "online_date": "2025/06/18",
-   "latest_version": "v3",
-   "journal_ref": null,
-   "comments": "ICLR 2025 (Oral)",
-   "page_sha256": "b0dc0879738288119800622bbf717c471118cb4a4d56efd4c0c35f2274c68336"
-  },
-  {
-   "id": "2510.19003",
-   "title": "$\\Delta$t-Mamba3D: A Time-Aware Spatio-Temporal State-Space Model for Breast Cancer Risk Prediction",
-   "authors": [
-    "Zhou, Zhengbo",
-    "Arefan, Dooman",
-    "Zuley, Margarita",
-    "Wu, Shandong"
-   ],
-   "citation_date": "2025/10/21",
-   "online_date": "2025/10/21",
-   "latest_version": "v1",
-   "journal_ref": null,
-   "comments": null,
-   "page_sha256": "b215c5e86a09264e1724db9f1893b2b91b88d1e24d7b86881e015c31e8573e06"
-  },
-  {
-   "id": "2603.15569",
-   "title": "Mamba-3: Improved Sequence Modeling using State Space Principles",
-   "authors": [
-    "Lahoti, Aakash",
-    "Li, Kevin Y.",
-    "Chen, Berlin",
-    "Wang, Caitlin",
-    "Bick, Aviv",
-    "Kolter, J. Zico",
-    "Dao, Tri",
-    "Gu, Albert"
-   ],
-   "citation_date": "2026/03/16",
-   "online_date": "2026/03/16",
-   "latest_version": "v1",
-   "journal_ref": null,
-   "comments": "ICLR 2026",
-   "page_sha256": "aed44f3c1413d5f8bfd7fd630d39c5cdec5572f6b9927050215e32b5289ad857"
-  },
-  {
-   "id": "2605.09742",
-   "title": "TIDES: Implicit Time-Awareness in Selective State Space Models",
-   "authors": [
-    "Soydan, Taylan",
-    "Bessa, Miguel A.",
-    "Mohr, Dirk",
-    "Barreira, Rui"
-   ],
-   "citation_date": "2026/05/10",
-   "online_date": "2026/05/10",
-   "latest_version": "v1",
-   "journal_ref": null,
-   "comments": "Preprint submitted for peer-review",
-   "page_sha256": "ada6af3bd55f553927ad61f587d6e528730b7df667f54b81ee0c1ac33e28dd7d"
-  }
- ]
+  "source": "https://arxiv.org/abs/<id> citation_* meta tags (arXiv API returned HTTP 406 via proxy)",
+  "fetched_utc": "2026-09-26T21:33:35Z",
+  "entries": [
+    {
+      "id": "2005.08926",
+      "title": "Neural Controlled Differential Equations for Irregular Time Series",
+      "authors": [
+        "Kidger, Patrick",
+        "Morrill, James",
+        "Foster, James",
+        "Lyons, Terry"
+      ],
+      "citation_date": "2020/05/18",
+      "online_date": "2020/11/05",
+      "latest_version": "v2",
+      "journal_ref": null,
+      "comments": "Accepted at NeurIPS 2020 (Spotlight)",
+      "page_sha256": "6f6674c194ee10bc79594186670c52089fae6ff6cd977a550b4ba1b764e866da"
+    },
+    {
+      "id": "2110.13985",
+      "title": "Combining Recurrent, Convolutional, and Continuous-time Models with Linear State-Space Layers",
+      "authors": [
+        "Gu, Albert",
+        "Johnson, Isys",
+        "Goel, Karan",
+        "Saab, Khaled",
+        "Dao, Tri",
+        "Rudra, Atri",
+        "Ré, Christopher"
+      ],
+      "citation_date": "2021/10/26",
+      "online_date": "2021/10/26",
+      "latest_version": "v1",
+      "journal_ref": null,
+      "comments": "NeurIPS 2021",
+      "page_sha256": "77f158933fa98df2b9cba09448b33a49be682f36434c43bb7fd59c6c3fcc6347"
+    },
+    {
+      "id": "2111.00396",
+      "title": "Efficiently Modeling Long Sequences with Structured State Spaces",
+      "authors": [
+        "Gu, Albert",
+        "Goel, Karan",
+        "Ré, Christopher"
+      ],
+      "citation_date": "2021/10/31",
+      "online_date": "2022/08/05",
+      "latest_version": "v3",
+      "journal_ref": null,
+      "comments": "ICLR 2022 (Outstanding Paper HM)",
+      "page_sha256": "9723e49e0453de53b7f904a5b516fa18db5b0b025fd5c5b44cc43a7d1905bf03"
+    },
+    {
+      "id": "2206.11893",
+      "title": "On the Parameterization and Initialization of Diagonal State Space Models",
+      "authors": [
+        "Gu, Albert",
+        "Gupta, Ankit",
+        "Goel, Karan",
+        "Ré, Christopher"
+      ],
+      "citation_date": "2022/06/23",
+      "online_date": "2022/08/05",
+      "latest_version": "v2",
+      "journal_ref": null,
+      "comments": null,
+      "page_sha256": "377b4fbd44a780d3e125697a3c200de4d46e854d0b39c0541303527f6f7c1548"
+    },
+    {
+      "id": "2208.04933",
+      "title": "Simplified State Space Layers for Sequence Modeling",
+      "authors": [
+        "Smith, Jimmy T. H.",
+        "Warrington, Andrew",
+        "Linderman, Scott W."
+      ],
+      "citation_date": "2022/08/09",
+      "online_date": "2023/03/03",
+      "latest_version": "v3",
+      "journal_ref": null,
+      "comments": null,
+      "page_sha256": "0597aee6bf80a8acf8e33edf959e2cf1b3499d8eb8020ec9cfb082ae478e73c4"
+    },
+    {
+      "id": "2209.12951",
+      "title": "Liquid Structural State-Space Models",
+      "authors": [
+        "Hasani, Ramin",
+        "Lechner, Mathias",
+        "Wang, Tsun-Hsuan",
+        "Chahine, Makram",
+        "Amini, Alexander",
+        "Rus, Daniela"
+      ],
+      "citation_date": "2022/09/26",
+      "online_date": "2022/09/26",
+      "latest_version": "v1",
+      "journal_ref": null,
+      "comments": null,
+      "page_sha256": "81295faa9bc21543b49d5a56f7050666b38783c0532e01bee9601a4c0432eecc"
+    },
+    {
+      "id": "2210.06583",
+      "title": "S4ND: Modeling Images and Videos as Multidimensional Signals Using State Spaces",
+      "authors": [
+        "Nguyen, Eric",
+        "Goel, Karan",
+        "Gu, Albert",
+        "Downs, Gordon W.",
+        "Shah, Preey",
+        "Dao, Tri",
+        "Baccus, Stephen A.",
+        "Ré, Christopher"
+      ],
+      "citation_date": "2022/10/12",
+      "online_date": "2022/10/14",
+      "latest_version": "v2",
+      "journal_ref": null,
+      "comments": "NeurIPS 2022",
+      "page_sha256": "a04880d6987e205247113f044bcf5f69e7326cb0d7f0ed76b9b9df773f63e720"
+    },
+    {
+      "id": "2312.00752",
+      "title": "Mamba: Linear-Time Sequence Modeling with Selective State Spaces",
+      "authors": [
+        "Gu, Albert",
+        "Dao, Tri"
+      ],
+      "citation_date": "2023/12/01",
+      "online_date": "2024/05/31",
+      "latest_version": "v2",
+      "journal_ref": null,
+      "comments": null,
+      "page_sha256": "c46e80f9a7fb8d7f280bd5bf790e63d124321224d3902bafbaa185a484d2d4e3"
+    },
+    {
+      "id": "2402.15584",
+      "title": "State Space Models for Event Cameras",
+      "authors": [
+        "Zubić, Nikola",
+        "Gehrig, Mathias",
+        "Scaramuzza, Davide"
+      ],
+      "citation_date": "2024/02/23",
+      "online_date": "2024/04/18",
+      "latest_version": "v3",
+      "journal_ref": "IEEE Conference on Computer Vision and Pattern Recognition (CVPR), Seattle, 2024",
+      "comments": "18 pages, 5 figures, 6 tables, CVPR 2024 Camera Ready paper",
+      "page_sha256": "cf1417eb92ec0911482a4a29a0700db607848130774ebb41299fb31da06572ee"
+    },
+    {
+      "id": "2402.18512",
+      "title": "Log Neural Controlled Differential Equations: The Lie Brackets Make a Difference",
+      "authors": [
+        "Walker, Benjamin",
+        "McLeod, Andrew D.",
+        "Qin, Tiexin",
+        "Cheng, Yichuan",
+        "Li, Haoliang",
+        "Lyons, Terry"
+      ],
+      "citation_date": "2024/02/28",
+      "online_date": "2025/10/23",
+      "latest_version": "v4",
+      "journal_ref": "Proceedings of the 41st International Conference on Machine Learning, 2024",
+      "comments": "23 pages, 5 figures",
+      "page_sha256": "c0496cb1ae546b66f8b1c802967702afb53b932982dfb8aeaa22f99e571af96a"
+    },
+    {
+      "id": "2402.19047",
+      "title": "Theoretical Foundations of Deep Selective State-Space Models",
+      "authors": [
+        "Cirone, Nicola Muca",
+        "Orvieto, Antonio",
+        "Walker, Benjamin",
+        "Salvi, Cristopher",
+        "Lyons, Terry"
+      ],
+      "citation_date": "2024/02/29",
+      "online_date": "2025/01/06",
+      "latest_version": "v4",
+      "journal_ref": null,
+      "comments": "Fina NeurIPS Camera Ready Version w/ minor edits",
+      "page_sha256": "2919f06507527d53a2bf69d07969fc0592623f3ffdf56410cf32d56fa2681fe2"
+    },
+    {
+      "id": "2405.21060",
+      "title": "Transformers are SSMs: Generalized Models and Efficient Algorithms Through Structured State Space Duality",
+      "authors": [
+        "Dao, Tri",
+        "Gu, Albert"
+      ],
+      "citation_date": "2024/05/31",
+      "online_date": "2024/05/31",
+      "latest_version": "v1",
+      "journal_ref": null,
+      "comments": "ICML 2024",
+      "page_sha256": "b0b39c0ebc8d724c6a842550350643d48ea118368b5630c48ebaf59749b1ed2e"
+    },
+    {
+      "id": "2410.03464",
+      "title": "S7: Selective and Simplified State Space Layers for Sequence Modeling",
+      "authors": [
+        "Soydan, Taylan",
+        "Zubić, Nikola",
+        "Messikommer, Nico",
+        "Mishra, Siddhartha",
+        "Scaramuzza, Davide"
+      ],
+      "citation_date": "2024/10/04",
+      "online_date": "2024/10/04",
+      "latest_version": "v1",
+      "journal_ref": null,
+      "comments": "23 pages, 3 figures, 11 tables. Equal contribution by Taylan Soydan and Nikola Zubić",
+      "page_sha256": "7a310fc2205101e14dadb6c513bef0ae809a789b20e15b8628e36cb4e6584382"
+    },
+    {
+      "id": "2410.03943",
+      "title": "Oscillatory State-Space Models",
+      "authors": [
+        "Rusch, T. Konstantin",
+        "Rus, Daniela"
+      ],
+      "citation_date": "2024/10/04",
+      "online_date": "2025/06/18",
+      "latest_version": "v3",
+      "journal_ref": null,
+      "comments": "ICLR 2025 (Oral)",
+      "page_sha256": "b0dc0879738288119800622bbf717c471118cb4a4d56efd4c0c35f2274c68336"
+    },
+    {
+      "id": "2510.19003",
+      "title": "$\\Delta$t-Mamba3D: A Time-Aware Spatio-Temporal State-Space Model for Breast Cancer Risk Prediction",
+      "authors": [
+        "Zhou, Zhengbo",
+        "Arefan, Dooman",
+        "Zuley, Margarita",
+        "Wu, Shandong"
+      ],
+      "citation_date": "2025/10/21",
+      "online_date": "2025/10/21",
+      "latest_version": "v1",
+      "journal_ref": null,
+      "comments": null,
+      "page_sha256": "b215c5e86a09264e1724db9f1893b2b91b88d1e24d7b86881e015c31e8573e06"
+    },
+    {
+      "id": "2603.15569",
+      "title": "Mamba-3: Improved Sequence Modeling using State Space Principles",
+      "authors": [
+        "Lahoti, Aakash",
+        "Li, Kevin Y.",
+        "Chen, Berlin",
+        "Wang, Caitlin",
+        "Bick, Aviv",
+        "Kolter, J. Zico",
+        "Dao, Tri",
+        "Gu, Albert"
+      ],
+      "citation_date": "2026/03/16",
+      "online_date": "2026/03/16",
+      "latest_version": "v1",
+      "journal_ref": null,
+      "comments": "ICLR 2026",
+      "page_sha256": "aed44f3c1413d5f8bfd7fd630d39c5cdec5572f6b9927050215e32b5289ad857"
+    },
+    {
+      "id": "2605.09742",
+      "title": "TIDES: Implicit Time-Awareness in Selective State Space Models",
+      "authors": [
+        "Soydan, Taylan",
+        "Bessa, Miguel A.",
+        "Mohr, Dirk",
+        "Barreira, Rui"
+      ],
+      "citation_date": "2026/05/10",
+      "online_date": "2026/05/10",
+      "latest_version": "v1",
+      "journal_ref": null,
+      "comments": "Preprint submitted for peer-review",
+      "page_sha256": "ada6af3bd55f553927ad61f587d6e528730b7df667f54b81ee0c1ac33e28dd7d"
+    }
+  ],
+  "manual_entries": [
+    {
+      "key": "anguita2013har",
+      "type": "inproceedings",
+      "title": "A Public Domain Dataset for Human Activity Recognition Using Smartphones",
+      "author": "Anguita, Davide and Ghio, Alessandro and Oneto, Luca and Parra, Xavier and Reyes-Ortiz, Jorge L.",
+      "booktitle": "21st European Symposium on Artificial Neural Networks, Computational Intelligence and Machine Learning (ESANN)",
+      "year": "2013",
+      "note": "Dataset: UCI Machine Learning Repository, DOI 10.24432/C54S4K",
+      "source": "citation [1] required by the dataset README.txt (sha256 eaee53f4...) and the UCI dataset page; not an arXiv entry"
+    }
+  ]
 }

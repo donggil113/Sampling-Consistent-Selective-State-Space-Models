@@ -1,4 +1,4 @@
-# Internal evidence bundle: "Where Sampling-Grid Dependence Enters Selective State-Space Models" (manuscript v4)
+# Internal evidence bundle: "Where Sampling-Grid Dependence Enters Selective State-Space Models" (manuscript v5)
 
 This bundle is the INTERNAL evidence package for the owner's review. It is not a submission and it is not anonymous.
 
@@ -13,7 +13,7 @@ The separate anonymous review package is `anon_submission/` (built by `scripts/m
 
 | Path | What it is |
 |---|---|
-| `paper/main.tex`, `paper/generated/*.tex` | Manuscript v4 source. Every number in the tables and in the `\R...` macros is generated from `results/raw` by `scripts/make_paper_assets.py`. |
+| `paper/main.tex`, `paper/generated/*.tex` | Manuscript v5 source. Every number in the tables and in the `\R...` macros is generated from `results/raw` by `scripts/make_paper_assets.py`. |
 | `paper/main.pdf` | Built PDF. Built by `scripts/build_paper.sh`. Checks are in `results/pdf_check.json`. |
 | `paper/claims.csv` | Claim ledger. Core claims are K1–K3 (`core = yes`): model coupling, pooled weighting (mostly a weighted-average identity) and task risk. Rows changed in v4 carry a `v4:` note. |
 | `paper/references.bib`, `paper/bib_provenance.json` | Bibliography. Metadata comes from arXiv abs pages. |
@@ -33,6 +33,7 @@ The separate anonymous review package is `anon_submission/` (built by `scripts/m
 | P1-COMP-01 | `results/raw/P1-COMP-01*` | Two-layer cascade check. |
 | P1-REAL-01 | `results/raw/P1-REAL-01*` (no checkpoint) | DEVELOPMENT run: seed 0 on its own test set, plus the convention check, adapter check and exploratory layer diagnostic. |
 | P1-REAL-02 | `results/raw/P1-REAL-02/` | Fixed-protocol repetition: training seeds 1–4 plus the development row, on one new shared test set (ids 10000–10255). |
+| P1-HAR-01 | `results/raw/P1-HAR-01/` | Real-sensor evaluation (UCI HAR), one checkpoint (included, 116 KB, with sha256), per-window records, control, aggregate, cost ledger and the acquisition record. Data not included (gitignored `data/`). |
 | P1-REAL-02-H8DECOMP | `results/raw/P1-REAL-02/h8_decomposition/` | Derived signed decomposition of the H8 pooled change. Built from one frozen forward per existing checkpoint, because per-token outputs had not been stored. Per-token outputs are in gzip JSON. |
 
 The P1-REAL-02 files are:
@@ -46,7 +47,7 @@ The P1-REAL-02 files are:
 
 | Excluded | Why | How to recover |
 |---|---|---|
-| Model checkpoints (`*.pt`, about 114 KB each) | Weights are not needed for review. | Their sha256 values are in `run_manifest.json`. Retrain with `python3 scripts/run_p1_real_02.py --stage train --seed s` (about 47 s per seed on 2 CPU threads). Determinism was checked only for seed 0: its retrain reproduced every tensor of the pilot checkpoint in this environment. |
+| Synthetic-task model checkpoints (`*.pt`, about 114 KB each; the HAR checkpoint is included) | Weights are not needed for review. | Their sha256 values are in `run_manifest.json`. Retrain with `python3 scripts/run_p1_real_02.py --stage train --seed s` (about 47 s per seed on 2 CPU threads). Determinism was checked only for seed 0: its retrain reproduced every tensor of the pilot checkpoint in this environment. |
 | `results/raw/P1-REAL-02/data_cache.json`, `testset_cache.json` | These hold synthetic data from the fixed generator and are regenerable. | Run `python3 scripts/run_p1_real_02.py --stage data` and `--stage testset`. These commands rewrite `data_hash.json` and `testset_hash.json`, so compare the new sha256 values with the copies in this bundle; they do not compare them for you. Afterwards, every loader refuses a cache whose content does not match its recorded hash. |
 | `third_party/TIDES` | Third-party code, MIT license. It is not redistributed here, so no license notice is altered. | `git clone` the official TIDES repository and check out `4b51adce2060e7209e002a6a2fd6691a2f6fcc5e`. |
 | ICML style files, `paper/build/` | Style kit and build intermediates. | `scripts/build_paper.sh` fetches the official kit (or copies it from `$ICML_KIT_ZIP`) and verifies its sha256 (`8b29290f…`). |
@@ -86,6 +87,6 @@ Rules for running:
 - **K1–K3** come from one synthetic continuous-time teacher task, one model (the official TIDES code), and four training seeds. These seeds are repetitions of the same task. They are not evidence about other data, sensors or models, and they give no population-level confidence interval over training runs.
 - **Seed 0 is the development run.** The primary estimand was chosen after seeing that run.
 - **The primary H8 effect is mostly a weighted-average identity.** The density-weighting term W = (7/18)(A − B) of the unchanged C0 outputs accounts for almost all of the token-mean change. The model term is small, and time weighting reduces the change but leaves a residual. This is not a selective-SSM-specific failure (derived, post hoc).
-- **P1-HAR-01 (UCI HAR) is BLOCKED.** It needs resource approval; nothing was downloaded or run.
+- **P1-HAR-01 (UCI HAR) ran once** (one checkpoint, one seed, nine test subjects): coupling and weighting effects present; the primary cross-entropy difference +0.016 nats has a subject-level interval that includes zero (not established; not equivalence).
 - **The loss contrast is not stable across seeds**, and J1 depends on the test draw. Both are reported in the main text.
 - **The paper-vs-code interval convention** is a difference between the printed equations and the pinned implementation. It is not a claim that TIDES' benchmark results are affected.

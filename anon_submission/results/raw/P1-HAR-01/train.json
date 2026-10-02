@@ -1,0 +1,167 @@
+{
+  "status": "COMPLETED",
+  "model_seed": 0,
+  "updates_run": 2000,
+  "updates_planned": 2000,
+  "selected_update": 1200,
+  "selected_cal_ce": 0.09187260270118713,
+  "selected_cal_acc": 0.9743402004241943,
+  "curve": [
+    {
+      "update": 0,
+      "cal_ce": 1.8901485204696655,
+      "cal_acc": 0.1671554297208786
+    },
+    {
+      "update": 100,
+      "train_ce": 0.3715202510356903,
+      "cal_ce": 0.5118276476860046,
+      "cal_acc": 0.8027859330177307
+    },
+    {
+      "update": 200,
+      "train_ce": 0.2501627802848816,
+      "cal_ce": 0.24411821365356445,
+      "cal_acc": 0.9178885817527771
+    },
+    {
+      "update": 300,
+      "train_ce": 0.1846001297235489,
+      "cal_ce": 0.20568379759788513,
+      "cal_acc": 0.9457477927207947
+    },
+    {
+      "update": 400,
+      "train_ce": 0.06040515750646591,
+      "cal_ce": 0.11834090203046799,
+      "cal_acc": 0.9618768095970154
+    },
+    {
+      "update": 500,
+      "train_ce": 0.12288836389780045,
+      "cal_ce": 0.2074185162782669,
+      "cal_acc": 0.9589442610740662
+    },
+    {
+      "update": 600,
+      "train_ce": 0.11392588168382645,
+      "cal_ce": 0.21173667907714844,
+      "cal_acc": 0.9560117125511169
+    },
+    {
+      "update": 700,
+      "train_ce": 0.1982368528842926,
+      "cal_ce": 0.15717405080795288,
+      "cal_acc": 0.9589442610740662
+    },
+    {
+      "update": 800,
+      "train_ce": 0.05885575711727142,
+      "cal_ce": 0.16180932521820068,
+      "cal_acc": 0.9626099467277527
+    },
+    {
+      "update": 900,
+      "train_ce": 0.17646245658397675,
+      "cal_ce": 0.10749748349189758,
+      "cal_acc": 0.973607063293457
+    },
+    {
+      "update": 1000,
+      "train_ce": 0.08089614659547806,
+      "cal_ce": 0.09366174787282944,
+      "cal_acc": 0.9816715717315674
+    },
+    {
+      "update": 1100,
+      "train_ce": 0.0629972517490387,
+      "cal_ce": 0.12506678700447083,
+      "cal_acc": 0.9567448496818542
+    },
+    {
+      "update": 1200,
+      "train_ce": 0.1270565688610077,
+      "cal_ce": 0.09187260270118713,
+      "cal_acc": 0.9743402004241943
+    },
+    {
+      "update": 1300,
+      "train_ce": 0.18057329952716827,
+      "cal_ce": 0.13117557764053345,
+      "cal_acc": 0.9640762209892273
+    },
+    {
+      "update": 1400,
+      "train_ce": 0.08904983103275299,
+      "cal_ce": 0.1318802684545517,
+      "cal_acc": 0.9670087695121765
+    },
+    {
+      "update": 1500,
+      "train_ce": 0.0068701887503266335,
+      "cal_ce": 0.1820962280035019,
+      "cal_acc": 0.9699413776397705
+    },
+    {
+      "update": 1600,
+      "train_ce": 0.11092563718557358,
+      "cal_ce": 0.15133337676525116,
+      "cal_acc": 0.96334308385849
+    },
+    {
+      "update": 1700,
+      "train_ce": 0.1427532136440277,
+      "cal_ce": 0.18796007335186005,
+      "cal_acc": 0.9413489699363708
+    },
+    {
+      "update": 1800,
+      "train_ce": 0.14489981532096863,
+      "cal_ce": 0.2191312611103058,
+      "cal_acc": 0.9428152441978455
+    },
+    {
+      "update": 1900,
+      "train_ce": 0.07336599379777908,
+      "cal_ce": 0.1378844976425171,
+      "cal_acc": 0.9567448496818542
+    },
+    {
+      "update": 2000,
+      "train_ce": 0.18274816870689392,
+      "cal_ce": 0.16788557171821594,
+      "cal_acc": 0.9655424952507019
+    }
+  ],
+  "eval_mode_checks_all_ok": true,
+  "eval_mode_check_example": {
+    "all_modules_eval": true,
+    "dropout_p": [
+      0.0
+    ],
+    "batchnorm_running_stats": true,
+    "n_batchnorm": 2
+  },
+  "min_train_step_scale": 1.0,
+  "n_parameters": 23786,
+  "n_fit_windows": 5988,
+  "n_cal_windows": 1364,
+  "train_loop_wall_seconds": 179.987,
+  "train_loop_cpu_seconds": 349.723,
+  "stage_wall_seconds": 182.984,
+  "stage_cpu_seconds": 354.205,
+  "checkpoint_sha256": "e3b414f5bdf55541d84a2f3abaf5a1c04faddfd6e2fdfd38dd79a20be049910d",
+  "data_sha256": {
+    "Xtr": "c18b484a1a83cc6aca9bebd83fbe2ea5e234e99b5b4cd8c6094253aac7349247",
+    "ytr": "cc77aaecf2d4a201542a365c2bb4221f2e1671e8d5ea0c9220899fb190874d76",
+    "subject_train": "67ee642e93b07afe660e5a3785db14ff6e65a0f6d9c66e0e253a49610c67506b",
+    "Xte": "801761f554ff7bb76bb5cfc900da64496d2f5457086bcf128a6bb6955d459af7",
+    "yte": "666cd1b00a531b008992aeba2caad9d543c603131d2c5999fc50bc1836ac55a3",
+    "subject_test": "0c2bbe9b52e81376ace1e9ea7b18a5c6c94f655c96cfb18d6c9783300f143b2a"
+  },
+  "torch": "2.14.0+cpu",
+  "threads": 2,
+  "git_head": "<commit>",
+  "config_sha256": "e603cf75e6472a20547afe22b6056f8e940de93120bc9fd2e6f66806a7dc44fc",
+  "test_opened": true
+}

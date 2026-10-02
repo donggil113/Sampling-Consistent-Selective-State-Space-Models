@@ -50,6 +50,7 @@ INCLUDE = [
     "results/raw/P1-REAL-02/*/train.json", "results/raw/P1-REAL-02/*/train.log",
     "results/raw/P1-REAL-02/*/eval.jsonl", "results/raw/P1-REAL-02/*/eval_summary.json",
     "results/raw/P1-REAL-02/h8_decomposition/*",
+    "results/raw/P1-HAR-01/*",
     "run_manifest.json",
 ]
 EXCLUDE_NAMES = {"data_cache.json", "testset_cache.json", "check_paper.py", "check_pdf.py",
@@ -102,11 +103,11 @@ def main():
     for pat in INCLUDE:
         for src in sorted(glob.glob(os.path.join(ROOT, pat))):
             rel = os.path.relpath(src, ROOT)
-            if os.path.basename(rel) in EXCLUDE_NAMES or rel.endswith(".pt") or "__pycache__" in rel or rel in files:
+            if os.path.basename(rel) in EXCLUDE_NAMES or (rel.endswith(".pt") and "P1-HAR-01" not in rel) or "__pycache__" in rel or rel in files:
                 continue
             dst = os.path.join(OUT, rel)
             os.makedirs(os.path.dirname(dst), exist_ok=True)
-            if rel.endswith(BINARY_EXT):
+            if rel.endswith(BINARY_EXT) or rel.endswith(".pt"):
                 shutil.copy2(src, dst)
             else:
                 t = open(src, encoding="utf-8").read()
@@ -133,7 +134,10 @@ def main():
     for rel in files:
         p = os.path.join(OUT, rel)
         if rel.endswith(".gz"):
-            t = gzip.open(p, "rt").read()
+            raw = gzip.open(p, "rb").read()
+            t = raw.decode("utf-8") if rel.endswith(".json.gz") else raw.decode("latin-1")
+        elif rel.endswith(".pt"):
+            t = open(p, "rb").read().decode("latin-1")
         elif rel.endswith(".pdf"):
             t = subprocess.run(["pdftotext", p, "-"], capture_output=True, text=True).stdout
             t += subprocess.run(["pdfinfo", "-meta", p], capture_output=True, text=True).stdout

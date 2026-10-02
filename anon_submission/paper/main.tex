@@ -78,6 +78,7 @@ On the official code of one selective SSM with a physical step (TIDES), trained 
 Model coupling: eight-fold splitting of the held input changes the outputs by $\RtwoSeightMin$--$\RtwoSeightMax$ (relative $\ell_2$) in every seed.
 Pooled weighting: under a same-path density change the token-mean readout moves by $\DecDeltaMin$ to $\DecDeltaMax$ label units on average, of which $\DecWMin$ to $\DecWMax$ is the weighted-average identity $\tfrac{7}{18}(A-B)$ of the unchanged outputs rather than a property of the SSM; time weighting of the same outputs leaves a mean absolute change of $\DecQabsMin$--$\DecQabsMax$.
 Task risk: the native-versus-resampled loss contrast changes sign across seeds, while resampling is about ten times cheaper at eight-fold refinement.
+One checkpoint trained on a public activity-recognition dataset (UCI HAR, nine test subjects) shows the same pattern under an artificial refinement of its sensor windows: splitting changes the class-centered logits by $\HarCLSeightMean$ and the predicted class of $\HarFlipSeightMean$ of the windows, the token-mean effect of a density change is again mostly the weighting identity ($\HarDecW$ of $\HarDecDelta$ logit units), and the cross-entropy difference between token-mean and time-weighted pooling is $\HarD$ nats with a subject-level interval that includes zero.
 We propose no new architecture.
 \end{abstract}
 
@@ -96,14 +97,14 @@ This requires separating two operations.
 \emph{Adding observations} of the same signal changes the observed values and hence the reconstructed input path, so part of the change is a response to a different input; we make no claim about task-relevant or Bayesian information.
 
 \paragraph{Known and not claimed.}
-The physical $\Delta t$ in the discretization, exact zero-order-hold (ZOH) formulas and flow composition are standard~\citep{gu2021lssl,smith2022s5}; that the released Mamba code uses $\bar B=\Delta B$ (``exponential-Euler'') is documented by \citet{lahoti2026mamba3}; that a continuous-time reading of selective SSMs needs $\Delta\propto dt$ is shown by \citet{cirone2024theoretical}; keeping $\Delta$ physical with selectivity on the decay rate is the design of \citet{soydan2026tides}; and that a sample mean weights samples rather than time is elementary.
+The physical $\Delta t$, exact zero-order-hold (ZOH) formulas and flow composition are standard~\citep{gu2021lssl,smith2022s5}; that the released Mamba code uses $\bar B=\Delta B$ (``exponential-Euler'') is documented by \citet{lahoti2026mamba3}; that a continuous-time reading of selective SSMs needs $\Delta\propto dt$ is shown by \citet{cirone2024theoretical}; keeping $\Delta$ physical with selectivity on the decay rate is the design of \citet{soydan2026tides}; a sample mean weighting samples rather than time is elementary.
 
 \paragraph{Contributions.}
 None is an architecture.
 \begin{enumerate}
   \item A protocol that separates splitting from new observations, with an exact path/artifact decomposition and explicit denominators (\cref{sec:setup}).
   \item Two different causes, stated with their assumptions: resampling of internal signals between layers, which changes a stack of exact-update layers under splitting although the held input is unchanged, with an $O(\text{mesh})$ upper bound for a scalar linear cascade (\cref{sec:coupling}), and sample-count readouts, which weight tokens instead of time (\cref{sec:readout-analysis}); toy checks in \cref{sec:toy}.
-  \item A fixed-protocol seed repetition on the official TIDES code that separates a model-coupling effect, a pooled-weighting effect and a task-risk effect, with cost; an exact signed decomposition shows that the token-mean readout effect is almost entirely a weighted-average identity (\cref{sec:real}).
+  \item A fixed-protocol seed repetition on the official TIDES code that separates a model-coupling effect, a pooled-weighting effect and a task-risk effect, with cost; an exact signed decomposition shows that the token-mean readout effect is almost entirely a weighted-average identity (\cref{sec:real-syn}); and one pre-registered evaluation of a checkpoint trained on real sensor windows that shows the same separation (\cref{sec:har}).
   \item A check that the TIDES paper equations and the released code pair inputs with different intervals (\cref{sec:convention}).
 \end{enumerate}
 
@@ -150,14 +151,14 @@ A discrete variant is $h_k=\bar A_kh_{k-1}+\bar B_ku_k$ with $\Delta_k=dt_k\,g(u
 \paragraph{Grid changes and decomposition.}
 \emph{Splitting} divides base intervals into $m$ equal sub-steps that all receive the held value; \emph{new observations} give each new sub-time the value of the continuous signal.
 Outputs are compared at the common base times.
-With $D_m$ the outputs of a variant on grid $m$ and $Y_m$ the continuous-time solution of \eqref{eq:ct} on the held path of grid $m$, the change splits exactly as
+With $D_m$ the outputs of a variant on grid $m$ and $Y_m$ the continuous-time solution of \eqref{eq:ct} on the held path of grid $m$, the change $T_m=D_m-D_1$ at the base times splits exactly as
 \begin{equation}
 T_m=\underbrace{(Y_m-Y_1)}_{P_m\text{: path}}+\underbrace{\big[(D_m-Y_m)-(D_1-Y_1)\big]}_{R_m\text{: artifact}},
 \label{eq:decomp}
 \end{equation}
 so $\|T_m\|^2=\|P_m\|^2+\|R_m\|^2+2\langle P_m,R_m\rangle$.
 Under splitting $P_m=0$.
-Because the cross term can be large and of either sign, we never report a ratio of norms as a share.
+Because the cross term can be large and of either sign, we never report a ratio of norms as a share or as a causal contribution.
 
 \paragraph{Readouts.}
 We distinguish sample-count readouts ($\sum_ky_k$, $\frac1K\sum_ky_k$), time-weighted endpoint sums (right-endpoint $\frac1T\sum_ky_k\,dt_k$ and trapezoidal), and the time average $\frac1T\int_0^Ty\,dt$ of the output over the held path, which the toy computes in closed form for exact-ZOH states (the ``exact integral'').
@@ -205,14 +206,7 @@ Let $u$ be held on a grid with mesh $\delta$, $|u|\le U$, $a\ge0$, $c>0$ and $h_
 (a) The exact coupled solution of \eqref{eq:cascade} at base times is split-invariant.
 (b) The layerwise computation that is exact in layer~1 and holds $h_1(t_k)$ on $(t_{k-1},t_k]$ in layer~2 has absolute error $|e_k|\le|b\,d|\,U\,\delta\,e^{c\delta}/c$ at every grid time, for every $T$ and also for $a=c$.
 \end{proposition}
-\begin{proof}
-(a) follows as in \cref{prop:split}, since the coupled system has constant coefficients on each held interval.
-(b) Layer~1 is exact, so with $\tau_k=dt_k$,
-$e_k=e^{-c\tau_k}e_{k-1}+d\int_0^{\tau_k}e^{-c(\tau_k-s)}[h_1(t_k)-h_1(t_{k-1}+s)]\,ds$.
-If $a>0$ then $|h_1|\le|b|U/a$, so $a|h_1|\le|b|U$; if $a=0$ then $a|h_1|=0$; either way $|\dot h_1|\le2|b|U$.
-On each held interval $h_1$ is $C^1$, so the bracket is at most $2|b|U(\tau_k-s)$, and with $e^{-c(\tau_k-s)}\le1$ the local term is at most $|b\,d|U\tau_k^2$.
-Unrolling from $e_0=0$ gives $|e_k|\le|b\,d|U\delta\sum_{j\le k}\tau_je^{-c(t_k-t_j)}$, and since $e^{-c(t_k-t_j)}\le e^{c\delta}e^{-c(t_k-s)}$ for $s\in(t_{j-1},t_j]$, the sum is at most $e^{c\delta}\int_0^{t_k}e^{-c(t_k-s)}ds\le e^{c\delta}/c$.
-\end{proof}
+The proof is elementary and is given in \cref{app:proof}.
 
 \begin{remark}[scope of \cref{prop:cascade}]
 \label{rem:scope}
@@ -248,8 +242,11 @@ The released code, not the printed equations, defines the model behind TIDES' re
 We make no claim that this affects TIDES' results.
 
 %=====================================================================================
-\section{Trained Official TIDES: Fixed-Protocol Seed Repetition}
+\section{Trained Official TIDES: Synthetic Seed Repetition and One Real-Sensor Evaluation}
 \label{sec:real}
+
+\subsection{Synthetic task: fixed-protocol seed repetition}
+\label{sec:real-syn}
 
 \paragraph{Setup.}
 \emph{Model:} official TIDES at a pinned commit (MIT), $\AdapterParams$ parameters, two blocks, input-dependent $\mathrm{Re}\,\Lambda$, $B$, $C$, exact ZOH, causal, no convolution, a linear per-step head; CPU, float32, 2 threads.
@@ -271,6 +268,7 @@ The primary estimand, chosen after the development run, is the pooled-readout ef
 $D_s=\frac1n\sum_i\big(|p^{\mathrm{mean}}_{s,i}(\mathrm{H8})-p_{s,i}(\mathrm{C0})|-|p^{\mathrm{time}}_{s,i}(\mathrm{H8})-p_{s,i}(\mathrm{C0})|\big)$ in label units.
 Secondary estimands are the final-output discrepancy under S8, $\|\hat y(\mathrm{S8})-\hat y(\mathrm{C0})\|_2/\|\hat y(\mathrm{C0})\|_2$ over the 32 grid times (also with weights and inputs cast to float64); the loss contrast $r_s=(\overline L_{\mathrm{native}}-\overline L_{\mathrm{resampled}})/\overline L_{\mathrm{resampled}}$ of the per-trajectory MSE; and wall time.
 Uncertainty is a paired bootstrap over the 256 test trajectories with the seed fixed, with ratios recomputed in every draw.
+Every interval is pointwise, for one estimand and one seed; it is not adjusted for the number of secondary conditions and seeds, and for a non-negative discrepancy an interval excluding zero shows that the change is nonzero, not what causes it.
 Because the seeds share the trajectories (a crossed design), we report the seeds separately and give only their range, not a pooled interval.
 A loss difference is called negligible only if the interval of $r_s$ lies inside $\pm5\%$, a convention (about 2.5\% in RMSE) rather than an application tolerance; non-significance is never read as equivalence.
 
@@ -279,42 +277,67 @@ A loss difference is called negligible only if the interval of $r_s$ lies inside
 \input{generated/tab_seeds_loss}
 
 \paragraph{Model coupling.}
-The final-output discrepancy under S8 is $\RtwoSeightMin$--$\RtwoSeightMax$ in the four seeds, with every interval excluding zero (\cref{tab:seeds-coupling}); it varies $\RtwoSeightFold$-fold between seeds, and the seed whose checkpoint was selected earliest (step 800) has the smallest value, a relation we did not test.
-As a precision diagnostic for these checkpoints, casting weights and inputs to float64 changes the mean discrepancy by at most $\RtwoFpEstMax$ (relative $\RtwoFpRelMax$) and any per-trajectory value by at most $\RtwoFpTrajMax$, while the smallest per-trajectory discrepancy is $\RtwoDiscTrajMin$ (all from the stored double-precision values of the de-normalized outputs); the discrepancy is therefore not a float32 rounding effect of these checkpoints.
-The pre-registered threshold $10^{-4}$ came from a scalar float32 emulation (\cref{app:numerics}) and is not a numerical floor of a trained 256-token network.
+The S8 discrepancy is $\RtwoSeightMin$--$\RtwoSeightMax$ in the four seeds, each interval excluding zero (\cref{tab:seeds-coupling}); it varies $\RtwoSeightFold$-fold between seeds, and the earliest-selected checkpoint (step 800) has the smallest value, a relation we did not test.
+Casting weights and inputs to float64 changes the mean by at most $\RtwoFpEstMax$ (relative $\RtwoFpRelMax$) and any per-trajectory value by at most $\RtwoFpTrajMax$, far below the smallest per-trajectory discrepancy $\RtwoDiscTrajMin$, so this is not float32 rounding; the pre-registered $10^{-4}$ threshold came from a scalar emulation (\cref{app:numerics}) and is not a floor of a trained 256-token network.
+In the development checkpoint the change is absent from the encoder and first block ($\le\RealLayerOneFp$ in float32, $\RealLayerOneDp$ in float64) and enters in the second block ($\RealLayerTwoMin$--$\RealLayerTwoMax$), qualitatively consistent with \cref{prop:split,prop:cascade}; this is exploratory and rests on one checkpoint (\cref{app:pilot}).
 
 \paragraph{Pooled weighting.}
-The primary effect is positive with an interval excluding zero in all four seeds ($D_s$ between $\RtwoDmin$ and $\RtwoDmax$, smallest lower bound $\RtwoDlomin$; \cref{tab:seeds-readout}), so the pre-specified replication criterion within this task is met.
-Its cause, however, is mostly the readout's weights rather than the model.
-Per trajectory the token-mean change splits exactly into the density-weighting term $W=\tfrac{7}{18}(A-B)$, computed from the unchanged C0 outputs (\cref{sec:readout-analysis}), and a model term $M$ from the native H8 outputs.
-On average the change is $\DecDeltaMin$ to $\DecDeltaMax$, $W$ is $\DecWMin$ to $\DecWMax$ ($A-B$ is $\DecABMin$--$\DecABMax$, i.e.\ the C0 outputs of this task are larger in the first half) and $M$ is $\DecMMin$ to $\DecMMax$; $W$ has the sign of the change in at least $\DecSignMin\%$ of trajectories, and token-mean pooling of outputs that merely repeat C0 would err by $\DecRepErrMin$--$\DecRepErrMax$ against the pooled label, about as much as the native token mean ($\RtwoPoolMeanMin$--$\RtwoPoolMeanMax$).
-The H8 token-mean effect is therefore a property of sample-count pooling applied to a non-constant output, which any per-token model would show; it is not evidence of a failure specific to selective SSMs.
-The model-dependent part is small: $|M|$ averages $\DecMabsMin$--$\DecMabsMax$, and $\DecMendMin$--$\DecMendMax$ on the tokens that end a base interval, where it measures the change of the model output itself; on the other tokens it also contains the evolution of the output within an interval, which is not an artifact.
-Time weighting of the same native outputs reduces the mean absolute change against C0 from $\DecDeltaAbsMin$--$\DecDeltaAbsMax$ to $\DecQabsMin$--$\DecQabsMax$ but does not remove it, and its pooled error ($\RtwoPoolTimeMin$--$\RtwoPoolTimeMax$) stays close to that of the resampled arm ($\RtwoPoolResMin$--$\RtwoPoolResMax$).
-Per-token outputs were not stored, so $W$, $M$ and $Q$ come from one additional frozen forward pass per checkpoint, which reproduces the stored pooled values exactly (\cref{app:prereg}).
-The signed terms are not an additive decomposition of $D_s$, which is a difference of absolute values.
+$D_s$ is positive with an interval excluding zero in all four seeds ($\RtwoDmin$--$\RtwoDmax$, smallest lower bound $\RtwoDlomin$; \cref{tab:seeds-readout}), so the pre-specified replication criterion is met, but the cause is mostly the readout's weights: per trajectory the token-mean change splits exactly into $W=\tfrac{7}{18}(A-B)$, computed from the unchanged C0 outputs (\cref{sec:readout-analysis}), and a model term $M$.
+The change averages $\DecDeltaMin$ to $\DecDeltaMax$, $W$ averages $\DecWMin$ to $\DecWMax$ ($A-B$ is $\DecABMin$--$\DecABMax$) and $M$ averages $\DecMMin$ to $\DecMMax$; $W$ has the sign of the change in at least $\DecSignMin\%$ of trajectories, and a token mean of outputs that merely repeat C0 would err by $\DecRepErrMin$--$\DecRepErrMax$ against the pooled label, as much as the native token mean ($\RtwoPoolMeanMin$--$\RtwoPoolMeanMax$).
+The effect is therefore sample-count pooling of a non-constant output, which any per-token model shows, not a failure specific to selective SSMs.
+$|M|$ averages $\DecMabsMin$--$\DecMabsMax$, and $\DecMendMin$--$\DecMendMax$ on the tokens that end a base interval, where it is the change of the model output itself.
+Time weighting reduces the mean absolute change against C0 from $\DecDeltaAbsMin$--$\DecDeltaAbsMax$ to $\DecQabsMin$--$\DecQabsMax$ but does not remove it, and its pooled error ($\RtwoPoolTimeMin$--$\RtwoPoolTimeMax$) stays close to the resampled arm's ($\RtwoPoolResMin$--$\RtwoPoolResMax$).
+$W$, $M$ and $Q$ come from one frozen forward pass per checkpoint that reproduces the stored pooled values exactly (\cref{app:prereg}); the signed terms do not decompose the absolute-value estimand $D_s$.
 
 \paragraph{Task risk: the accuracy consequence does not replicate.}
 The development run suggested that native evaluation on refined grids is slightly more accurate than resampled evaluation.
-Across seeds 1--4, $r_s$ ranges from $\RtwoRSeightMin\%$ to $\RtwoRSeightMax\%$ on S8 and from $\RtwoRHeightMin\%$ to $\RtwoRHeightMax\%$ on H8 (\cref{tab:seeds-loss}): seed~2 is worse on H8 with an interval that excludes zero, seed~3 shows no practical difference on every held-path condition, and the remaining verdicts are mixed.
-We therefore report no stable accuracy difference between native and resampled evaluation on held-path refinements.
-On J1, native evaluation has lower MSE in every seed on the new test set ($r_s$ from $\RtwoRJoneMin\%$ to $\RtwoRJoneMax\%$), but the development checkpoint, which gives $\RtwoRJoneDev\%$ here, gave $\RtwoRJonePilotOld\%$ (inconclusive) on its own test set, so the J1 contrast depends strongly on the test draw; J1 is not a refinement of the held path.
+Across seeds 1--4, $r_s$ ranges from $\RtwoRSeightMin\%$ to $\RtwoRSeightMax\%$ on S8 and from $\RtwoRHeightMin\%$ to $\RtwoRHeightMax\%$ on H8 (\cref{tab:seeds-loss}): seed~2 is worse on H8 with an interval that excludes zero, seed~3 shows no practical difference on every held-path condition, and the rest are mixed, so we report no stable difference.
+On J1 native MSE is lower in every seed ($r_s$ from $\RtwoRJoneMin\%$ to $\RtwoRJoneMax\%$), but the development checkpoint gives $\RtwoRJoneDev\%$ here and $\RtwoRJonePilotOld\%$ (inconclusive) on its own test set, so the J1 contrast depends on the test draw; J1 is not a refinement of the held path.
 
 \paragraph{Cost.}
-With the pre-specified timing protocol (inference mode, two warm-up and five timed calls, one batch of 256 sequences, 2 threads), the ratio native\_S8\_end\_to\_end\,/\,resampled\_S8\_end\_to\_end is $\RtwoRatioMin$--$\RtwoRatioMax$ across seeds and native\_S8\_forward\,/\,resampled\_S8\_forward is $\RtwoFratioMin$--$\RtwoFratioMax$; on C0 the end-to-end ratio is $\RtwoCzeroRatioMin$--$\RtwoCzeroRatioMax$ (\cref{tab:timing}).
-End-to-end time includes resampling and tensor construction; for the resampled arm on S8 the difference between the end-to-end and forward-only medians is $\RtwoResOverMin$--$\RtwoResOverMax$\,s.
-The two boundaries are timed in separate jobs, and in $\RtwoInvN$ of $\RtwoInvTot$ seed--condition--arm cells the end-to-end median is below the forward-only median (by up to $\RtwoInvMaxPct$\%), so timing differences of a few percent are within run-to-run variation; the order-of-magnitude S8 ratio is not.
-The development run's timings ($\RealRunNatSeight$\,s native on S8) were forward-only, without warm-up and outside inference mode, and excluded resampling; they are superseded for cost statements.
-
-\paragraph{Where the discrepancy enters (exploratory, development checkpoint).}
-After seeing the development results we measured the change at intermediate features of the development checkpoint (\cref{tab:layers} in \cref{app:pilot}); this was not pre-registered.
-The encoder output is unchanged, the first block changes by at most $\RealLayerOneFp$ in float32 and $\RealLayerOneDp$ with the weights cast to float64, and the second block changes by $\RealLayerTwoMin$ to $\RealLayerTwoMax$ in both precisions.
-This is qualitatively consistent with \cref{prop:split,prop:cascade}: the first block receives the held input and uses an exact held-coefficient update, whereas the second block receives the first block's output, which splitting samples at more points within each interval; neither proposition is a statement about this trained network.
-The repetition pre-specified a per-seed layer diagnostic only if some seed's S8 discrepancy fell below $10^{-3}$; this did not happen, so the localization rests on one checkpoint.
+With the pre-specified protocol (inference mode, two warm-up and five timed calls, one batch of 256 sequences, 2 threads), native\_S8\_end\_to\_end\,/\,resampled\_S8\_end\_to\_end is $\RtwoRatioMin$--$\RtwoRatioMax$ across seeds, forward-only $\RtwoFratioMin$--$\RtwoFratioMax$, and on C0 $\RtwoCzeroRatioMin$--$\RtwoCzeroRatioMax$ (\cref{tab:timing}); end-to-end includes resampling ($\RtwoResOverMin$--$\RtwoResOverMax$\,s on S8).
+The two boundaries are timed in separate jobs and cross in $\RtwoInvN$ of $\RtwoInvTot$ cells (by up to $\RtwoInvMaxPct$\%), so differences of a few percent are run-to-run variation; the development run's forward-only timings are superseded.
 
 \paragraph{What this does not show.}
-Four training seeds of one two-block model on one synthetic task give a replication within that task, not evidence about other data, sensors, models or tasks, about TIDES' benchmarks, about selective SSMs in general, or a precise statement about the distribution of training runs.
-The teacher is from the model's own continuous-time family, the primary estimand was chosen after the development run, and the calibration curves were unstable in every seed (up to $\RealDevMax$ in the development run), so the selected checkpoints depend on the evaluation schedule.
+Four seeds of one two-block model on one synthetic task whose teacher is from the model's own family give a replication within that task, not evidence about other data, models, selective SSMs in general or TIDES' benchmarks, nor a statement about the distribution of training runs; the primary estimand was chosen after the development run, and the calibration curves were unstable in every seed (up to $\RealDevMax$ in the development run), so the selected checkpoints depend on the evaluation schedule.
+
+\subsection{Real sensor windows: UCI HAR, one checkpoint}
+\label{sec:har}
+
+\paragraph{Data and representation.}
+We use the Human Activity Recognition Using Smartphones data~\citep{anguita2013har}: 30 subjects, six activities, 3-axis total acceleration, body acceleration and gyroscope at 50\,Hz, distributed as noise-filtered windows of 128 readings (2.56\,s) with 50\% overlap between consecutive windows of a subject; we use the nine inertial channels, not the 561 engineered features.
+These are distributor-preprocessed windows, not a raw sensor stream, and the refinement below is artificial: it says nothing about naturally irregular acquisitions.
+The official subject partition is kept (21 training subjects, 9 test subjects, $\HarNwin$ test windows); four training subjects, chosen before the run by a hash of their identifiers, are the calibration subjects ($\HarNcal$ windows), and the other 17 ($\HarNfit$ windows) fit the model and the per-channel normalization, which is never re-fitted.
+A window's 128 values are represented as 128 held intervals of $1/50$\,s ($T{=}2.56$\,s), a chosen reconstruction: C0 keeps them; S8 splits every interval into 8 (1024 tokens); H8 splits the first 64 (576 tokens); held values, horizon and label are unchanged.
+Because windows overlap, every quantity is averaged within a subject first and the 9 subject values are averaged with equal weight.
+
+\paragraph{Model, training and arms.}
+The model is the official \texttt{TIDESClassifier} of the pinned code with the backbone setting of \cref{sec:real-syn} ($\HarParams$ parameters), nine input channels and the official head, a token mean of the features followed by a linear map to six classes.
+One model seed; Adam, batch 32, $\HarUpdatesRun$ updates; the state with the lowest calibration cross-entropy (every 100 updates) is frozen and hashed before any test window is read: update $\HarUpdate$, calibration cross-entropy $\HarCalCE$, accuracy $\HarCalAcc$.
+The same checkpoint is evaluated with three arms: the official token-mean readout on the condition's grid (\emph{native mean}); the same features pooled with weights $dt_j/T$ at the same location and passed through the same affine head (\emph{native time}, an inference-time ablation, not a trained baseline); and the official readout on the training grid rebuilt from the observed values (\emph{resampled}), which on S8 and H8 is the identity control (input difference $\HarResIdent$).
+Because the head is affine, the token mean of the features equals the mean of the per-token logits (checked, maximum difference $\HarPoolIdent$ on C0); softmax outputs are never averaged.
+The primary estimand, fixed before the run, is $d_s$, the mean over the windows of test subject $s$ of CE(native mean, H8) $-$ CE(native time, H8), and $D$, its equal-weight mean over the 9 subjects, with a subject-level paired percentile bootstrap (2000 draws); cross-entropy, accuracy, prediction flips, output distances and cost are secondary and reported separately.
+A control, time-weighted per-channel means and second moments with a multinomial linear classifier, only shows that a readout integrating over time is unchanged by the refinement; it is not a task ceiling or a capacity-matched baseline.
+
+\input{generated/tab_har_subjects}
+\input{generated/tab_har_effects}
+
+\paragraph{Results (\cref{tab:har-subjects,tab:har-effects}).}
+\emph{Model coupling.}
+Splitting every held interval (S8) changes the class-centered logits by $\HarCLSeightMean$ (relative $\ell_2$, subject means from $\HarCLSeightMeanMin$ to $\HarCLSeightMeanMax$ in every subject), the class probabilities by a total variation of $\HarTVSeightMean$, and the predicted class of $\HarFlipSeightMean$ of the windows, while the resampled arm reproduces C0 exactly; the cross-entropy change is $\HarDCESeightMean$ nats with a subject-level interval of $[\HarDCESeightMeanlo,\HarDCESeightMeanhi]$, so no risk change is established at nine subjects.
+\emph{Pooled weighting.}
+Under H8 the token-mean readout moves the centered logits by $\HarCLHeightMean$, changes the predicted class of $\HarFlipHeightMean$ of the windows and the cross-entropy by $\HarDCEHeightMean$ $[\HarDCEHeightMeanlo,\HarDCEHeightMeanhi]$; time weighting of the same features reduces these to $\HarCLHeightTime$, $\HarFlipHeightTime$ and $\HarDCEHeightTime$ $[\HarDCEHeightTimelo,\HarDCEHeightTimehi]$.
+The logit decomposition of \cref{sec:real-syn} applies unchanged: the token-mean change has norm $\HarDecDelta$ (logit units, subject means), the density-weighting term from the C0 token logits alone $\HarDecW$, the model term $M$ $\HarDecM$, its part on the 128 interval-end tokens $\HarDecMend$, and the time-weighted change $Q$ $\HarDecQ$: as on the synthetic task, the large token-mean effect is the weighted-average identity, and the change of the model outputs at the base times is two orders of magnitude smaller.
+\emph{Task risk.}
+The primary estimand is $D=\HarD$ nats with a subject-level interval of $[\HarDlo,\HarDhi]$; $d_s$ is positive for $\HarDpos$ of the 9 subjects (range $\HarDmin$ to $\HarDmax$).
+The interval includes zero: the pre-registered difference between token-mean and time-weighted pooling is not established on this dataset, and the non-significance is not evidence that the two readouts are equivalent; the sign pattern is consistent with the synthetic finding, but nine clusters give a coarse interval.
+Accuracy is $\HarAccCzero$ on C0 (subject means $\HarAccCzeroMin$--$\HarAccCzeroMax$), $\HarAccHeightMean$ under H8 with the token mean and $\HarAccHeightTime$ with time weighting, so the refinement has no practical effect on accuracy at this size.
+\emph{Control and cost.}
+The control has identical features on C0, S8 and H8 (maximum difference $\HarCtlFeat$; cross-entropy $\HarCtlCE$, accuracy $\HarCtlAcc$, unchanged), as any readout that integrates the held path over time must.
+Native evaluation costs native\_S8\_end\_to\_end\,/\,resampled\_S8\_end\_to\_end $=\HarRatioSeight$ (forward-only $\HarFratioSeight$) and $\HarRatioHeight$ on H8 (\cref{tab:har-timing}).
+
+\paragraph{What this does not show.}
+One dataset, one checkpoint and one model seed give a result conditional on this checkpoint, not a statement about the population of training runs, other sensors, naturally irregular acquisitions or TIDES' benchmarks; nine overlapping-window subjects bound what the subject-level interval can resolve.
 
 %=====================================================================================
 \section{Controlled Toy Results}
@@ -342,8 +365,6 @@ One fix at a time (\cref{tab:interaction}): exact ZOH alone gives $\FacZoh$, the
 This is not a necessity result: it concerns a time-average readout of one toy, a last-state readout needs no time integral, and special inputs or coefficients (for example a zero input) remove the artifact without all three corrections.
 Under the pre-registered stop condition this means the toy gives no support for a new architecture; the stop condition is an operational rule, not a statistical, equivalence or novelty test.
 
-\input{generated/tab_interaction}
-
 \paragraph{Two-layer cascade.}
 For \eqref{eq:cascade} (P1-COMP-01; held input of FIRST\_RUN unit~0; \CompSeconds\,s), the exact coupled solution is split-invariant to $\CompInv$, while the layerwise computation has error $\CompErrOne$ at the base step and $\CompErrEight$ at $m{=}8$ (slope $\CompSlope$; $\CompSlopeEq$ for $a=c$; \cref{fig:convergence}b, \cref{tab:coupling}), consistent with, not a proof of, first order for this input.
 
@@ -352,28 +373,27 @@ For \eqref{eq:cascade} (P1-COMP-01; held input of FIRST\_RUN unit~0; \CompSecond
 \section{Limitations}
 \label{sec:limits}
 
-\emph{Trained evidence:} four training seeds and a development seed of one small two-block model (one selective SSM) on one synthetic task whose teacher is from the model's own family; no statement about other tasks, real data, the population of training runs, TIDES' benchmarks, Mamba, S4 or S5 is supported, and the accuracy contrast was not stable. A first evaluation on real sensor signals has not been run.
+\emph{Trained evidence:} four training seeds and a development seed of one small two-block model (one selective SSM) on one synthetic task whose teacher is from the model's own family; no statement about other tasks, real data, the population of training runs, TIDES' benchmarks, Mamba, S4 or S5 is supported, and the accuracy contrast was not stable. \emph{Real-sensor evidence:} one dataset, one checkpoint, one seed, nine subjects, an artificial refinement of distributor-preprocessed windows (\cref{sec:har}).
 \emph{Margin:} the $\pm5\%$ equivalence margin is a convention, not an application-derived tolerance; all intervals are reported.
 \emph{Entry points not measured:} token-indexed convolution, normalization in training mode, and deeper or wider stacks.
 \emph{Analysis:} \cref{prop:split,prop:cascade} are standard; \cref{prop:cascade} is an upper bound for a linear time-invariant scalar cascade (\cref{rem:scope}) and gives no lower bound and no statement about deep selective networks; no global hold-error or Euler-$B$ bound is claimed.
 \emph{Post hoc choices:} the primary estimand of the repetition was chosen after the development run; the layer localization, the H8 signed decomposition, the toy decomposition and the stiffness columns were analysed after the results were seen.
 \emph{Numerics:} the $10^{-4}$ float32 threshold comes from a scalar emulation; for the trained checkpoints we rely on their own float32/float64 comparison.
-\emph{Literature:} the key equations and experiment sections of TIDES, Mamba-3 and S5 were read in the original text; other entries were checked by keyword search.
 
 %=====================================================================================
 \section{Conclusion}
 \label{sec:conclusion}
 
 Grid dependence in selective SSMs can enter through a step that counts samples, an inexact input-matrix discretization, sample-count readouts and, in stacks, the resampling of internal signals; the last is not caused by any change of the observed input.
-In the tested single-layer toy ablation, the combined corrections (physical step, exact ZOH, exact time average) reduced the readout artifact to rounding level while no single correction did; the inter-layer resampling error remained, with an $O(\text{mesh})$ upper bound for a scalar linear cascade.
-On the official TIDES code, whose step is physical, splitting the held path changes the final outputs in all four training seeds of one task; the larger readout effect of a same-path density change is almost entirely the weighted-average identity of token-mean pooling, which time weighting reduces to a small residual; the loss consequence of native versus resampled evaluation does not replicate, and resampling is about ten times cheaper at eight-fold refinement.
-Whether these effects matter on real sensor data and for other selective SSMs is open.\label{body-end}
+In the tested single-layer toy ablation the combined corrections reduced the readout artifact to rounding level while no single correction did, and the inter-layer resampling error remained, with an $O(\text{mesh})$ upper bound for a scalar linear cascade.
+On the official TIDES code, whose step is physical, splitting the held path changes the final outputs in all four training seeds of one synthetic task and in one checkpoint trained on real sensor windows; the larger readout effect of a same-path density change is, in both, almost entirely the weighted-average identity of token-mean pooling, which time weighting reduces to a small residual; and the loss consequence does not replicate across seeds, while on the sensor windows its subject-level interval includes zero, with resampling about ten times cheaper at eight-fold refinement.
+Whether these effects matter for other selective SSMs, for naturally irregular acquisitions, and across training runs is open.\label{body-end}
 
 %=====================================================================================
 \section*{Impact Statement}
 
 This paper presents work whose goal is to advance the field of Machine Learning, specifically the understanding of how sequence models respond to changes in sampling.
-All experiments use synthetic data and small CPU computations; the trained-model results come from four training seeds and a development seed on one synthetic task.
+The experiments use synthetic data and one public, anonymized activity-recognition dataset (UCI HAR, distributed for research with a citation requirement), all on small CPU computations; the trained-model results come from four training seeds and a development seed on one synthetic task and from one checkpoint on the public dataset. No clinical or otherwise sensitive data were used.
 The main risk we see is over-reading such results: a model that behaves consistently in a controlled setting may still behave differently on irregularly sampled real data, for example clinical or sensor streams, so any use in such settings needs evaluation on the actual data and sampling process.
 We are not aware of other societal consequences that must be specifically highlighted here.
 
@@ -395,6 +415,7 @@ Amendments recorded before any experiment ran: A1 (adaptive RK4 reference step),
 Deviations: a timing-only smoke test on seed 999 (metrics not inspected); a repeated execution after a manifest bookkeeping bug, with byte-identical data files; a partial execution killed by a shell pipe, whose outputs were deleted.
 P1-COMP-01 was pre-registered separately before its code ran.
 \Cref{tab:hypotheses} lists every pre-registered verdict, including the failure.
+\emph{Literature:} the key equations and experiment sections of TIDES, Mamba-3 and S5 were read in the original text; other entries were checked by keyword search.
 
 \paragraph{P1-REAL-01.}
 The design, the pinned implementation and the predictions were committed before any installation.
@@ -440,11 +461,36 @@ P1-REAL-02: data generation $\RtwoDataWall$\,s; seed-0 equivalence retrain ${\ap
 Its equivalence analysis used a margin of 5\% of the point-estimated resampled MSE (kept here as exploratory); the repetition in \cref{sec:real} instead bootstraps the ratio $r_s$.
 Pooled quantities in \cref{tab:pool} are mean absolute errors (or changes) of pooled predictions against the pooled label, in label units; they are not hidden-state discrepancies or MSEs.
 Its runtimes are forward-only model calls on prebuilt tensors (no warm-up, outside inference mode) and exclude resampling.
+\emph{Layer diagnostic (exploratory, not pre-registered).} After seeing the development results we measured the change at intermediate features of the development checkpoint (\cref{tab:layers}): the encoder output is unchanged, the first block changes by at most $\RealLayerOneFp$ in float32 and $\RealLayerOneDp$ with the weights cast to float64, and the second block by $\RealLayerTwoMin$ to $\RealLayerTwoMax$ in both precisions. The first block receives the held input and uses an exact held-coefficient update, whereas the second block receives the first block's output, which splitting samples at more points within each interval; neither proposition is a statement about this trained network. The repetition pre-specified a per-seed layer diagnostic only if some seed's S8 discrepancy fell below $10^{-3}$; this did not happen, so the localization rests on one checkpoint.
 
 \input{generated/tab_dev_newtest}
 \input{generated/tab_real}
 \input{generated/tab_pool}
 \input{generated/tab_layers}
+\FloatBarrier
+\section{P1-HAR-01: data, protocol and cost}
+\label{app:har}
+
+\emph{Data.} The official archive (61,005,872 bytes; sha256 recorded with the per-file hashes in the acquisition record) was downloaded once from the UCI repository, checked for path traversal before extraction, and kept outside version control. The repository page states a CC BY 4.0 license; the README requires citing \citet{anguita2013har} and prohibits commercial use; both statements are recorded. Channels: total acceleration (g), body acceleration (g, gravity removed by the distributors' 0.3\,Hz filter) and angular velocity (rad/s). Train 7352 windows / test 2947 windows, as distributed.
+\emph{Calibration rule.} The 21 training subjects are ranked by the SHA-256 digest of ``P1-HAR-01:calibration:$\langle$id$\rangle$'' and the first four (7, 15, 17, 19) are the calibration subjects; the runner re-derives the rule.
+\emph{Budget rule.} A 20-update smoke run (model discarded) measured $\HarSmokeWall$\,s and projected the training and evaluation cost; the pre-registered rule allowed the planned 2000 updates. Ledger: training $\HarTrainWall$\,s wall ($\HarTrainCPU$\,s process CPU), evaluation $\HarEvalWall$\,s wall; all stages together $\HarTotalWall$\,s wall and $\HarTotalCPU$\,s process CPU on 2 threads, against a cap of 3600\,s / 7200\,s.
+\emph{Checks.} Eval mode enforced at calibration and test (no dropout, running batch statistics); all step scales positive; no padding or mask; the resampled input equals C0 on S8 and H8 to $\HarResIdent$; the identities of the logit decomposition hold to $\HarDecIdent$; $\HarExcluded$ windows excluded by the centered-logit rule.
+\emph{Timing (\cref{tab:har-timing}).} native\_S8\_end\_to\_end\,/\,resampled\_S8\_end\_to\_end $=\HarRatioSeight$; forward-only $\HarFratioSeight$; H8 end-to-end $\HarRatioHeight$.
+
+\input{generated/tab_har_timing}
+
+\FloatBarrier
+\section{Proof of \texorpdfstring{\cref{prop:cascade}}{Proposition 4.2}}
+\label{app:proof}
+
+\begin{proof}
+(a) follows as in \cref{prop:split}, since the coupled system has constant coefficients on each held interval.
+(b) Layer~1 is exact, so with $\tau_k=dt_k$,
+$e_k=e^{-c\tau_k}e_{k-1}+d\int_0^{\tau_k}e^{-c(\tau_k-s)}[h_1(t_k)-h_1(t_{k-1}+s)]\,ds$.
+If $a>0$ then $|h_1|\le|b|U/a$, so $a|h_1|\le|b|U$; if $a=0$ then $a|h_1|=0$; either way $|\dot h_1|\le2|b|U$.
+On each held interval $h_1$ is $C^1$, so the bracket is at most $2|b|U(\tau_k-s)$, and with $e^{-c(\tau_k-s)}\le1$ the local term is at most $|b\,d|U\tau_k^2$.
+Unrolling from $e_0=0$ gives $|e_k|\le|b\,d|U\delta\sum_{j\le k}\tau_je^{-c(t_k-t_j)}$, and since $e^{-c(t_k-t_j)}\le e^{c\delta}e^{-c(t_k-s)}$ for $s\in(t_{j-1},t_j]$, the sum is at most $e^{c\delta}\int_0^{t_k}e^{-c(t_k-s)}ds\le e^{c\delta}/c$.
+\end{proof}
 
 \FloatBarrier
 \section{Numerical floor}
@@ -456,21 +502,24 @@ In emulated float32, split composition of one scalar mode drifts to $\NfourFloor
 \input{generated/tab_numerics}
 
 \FloatBarrier
-\section{Additional toy tables}
-\label{app:toy}
-
-\input{generated/tab_split}
-\input{generated/tab_coupling}
-\input{generated/tab_stiff}
-\input{generated/tab_newobs}
-\input{generated/tab_readout}
-
-\FloatBarrier
 \section{Reproducibility}
 \label{app:repro}
 
 The anonymized supplementary package contains the code (toy, RK4 references, cascade check, TIDES adapter, convention check, runners, diagnostics and the generator that produces every table, figure and number in this paper), the configurations, and the raw records from which the generator works, together with the sha256 of every checkpoint.
 It does not contain model checkpoints or the third-party TIDES code: the checkpoints are regenerated by the training command listed in the package (a retrain of the development seed reproduced every tensor), and TIDES is obtained at the pinned commit under its own license.
+
+\FloatBarrier
+\section{Additional toy tables}
+\label{app:toy}
+
+\Cref{tab:interaction,tab:split,tab:coupling,tab:stiff,tab:newobs,tab:readout} list the toy measurements referenced in \cref{sec:toy}: one fix at a time, splitting, the two-layer cascade, the stiff mode, new observations with the exact decomposition, and readouts under a density change.
+
+\input{generated/tab_interaction}
+\input{generated/tab_split}
+\input{generated/tab_coupling}
+\input{generated/tab_stiff}
+\input{generated/tab_newobs}
+\input{generated/tab_readout}
 
 \FloatBarrier
 \end{document}

@@ -386,6 +386,181 @@
         "seed4_tokens.json.gz": "cfbcdb496eb1ede95387a20033a575c67175dc899c37572ddde999acdba4afcc",
         "summary.json": "6dca1cb9cc42a99645a925fd086df70a268913e3830f7fd31f66ffb1f7722816"
       }
+    },
+    {
+      "run_id": "P1-HAR-01",
+      "status": "COMPLETED (one checkpoint; primary interval includes 0)",
+      "authorization": "round-6 instruction delivered directly by the user (2026-10-02): one official UCI HAR ZIP download, existing CPU environment, one TIDES classifier + one model seed + one linear control, 2 threads, 3600 s wall / 7200 s CPU",
+      "config": {
+        "path": "configs/p1_har_01.json",
+        "sha256": "e603cf75e6472a20547afe22b6056f8e940de93120bc9fd2e6f66806a7dc44fc",
+        "commits": [
+          "6a8ab2f9a1f0099609638f7268d3298ef0bd5fb3 P1-HAR-01: pre-execution amendment after independent review (guards, projections, same-path arms, locks); data stage and first smoke recorded",
+          "97963e4f665bd791258995e0faf4eefffa52997c P1-HAR-01: data acquisition record, pre-registered config and runner (before any execution); manuscript corrections 1-3, 6"
+        ],
+        "amendment": "one pre-execution amendment after an independent review (before training; after the data stage and the first smoke); a stale print key in the smoke summary fixed afterwards; aggregate/control stages patched after the statistics review before they ran"
+      },
+      "data": {
+        "acquisition_record": "results/raw/P1-HAR-01/acquisition.json",
+        "outer_zip_sha256": "c00b803081a5c797cd5e4b83700a9810b38d53d9d84e01917e090e1fdbc81031",
+        "outer_zip_bytes": 61005872,
+        "arrays_sha256": {
+          "Xtr": "c18b484a1a83cc6aca9bebd83fbe2ea5e234e99b5b4cd8c6094253aac7349247",
+          "ytr": "cc77aaecf2d4a201542a365c2bb4221f2e1671e8d5ea0c9220899fb190874d76",
+          "subject_train": "67ee642e93b07afe660e5a3785db14ff6e65a0f6d9c66e0e253a49610c67506b",
+          "Xte": "801761f554ff7bb76bb5cfc900da64496d2f5457086bcf128a6bb6955d459af7",
+          "yte": "666cd1b00a531b008992aeba2caad9d543c603131d2c5999fc50bc1836ac55a3",
+          "subject_test": "0c2bbe9b52e81376ace1e9ea7b18a5c6c94f655c96cfb18d6c9783300f143b2a"
+        },
+        "n_fit": 5988,
+        "n_cal": 1364,
+        "n_test": 2947,
+        "local_only": "data/har/ (gitignored); not redistributed"
+      },
+      "environment": {
+        "python": "3.11.15",
+        "torch": "2.14.0+cpu",
+        "threads": 2,
+        "device": "cpu",
+        "tides_commit": "4b51adce2060e7209e002a6a2fd6691a2f6fcc5e"
+      },
+      "git_head_at_training": "fa3c64c47e866873c134143aa1e7caffdd283cc9",
+      "checkpoint": {
+        "sha256": "e3b414f5bdf55541d84a2f3abaf5a1c04faddfd6e2fdfd38dd79a20be049910d",
+        "bytes": 115677,
+        "selected_update": 1200,
+        "selected_cal_ce": 0.09187260270118713,
+        "selected_cal_acc": 0.9743402004241943,
+        "updates_run": 2000,
+        "n_parameters": 23786
+      },
+      "smoke_decision": {
+        "updates": 2000,
+        "status": "OK",
+        "train_wall_allowance_seconds": 481.6,
+        "projected_eval_wall_seconds": 531.9,
+        "projected_eval_cpu_seconds": 958.0
+      },
+      "cost_ledger": [
+        {
+          "stage": "data",
+          "started_utc": "2026-10-02T16:20:54Z",
+          "wall_seconds": 1.985,
+          "cpu_seconds": 2.154,
+          "threads": 2,
+          "status": "COMPLETED"
+        },
+        {
+          "stage": "smoke",
+          "started_utc": "2026-10-02T16:21:30Z",
+          "wall_seconds": 16.001,
+          "cpu_seconds": 14.63,
+          "threads": 2,
+          "status": "COMPLETED",
+          "decision": {
+            "updates": 2000,
+            "status": "OK",
+            "train_wall_allowance_seconds": 589.5
+          }
+        },
+        {
+          "stage": "smoke",
+          "started_utc": "2026-10-02T16:30:09Z",
+          "wall_seconds": 13.365,
+          "cpu_seconds": 24.07,
+          "threads": 2,
+          "status": "COMPLETED",
+          "decision": {
+            "updates": 2000,
+            "status": "OK",
+            "train_wall_allowance_seconds": 481.6,
+            "projected_eval_wall_seconds": 531.9,
+            "projected_eval_cpu_seconds": 958.0
+          }
+        },
+        {
+          "stage": "train",
+          "started_utc": "2026-10-02T16:33:45Z",
+          "wall_seconds": 182.984,
+          "cpu_seconds": 354.205,
+          "threads": 2,
+          "status": "COMPLETED",
+          "updates_run": 2000,
+          "selected_update": 1200
+        },
+        {
+          "stage": "eval",
+          "started_utc": "2026-10-02T16:37:06Z",
+          "wall_seconds": 169.633,
+          "cpu_seconds": 317.744,
+          "threads": 2,
+          "status": "COMPLETED"
+        },
+        {
+          "stage": "control",
+          "started_utc": "2026-10-02T16:37:32Z",
+          "wall_seconds": 3.733,
+          "cpu_seconds": 4.633,
+          "threads": 2,
+          "status": "COMPLETED"
+        },
+        {
+          "stage": "aggregate",
+          "started_utc": "2026-10-02T16:37:33Z",
+          "wall_seconds": 0.352,
+          "cpu_seconds": 0.602,
+          "threads": 2,
+          "status": "COMPLETED"
+        },
+        {
+          "stage": "aggregate",
+          "started_utc": "2026-10-02T16:45:57Z",
+          "finished_utc": "2026-10-02T16:45:57Z",
+          "wall_seconds": 0.372,
+          "cpu_seconds": 0.572,
+          "threads": 2,
+          "status": "COMPLETED"
+        }
+      ],
+      "totals": {
+        "wall_seconds": 388.425,
+        "process_cpu_seconds": 718.61,
+        "cap_wall": 3600,
+        "cap_cpu": 7200,
+        "outside_budget": "download 32.97 s wall; extraction; PDF/package builds",
+        "note": "stage timers started after imports and hashing in the code version that ran (about 2-4 s per stage not recorded); the true total is roughly 400 s wall"
+      },
+      "primary": {
+        "D_nats": 0.016308530924014495,
+        "ci95_subject_bootstrap": [
+          -0.004167634545312573,
+          0.03231500688302716
+        ],
+        "n_positive_of_9": 8,
+        "verdict": "interval includes 0"
+      },
+      "outputs_sha256": {
+        "C0_token_logits.f16.npy.gz": "e37108feeed17d7f23ac35105aa18acce34e72a4ada15ad201674fd88a8b00e4",
+        "acquisition.json": "9400844f80616c5446738e64a255fbb51de519fa39db754eae070119b12bfaf4",
+        "aggregate.json": "4851dccb7e59d1fe0174905f298df759faf60345882f8f9d22159fc11b40fd25",
+        "checkpoint.pt.sha256": "5948304b06338197d79a84e04021f6fb53d79ff7ed0a6c3cce15a02a0aa36a7c",
+        "control.json": "3e76a14d375c517517271b46799f172c106efb7db2c9d7d0f77e6c85833379ef",
+        "cost_ledger.json": "2e3435273bb86a5f8658473502205dcd3d9d93b9cefe92943987b22404bcb939",
+        "data_hash.json": "8d3097361ce77bd8438b524faea75fbb5b28ce959b6e62b63e92abcd0f9c345a",
+        "eval.jsonl": "541e83bb9fc22e04236f352311aceaaa08fee58a10042159f284071fb4f7e613",
+        "eval_summary.json": "095882e96a99708d8cb396282b17f92d581271dd51ef47e886adffff63a219cb",
+        "smoke.json": "53248e9640ed673886574b69d73a11ab72d3636383b6fca16d9beb29a061d3c5",
+        "test_opened.json": "a3151051fced71e42d1fab856e555ec4bc6b7162a9c3e0f4d859ae08d7d5d934",
+        "train.json": "6f9956819267c6b6af4289cc9a9618ef8a509455fa33f0761cd2ab02a83fe84a",
+        "train.log": "c2b51b4e6b7c0532655f686fc49ece21aec3eba8ae4d0722db95727591b5b590"
+      },
+      "code_provenance": {
+        "data_smoke_train_runner": "runner as of commit 60536b3 (training started at HEAD 60536b3; train.json git_head fa3c64c is the HEAD at the end of training, a commit that touched only the asset generator and manuscript)",
+        "eval_runner": "commit 60536b3",
+        "control_and_first_aggregate_runner": "commit 4be0c87",
+        "aggregate_rerun": "commit 133c434 runner (adds provenance fields only; statistics byte-identical)"
+      },
+      "review": "four-lens pre-execution review (leakage, representation, statistics, engineering); dispositions in configs/p1_har_01.json amendment_log, commit messages and STATUS.md"
     }
   ]
 }

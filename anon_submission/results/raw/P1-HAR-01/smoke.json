@@ -1,0 +1,35 @@
+{
+  "smoke_updates": 20,
+  "status": "COMPLETED",
+  "wall_seconds": 13.365,
+  "cpu_seconds": 24.07,
+  "cpu_to_wall_ratio": 1.801,
+  "s_per_update_mean_3_to_20": 0.06944149288887679,
+  "s_per_calibration_pass_mean_of_2": 2.032,
+  "n_fit": 5988,
+  "n_cal": 1364,
+  "s_per_token_calibration_L128": 1.1638563049853372e-05,
+  "s_per_token_S8_batch256_L1024": 2.50244140625e-05,
+  "rate_used": 2.50244140625e-05,
+  "n_parameters": 23786,
+  "projected_train_seconds_2000": 181.6,
+  "projected_eval_tokens": {
+    "main": 6601280,
+    "timing_block": 7569408
+  },
+  "projected_eval_seconds": 531.9,
+  "ledger_before": {
+    "wall": 17.986,
+    "cpu": 16.784
+  },
+  "decision": {
+    "updates": 2000,
+    "status": "OK",
+    "train_wall_allowance_seconds": 481.6,
+    "projected_eval_wall_seconds": 531.9,
+    "projected_eval_cpu_seconds": 958.0
+  },
+  "model_discarded": true,
+  "config_sha256": "e603cf75e6472a20547afe22b6056f8e940de93120bc9fd2e6f66806a7dc44fc",
+  "rule": "the smoke run measures s_upd (mean wall seconds per update over updates 3..20; the run must complete all 20 updates, else FAIL), s_cal (mean wall seconds of its two calibration passes, at update 0 and 20) and the per-token inference rate as the larger of s_cal/(N_cal*128) and the rate of one S8 batch of 256 fit windows (L = 1024); projected_train(U) = U*s_upd + (U/100 + 1)*s_cal; projected_eval = 1.5 * rate * (tokens_main + tokens_timing) with tokens_main = N_test*(128+1024+576) + N_test*128 + 3*N_test*128 and tokens_timing = 7*256*sum_cond(2*L_cond + 256); with the ledger total so far (data + smoke) and margins 300 s wall / 600 s CPU (CPU projected with the smoke's cpu/wall ratio), U = 2000 if the wall and CPU sums are within 3600 s / 7200 s; otherwise U = the largest multiple of 100 that satisfies both; if U < 500 the run is INCOMPLETE_BUDGET and test is not opened. The decision is written by the smoke stage and read by the train stage; it is not changed after seeing any performance"
+}

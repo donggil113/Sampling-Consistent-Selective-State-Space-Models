@@ -1,6 +1,6 @@
 # STATUS — P1 Sampling-grid dependence in selective SSMs
 
-Last updated: 2026-09-27 (UTC), session 5 (round 5). Branch: `claude/intelligent-maxwell-t1lcda`.
+Last updated: 2026-10-02 (UTC), session 6 (round 6). Branch: `claude/intelligent-maxwell-t1lcda`.
 
 ## Standing decisions (preserved)
 
@@ -17,6 +17,64 @@ Last updated: 2026-09-27 (UTC), session 5 (round 5). Branch: `claude/intelligent
   - the development-checkpoint layer diagnostic;
   - the development run's fixed-estimated-margin analysis.
 - **P1-REAL-02 primary estimand** (H8 pooled-readout effect) was chosen after seeing the development run. It is not a blind choice.
+
+## Session 6 (round 6): what was done
+
+**Checkout.** Branch `claude/intelligent-maxwell-t1lcda`; HEAD at start dc426eb (matched the report); clean tree.
+
+**Authorization (delivered directly by the user in the round-6 instruction).**
+
+- Approved and used: one download of the official UCI HAR ZIP plus page metadata/license; the existing torch-CPU / pinned-TIDES / TeX environment; one TIDES classifier with one model seed and one linear control; 2 CPU threads; 3600 s wall / 7200 s process-CPU total for smoke + train/dev/test + bootstrap.
+- Not approved and not used: GPU, paid APIs, new weights, extra libraries, other datasets, extra synthetic seeds.
+- `/nvmedata` does not exist in this sandbox; the checkout was used; `/data000` untouched.
+
+**A. Manuscript corrections without training.**
+
+1. `tab_newobs` caption: "genuine new external information" → "change in the held-input reconstruction; no task or Bayesian information gain is implied".
+2. Eq. (2): $T_m = D_m - D_1$ defined; norm ratios never read as shares or causal contributions.
+3. Intervals stated as pointwise per estimand and seed, unadjusted for secondary conditions; a non-negative discrepancy's interval excluding zero is nonzero-ness, not a cause.
+4. Prop. 4.2 unchanged (scalar LTI upper bound); its proof moved to an appendix for space.
+5. Anonymization check of the existing packages: the TIDES pin (4b51adc…) and every checkpoint sha256 are kept; only this repository's commit ids were replaced. No change needed.
+6. Layout: Reproducibility moved before the toy tables; pointer sentence under the toy-tables heading.
+
+**B. P1-HAR-01 (UCI HAR), one run.**
+
+- **Data.** Official ZIP, 61,005,872 bytes, sha256 c00b8030…; nested archive checked for path traversal before extraction; license: page says CC BY 4.0, README requires citation and prohibits commercial use (both recorded); data kept in gitignored `data/`. Nine inertial channels; the 561-feature tables are not used. 7352 train / 2947 test windows as distributed.
+- **Contract.** Official subject partition kept; calibration subjects 7, 15, 17, 19 by an ID-hash rule (re-derived by the runner); fit subjects 17 (5988 windows); normalization fit-only; 128 held intervals of 1/50 s (T = 2.56 s); C0 128 / S8 1024 / H8 576 tokens; no mask or padding; the resampler reads only observed values; the subject is the analysis unit.
+- **Model.** Official `TIDESClassifier` with the pilot backbone setting (23,786 parameters), 9 inputs, 6 classes; the classifier's defaults for `conj_sym`, `encoder_depth`, `proj_norm` overridden to reuse the existing setting (documented).
+- **Pre-registration.** Config and runner committed before execution (97963e4); an independent 4-lens review found no leakage; its findings were applied as one pre-execution amendment (6a8ab2f, before training): projection-aware budget guards, same-path arms (head of pooled features), test-opened lock, enforced eval-mode checks, finiteness guards, per-subject exclusion counts, degenerate-interval verdict logic.
+- **Budget ledger (all stages, 2 threads):**
+
+  | stage | wall s | CPU s | note |
+  |---|---|---|---|
+  | data | 2.0 | 2.2 | parse + hash |
+  | smoke (first code) | 16.0 | 14.6 | 20 updates, model discarded |
+  | smoke (amended) | 13.4 | 24.1 | decision: 2000 updates OK |
+  | train | 183.0 | 354.2 | 2000 updates; selected update 1200 (cal CE 0.092, acc 0.974) |
+  | eval | 169.6 | 317.7 | C0/S8/H8 × 3 arms + timing |
+  | control | 3.7 | 4.6 | |
+  | aggregate (×2) | 0.8 | 1.2 | second run only adds provenance |
+  | **total** | **388.4** | **718.6** | cap 3600 / 7200; stage timers of the code that ran started after imports/hashing (≈2–4 s per stage unrecorded; true total ≈ 400 s wall) |
+
+  Outside this budget: download 33 s, PDF and package builds.
+- **Checks.** Resampled input = C0 exactly on S8/H8 and its logits bit-identical to C0 (0.0); head-of-mean = direct forward (0.0); decomposition identities to 2.7e-5 (float32); no non-finite value; 0 windows excluded by the centered-logit rule.
+- **Results (9 test subjects, subject means first):**
+  - Primary D = CE(token mean, H8) − CE(time-weighted, H8) = **+0.016 nats, 9-subject bootstrap [−0.004, +0.032], 8 of 9 subjects positive → interval includes 0: NOT ESTABLISHED** (and not evidence of equivalence).
+  - Model coupling (S8): class-centered logit change 0.029 (every subject 0.022–0.033), TV 0.008, 0.8 % prediction flips; ΔCE −0.010 [−0.034, +0.012].
+  - Pooled weighting (H8): token mean: centered-logit 0.210, flips 2.8 %, ΔCE +0.012 [−0.005, +0.028]; time-weighted: 0.016, 0.3 %, −0.004 [−0.017, +0.007]. Decomposition norms: ‖p_mean − p_C0‖ 7.69, ‖W‖ 7.44, ‖M‖ 1.00, ‖M_end‖ 0.013, ‖Q‖ 0.57 → again mostly the weighting identity.
+  - Accuracy 0.904 (C0), 0.905 (H8 mean), 0.903 (H8 time).
+  - Control: features identical to 1.8e-14; CE 0.695 / acc 0.765, unchanged across grids.
+  - Cost: native_S8_e2e / resampled_S8_e2e = 12.7 (forward-only 12.4); H8 5.0.
+- **Stored.** `results/raw/P1-HAR-01/`: eval.jsonl (9.8 MB, per-window float64 pooled logits, CE, predictions, distances, decomposition), C0 token logits float16 gz (4.1 MB), checkpoint (116 KB) + sha256, train/smoke/control/aggregate/ledger/acquisition. S8/H8 token logits local only. Note: the config's "about 30 KB" checkpoint size estimate was wrong (116 KB); the config was not edited after training because its sha256 is verified by every later stage.
+
+**C. Manuscript v5.** §5 split into 5.1 (synthetic repetition, compressed; layer diagnostic and one-fix table moved to appendices) and 5.2 (HAR); abstract, contributions, conclusion, limitations, Impact Statement and a new appendix (data, protocol, cost, timing) updated; dataset citation added through the bib provenance (manual entry, source recorded). claims.csv: K4 added; K1/K2 notes extended. PDF: 17 pages, body's last sentence on page 8, 0 overfull boxes, 0 undefined references, anonymity check clean; pages 4–8 rendered and inspected at 96 dpi.
+
+**D. Review workflows.** Four independent pre-execution reviewers (leakage, representation, statistics, engineering), plus a post-build claim verification.
+
+- Leakage and representation lenses reported before training; no leakage found; their findings became the pre-execution amendment (6a8ab2f).
+- The statistics lens reported during evaluation; its findings were applied to the aggregate/control stages before those ran (4be0c87).
+- The engineering lens reported after the run. Its findings concern robustness, not results: crash paths left no ledger row; `started_utc` was the finish time and stage timers started after imports/hashing; eval/control/aggregate outputs lacked code provenance; a NaN in the smoke FAIL path; no guard on the data stage. All were fixed in the runner afterwards (133c434); aggregate was re-run once only to add provenance (every statistic byte-identical; the extra ledger row is kept).
+- Code provenance of the run: data/smoke/train used the runner at 60536b3 (train.json's `git_head` fa3c64c is the HEAD at the end of training; the commit in between touched only the asset generator and manuscript); eval ran with the runner at 60536b3; control and the first aggregate with 4be0c87.
 
 ## Session 5 (round 5): what was done
 
@@ -186,14 +244,9 @@ Last updated: 2026-09-27 (UTC), session 5 (round 5). Branch: `claude/intelligent
 
 ## Next research decision (not run)
 
-**Session 5:** the owner fixed the dataset for the first real-sensor comparison: UCI HAR, P1-HAR-01, a synthetic refinement applied to real sensor signals. The remaining decision is whether to give the resource approval that P1-HAR-01 needs:
+**Session 6:** P1-HAR-01 has run once (one dataset, one checkpoint, one seed). The one decision for the owner is whether a **second model seed (or a second dataset) under the same frozen P1-HAR-01 protocol** is worth its budget to test whether the subject-level sign pattern (8 of 9) holds, or whether the project stops at the current scope. No further runs are assumed approved.
 
-- download of the official zip, with its hash recorded;
-- CPU training of one TIDES classifier with one seed.
-
-Nothing is assumed approved.
-
-*Session 4 record (superseded):* decide whether an independent real irregular time-series dataset is needed and admissible. The decision needed the owner to name a dataset with a known license, entity-level split and sampling process, and importing any dataset requires explicit approval.
+*Session 5 record (superseded):* the owner fixed UCI HAR for the first real-sensor comparison; the decision was the resource approval, which was given and used in session 6.
 
 ## Session 3: what was done
 

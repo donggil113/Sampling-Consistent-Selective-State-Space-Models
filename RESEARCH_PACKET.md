@@ -1,6 +1,6 @@
 # Research packet: Sampling-grid dependence in selective SSMs (P1)
 
-Last updated: 2026-09-27 (fifth session). Branch: `claude/intelligent-maxwell-t1lcda`.
+Last updated: 2026-10-02 (sixth session). Branch: `claude/intelligent-maxwell-t1lcda`.
 
 Runs covered:
 
@@ -309,4 +309,11 @@ Setup:
 - Overclaims corrected: "only … together", the scope of Prop. 4.2, invariance defect vs approximation error, "new information", the float floor, "removes", "exact integral", the unproved sketches (moved to `notes/`), and the reproducibility statement.
 
 **P1-HAR-01 (UCI HAR).** Specified by the owner. BLOCKED on resource approval; nothing was downloaded or run.
+
+## 12. Session 6: P1-HAR-01 (UCI HAR, one checkpoint) and manuscript v5
+
+- **Question.** Do the three effects separated on the synthetic task appear when an artificial same-held-path refinement is applied to real (distributor-preprocessed) sensor windows?
+- **Answer, conditional on one checkpoint and nine test subjects.** Model coupling: yes (S8 changes class-centered logits by 0.029, 0.8 % flips; resampled arm identical to C0). Pooled weighting: yes, and again mostly the density-weighting identity (‖W‖ 7.44 of 7.69; model term 1.00; interval-end part 0.013). Task risk: the pre-registered primary D = +0.016 nats has a subject-level interval [−0.004, +0.032] that includes zero; 8 of 9 subjects positive. Accuracy unchanged in practice (0.904 → 0.905 / 0.903).
+- **Status words.** MEASURED; primary NOT ESTABLISHED; not evidence of equivalence; conditional on one seed; artificial refinement, not natural irregularity.
+- **Evidence.** `results/raw/P1-HAR-01/`, `configs/p1_har_01.json` (pre-registered, one documented pre-execution amendment), `run_manifest.json` entry; 388 s wall / 718 s CPU on 2 threads.
 

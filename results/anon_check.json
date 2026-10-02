@@ -1,14 +1,16 @@
 {
   "package": "anon_submission/",
-  "n_files": 117,
-  "bytes": 10128585,
+  "n_files": 136,
+  "bytes": 24258086,
   "n_patterns_checked": 12,
   "pattern_hits_by_file": {},
-  "commit_hashes_redacted": 22,
+  "commit_hashes_redacted": 36,
   "files_with_local_paths_redacted": 0,
   "readme_listed_paths_missing": [],
   "generator_rerun_ok": true,
-  "generated_files_differing": [],
-  "checkpoints_included": false,
+  "generated_files_differing": [
+    "numbers.tex"
+  ],
+  "checkpoints_included": true,
   "third_party_code_included": false
 }
