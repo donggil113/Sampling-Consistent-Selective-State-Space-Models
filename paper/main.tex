@@ -1,4 +1,4 @@
-%%%%%%%% Manuscript v5 (v4: git commit dc426eb; v3: 1bca23e; v2: dce4d30; v1: 8fb0368) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%% Manuscript v5.1 (v5: git commit 0e5cf3d; v4: dc426eb; v3: 1bca23e; v2: dce4d30; v1: 8fb0368) %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TARGET_YEAR      = 2027  (ICML 2027; icml.cc/Conferences/2027, its CallForPapers page and the icml2027.zip style URL returned 404 on 2026-09-27)
 % TEMPLATE_YEAR    = 2026  (official ICML 2026 style kit, review/anonymous mode, unmodified)
 % SUBMISSION_READY = false
@@ -315,7 +315,7 @@ Because windows overlap, every quantity is averaged within a subject first and t
 The model is the official \texttt{TIDESClassifier} of the pinned code with the backbone setting of \cref{sec:real-syn} ($\HarParams$ parameters), nine input channels and the official head, a token mean of the features followed by a linear map to six classes.
 One model seed; Adam, batch 32, $\HarUpdatesRun$ updates; the state with the lowest calibration cross-entropy (every 100 updates) is frozen and hashed before any test window is read: update $\HarUpdate$, calibration cross-entropy $\HarCalCE$, accuracy $\HarCalAcc$.
 The same checkpoint is evaluated with three arms: the official token-mean readout on the condition's grid (\emph{native mean}); the same features pooled with weights $dt_j/T$ at the same location and passed through the same affine head (\emph{native time}, an inference-time ablation, not a trained baseline); and the official readout on the training grid rebuilt from the observed values (\emph{resampled}), which on S8 and H8 is the identity control (input difference $\HarResIdent$).
-Because the head is affine, the token mean of the features equals the mean of the per-token logits (checked, maximum difference $\HarPoolIdent$ on C0; the two native arms coincide on the uniform C0 grid to $\HarArmIdent$); softmax outputs are never averaged.
+Because the head $A(h)=Wh+b$ is affine and the weights sum to one, $A(\sum_jw_jh_j)=\sum_jw_jA(h_j)$ for both poolings (checked on C0: maximum difference $\HarPoolIdent$; the two native arms coincide on the uniform C0 grid to $\HarArmIdent$); softmax outputs are never averaged.
 The primary estimand, fixed before the run, is $d_s$, the mean over the windows of test subject $s$ of CE(native mean, H8) $-$ CE(native time, H8), and $D$, its equal-weight mean over the 9 subjects, with a subject-level paired percentile bootstrap (2000 draws); cross-entropy, accuracy, prediction flips, output distances and cost are secondary and reported separately.
 A control, time-weighted per-channel means and second moments with a multinomial linear classifier, only shows that a readout integrating over time is unchanged by the refinement; it is not a task ceiling or a capacity-matched baseline.
 
@@ -373,7 +373,7 @@ For \eqref{eq:cascade} (P1-COMP-01; held input of FIRST\_RUN unit~0; \CompSecond
 \section{Limitations}
 \label{sec:limits}
 
-\emph{Trained evidence:} four training seeds and a development seed of one small two-block model (one selective SSM) on one synthetic task whose teacher is from the model's own family; no statement about other tasks, real data, the population of training runs, TIDES' benchmarks, Mamba, S4 or S5 is supported, and the accuracy contrast was not stable. \emph{Real-sensor evidence:} one dataset, one checkpoint, one seed, nine subjects, an artificial refinement of distributor-preprocessed windows (\cref{sec:har}).
+\emph{Synthetic evidence:} four training seeds and a development seed of one small two-block model (one selective SSM) on one synthetic task whose teacher is from the model's own family; it supports no statement about other tasks, the population of training runs, TIDES' benchmarks, Mamba, S4 or S5, and the accuracy contrast was not stable. \emph{Real-sensor evidence:} one dataset, one checkpoint, one seed, nine subjects, an artificial refinement of distributor-preprocessed windows (\cref{sec:har}).
 \emph{Margin:} the $\pm5\%$ equivalence margin is a convention, not an application-derived tolerance; all intervals are reported.
 \emph{Entry points not measured:} token-indexed convolution, normalization in training mode, and deeper or wider stacks.
 \emph{Analysis:} \cref{prop:split,prop:cascade} are standard; \cref{prop:cascade} is an upper bound for a linear time-invariant scalar cascade (\cref{rem:scope}) and gives no lower bound and no statement about deep selective networks; no global hold-error or Euler-$B$ bound is claimed.
@@ -432,7 +432,7 @@ P1-REAL-02 stored per-trajectory pooled values but not per-token outputs.
 A configuration fixed before execution specified one frozen native forward pass per existing checkpoint on C0 and H8 (no training, no timing, same test set), a check that it reproduces the stored pooled values (maximum absolute difference $\DecMismatch$), and the signed identities of \cref{tab:seeds-readout} (largest residual $\DecIdentity$).
 
 \paragraph{Compute.}
-All on CPU (2 threads for experiments), no GPU, no paid API, no external data; wall and process CPU seconds are distinguished where recorded.
+All on CPU (2 threads for experiments), no GPU, no paid API; the synthetic stages use no external data, and the only external data are the public UCI HAR windows of \cref{app:har}; wall and process CPU seconds are distinguished where recorded.
 FIRST\_RUN: two executions of about 21\,s, one partial execution and a smoke test of about 3\,s together.
 P1-COMP-01: \CompSeconds\,s.
 P1-REAL-01 (development): installation of a CPU tensor library (35\,s) and of a \LaTeX\ toolchain (66\,s); adapter check and timing smoke (${\approx}4$\,s; $\AdapterStep$\,s per batch-32 step); convention check (${\approx}2$\,s); training including label generation ($\RealTrainSec$\,s); evaluation ($\RealEvalSec$\,s); layer diagnostic (${\approx}11$\,s).
@@ -506,7 +506,7 @@ In emulated float32, split composition of one scalar mode drifts to $\NfourFloor
 \label{app:repro}
 
 The anonymized supplementary package contains the code (toy, RK4 references, cascade check, TIDES adapter, convention check, runners, diagnostics and the generator that produces every table, figure and number in this paper), the configurations, and the raw records from which the generator works, together with the sha256 of every checkpoint.
-It does not contain model checkpoints or the third-party TIDES code: the checkpoints are regenerated by the training command listed in the package (a retrain of the development seed reproduced every tensor), and TIDES is obtained at the pinned commit under its own license.
+It contains the 116\,KB UCI HAR checkpoint with its SHA-256, but not the synthetic-task checkpoints (their SHA-256 values are listed and they are regenerated by the training command in the package; a retrain of the development seed reproduced every tensor), not the HAR data (acquisition command and archive hash are given) and not the third-party TIDES code, which is obtained at the pinned commit under its own license.
 
 \FloatBarrier
 \section{Additional toy tables}

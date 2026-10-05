@@ -1,0 +1,51 @@
+{
+  "run_id": "P1-HAR-CT-01",
+  "status": "FIXED BEFORE EXECUTION; EXPLORATORY_FIXED_CHECKPOINT; design is POST HOC (written after the P1-HAR-01 results were seen), so it is a fixed diagnostic, not an independent confirmation",
+  "created_utc": "2026-10-05",
+  "authorization": {
+    "scope_quoted": "round-7 instruction (2026-10-05): reuse of the existing HAR data/checkpoint/torch/TIDES/TeX and ONE frozen evaluation; no new data, retraining, new model, GPU or paid API; research computation <= 2 threads, wall total 1200 s / process CPU total 2400 s, RAM <= 16 GiB; use existing raw first and forward only where it is insufficient",
+    "not_approved": "second model seed, second dataset, any analysis aimed at making the 8/9 sign pattern significant, package installation"
+  },
+  "question": "Of the final pooled S8 classifier change reported by P1-HAR-01, how much is a change of the model output at the 128 common physical time points (common-time output change), and how much comes from averaging the 896 additional S8 time points (extra-sampling/readout change)? The two are different quantities; the synthetic common-time discrepancy of P1-REAL-02 and the pooled HAR comparison must not be called the same effect.",
+  "known_fact_no_toy_needed": "for an exact single layer with h(t) = 1 - exp(-t), the end value h(1) is split-invariant while mean_j h(j/8) differs from h(1): a quadrature/sampling phenomenon; no new toy experiment is run",
+  "inputs": {
+    "checkpoint": "results/raw/P1-HAR-01/checkpoint.pt, sha256 e3b414f5bdf55541d84a2f3abaf5a1c04faddfd6e2fdfd38dd79a20be049910d (verified before use)",
+    "original_config": "configs/p1_har_01.json, sha256 e603cf75e6472a20547afe22b6056f8e940de93120bc9fd2e6f66806a7dc44fc (verified; splits, normalization, grids and model kwargs are read from it)",
+    "split_and_normalization": "the P1-HAR-01 cached arrays (data/har/derived/cache.npz, hashes in results/raw/P1-HAR-01/data_hash.json), fit-only normalization, the 9 official test subjects (2947 windows)",
+    "eval_mode": "model.eval(), float32, running batch statistics, no dropout, torch.inference_mode(), 2 threads, batches of 256 windows (as in P1-HAR-01)",
+    "stored_raw_checked_first": "per-token LOGITS exist: C0 in results/raw/P1-HAR-01/C0_token_logits.f16.npy.gz and S8 in data/har/derived/S8_token_logits.f16.npy (float16). Per-token FEATURES were not stored. Stage A re-aggregates the float16 logits and records their reproduction gap against the stored float64 pooled logits; because float16 storage limits the decomposition to about 1e-3 absolute, Stage B performs ONE float32 streaming forward of C0 and S8 (no intermediate tensors are stored)"
+  },
+  "definitions": {
+    "head": "A(h) = W h + b, the official nn.Linear(16, 6); asserted affine at run time",
+    "H0": "final backbone features on C0, H0[k], k = 1..128",
+    "H8": "final backbone features on S8, H8[j], j = 1..1024; token j belongs to base interval k = ceil(j/8); end(k) = 8k is the token whose right end point is t_k = k/50 s, the same physical time as C0 token k",
+    "endpoint_map_check": "the 128 end tokens are identified from the S8 grid's is_end flags and verified against the time stamps (times[end(k)] == k/50 within 1e-12) and the base-interval index; 0/1-based and 128-values/127-gaps confusions are excluded by these assertions",
+    "z0": "A(mean_k H0[k])  (the official C0 readout)",
+    "z_end": "A(mean_k H8[end(k)])  (official head applied to the S8 features at the 128 common time points)",
+    "z_all": "A(mean_j H8[j])  (the official S8 readout)",
+    "decomposition": "z_all - z0 = (z_end - z0) + (z_all - z_end); first term: common-time output change; second term: extra-sampling/readout change. The second term involves the model path through the extra tokens and is NOT called a pure quadrature error; the first term is NOT attributed to any particular layer by this check",
+    "centering": "Pi = I - 11^T/6 applied identically to z0, z_end, z_all and every term; uncentered values are kept alongside; the P1-HAR-01 raw is untouched",
+    "per_window_records": "identity residual z_all - z0 - (z_end - z0) - (z_all - z_end); norms of each term (centered and uncentered); inner product <Pi(z_end - z0), Pi(z_all - z_end)>; relative norms against ||Pi z0||; feature change at the common end points: ||mean_k H8[end(k)] - mean_k H0[k]|| and mean_k ||H8[end(k)] - H0[k]|| / mean_k ||H0[k]||; cross-entropy of z0, z_end, z_all against the label; total variation and prediction flip of z_end and z_all against z0",
+    "not_a_share": "norm sums and norm ratios are never called contributions; the inner product is reported so that the reader sees the cross term"
+  },
+  "summaries": "every quantity is averaged within each test subject, then with equal weight over the 9 subjects; per-subject values are listed; NO new significance test, NO new primary estimand, NO subject exclusion, NO bootstrap interval",
+  "reproduction_checks": {
+    "stage_A": "float16 re-aggregation vs stored float64 pooled logits (C0/native_mean and S8/native_mean in eval.jsonl): maximum absolute differences recorded",
+    "stage_B": "z0 and z_all from the streaming forward vs the same stored values: maximum absolute differences recorded before any derived quantity is reported"
+  },
+  "fp64_check": {
+    "selection_rule_fixed_before_execution": "per test subject, the 2 windows whose sha256('P1-HAR-CT-01:fp64:<window id>') is smallest in ascending hex order (18 windows in total); the ids are written to the output whether or not the check runs",
+    "trigger_rule_fixed_before_execution": "the float64 check (model and inputs cast to float64, C0 and S8 of the 18 windows only) runs if the subject-mean relative common-time change ||Pi(z_end - z0)|| / ||Pi z0|| is below 1e-3 (within 100x of the ~1e-5 float32 pooling residual recorded by P1-HAR-01), or if any per-window identity residual exceeds 1e-4; otherwise it is recorded as NOT_NEEDED with the observed values",
+    "never": "the whole HAR evaluation is never re-run in float64"
+  },
+  "budget": {
+    "cpu_threads": 2, "wall_seconds_total": 1200, "process_cpu_seconds_total": 2400, "ram_gib": 16,
+    "projection_before_forward": "from P1-HAR-01 timing (one batch of 256: C0 forward 0.31 s, S8 forward 3.3 s), 12 batches of C0 + S8 are projected at about 45 s; the forward is refused if the ledger plus 3x this projection would exceed the caps",
+    "ledger": "results/raw/P1-HAR-CT-01/cost_ledger.json; the timer starts before importing torch and before hashing; wall and process CPU separately; a failed attempt is recorded"
+  },
+  "outputs": {
+    "dir": "results/raw/P1-HAR-CT-01/",
+    "files": "stageA_float16_reproduction.json, per_window.jsonl (z0, z_end, z_all in float64 plus derived terms), summary.json (subject-first means, per-subject values, checks, fp64 decision), fp64_check.json (if run), cost_ledger.json"
+  },
+  "what_this_cannot_show": "a layer-wise cause (the check is on final features only); anything beyond this one checkpoint; a change of the P1-HAR-01 primary verdict (PRIMARY_HAR_RISK_DIFFERENCE_NOT_ESTABLISHED is kept)"
+}
