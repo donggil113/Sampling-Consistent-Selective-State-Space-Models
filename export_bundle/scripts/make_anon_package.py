@@ -114,7 +114,8 @@ def main():
                 t = open(src, encoding="utf-8").read()
                 if rel == "paper/main.tex":
                     first = t.split("\n", 1)
-                    t = "%%%%%%%% Manuscript v4 (anonymous review copy) %%%%%%%%\n" + first[1]
+                    ver = re.search(r"Manuscript (v[0-9.]+)", first[0])
+                    t = f"%%%%%%%% Manuscript {ver.group(1) if ver else ''} (anonymous review copy) %%%%%%%%\n" + first[1]
                 t2 = redact_hashes(t)
                 n_hash += len(hexre.findall(t)) - len(hexre.findall(t2))
                 t3 = t2.replace(ROOT, "<repo>")

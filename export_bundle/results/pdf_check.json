@@ -12,7 +12,7 @@
   "appendix_start_page": 10,
   "icml_limit": "8 pages of main body (counted to the page of its last sentence); references, impact statement and appendix do not count",
   "overfull_boxes": 0,
-  "underfull_boxes": 15,
+  "underfull_boxes": 16,
   "undefined_references_or_citations": 0,
   "multiply_defined_labels": 0,
   "unresolved_question_marks_in_text": 0,

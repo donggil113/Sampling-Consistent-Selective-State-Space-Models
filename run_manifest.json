@@ -634,6 +634,26 @@
         "per_window.jsonl": "fb75990482adba4375675511040003fbba2b051a80bbdeb5699001da157cb053",
         "stageA_float16_reproduction.json": "7c355ea52a76fd05664adfb18aa861d279c1dcfbf1b11bb1d06a60fb36d50aa5",
         "summary.json": "11ad45c05345a921899a3b32d90ce01fcae676db1ae5e01e73fdd41ef5c81856"
+      },
+      "review_round": {
+        "reviewers": "2 read-only (methods; manuscript+packages), one round, one fix pass",
+        "VALID_FIXED": [
+          "share-like wording in abstract/conclusion/K4 (now: terms not additive shares; no quadrature attribution)",
+          "relative-norm definition stated (per-window ratios, subject-first; ratio of subject-mean norms 0.0031 added)",
+          "identity residual described as zero by construction",
+          "fp64 rule threshold stated with the observed value and the absolute comparison",
+          "C41 0.0291 -> 0.0290",
+          "HAR diagnostic added to the post-hoc list of the Limitations",
+          "per-token common-time change recorded as not computed",
+          "anonymous package header label derived from the repository header"
+        ],
+        "NOTED_NOT_CHANGED": [
+          "config/raw wording 'about 1e-3' for the float16 gap (observed 7.0e-3 / 3.3e-3; raw and the executed config are preserved)",
+          "git_dirty=true at run time is the run's own untracked outputs (the inputs' hashes equal HEAD)",
+          "ledger thread field is a literal 2; torch threads are set in setup() after Stage A (numpy, no BLAS); cpu/wall 1.57",
+          "config and script were committed 5 s before the run (same session; post hoc design)",
+          "config 'about 30 KB' checkpoint estimate (actual 116 KB), noted in session 6"
+        ]
       }
     }
   ]

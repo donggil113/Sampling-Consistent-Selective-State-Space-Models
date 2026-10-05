@@ -1006,7 +1006,7 @@ cond. & tokens & nat.\ e2e & nat.\ fwd & res.\ e2e & res.\ fwd & nat.\ e2e CPU \
         rows.append(f"mean & ${m['c_rel_all']:.4f}$ & ${m['c_rel_end']:.4f}$ & ${m['c_rel_extra']:.4f}$ & ${m['c_inner_end_extra']:+.3f}$ & ${m['feat_per_endpoint_rel_change']:.4f}$ & "
                     f"${m['ce_z0']:.3f}$ & ${m['ce_z_end']:.3f}$ & ${m['ce_z_all']:.3f}$ & ${m['flip_end_vs_z0']:.3f}$ & ${m['flip_all_vs_z0']:.3f}$ \\\\")
         write("tab_har_ct.tex", r"""\begin{table*}[t]
-\caption{P1-HAR-CT-01 (exploratory, fixed checkpoint, designed after the P1-HAR-01 results): decomposition of the pooled S8 change of the HAR checkpoint, per test subject (subject means first; last row: equal-weight mean). With the official affine head $A$, $z_0=A(\overline{H_0})$ (C0 readout), $z_{\mathrm{end}}=A(\mathrm{mean}_kH_8[\mathrm{end}(k)])$ (S8 features at the 128 common time points), $z_{\mathrm{all}}=A(\overline{H_8})$ (S8 readout), and $z_{\mathrm{all}}-z_0=(z_{\mathrm{end}}-z_0)+(z_{\mathrm{all}}-z_{\mathrm{end}})$ per window exactly. Columns 2--4: norms of the class-centered terms relative to $\|\Pi z_0\|$ (all / common-time / extra-sampling); 5: inner product of the two centered terms (logit$^2$; the norms are not shares); 6: mean relative change of the final features at the common end points; 7--9: cross-entropy of $z_0$, $z_{\mathrm{end}}$, $z_{\mathrm{all}}$; 10--11: fraction of windows whose predicted class differs from $z_0$. No interval and no test: a descriptive diagnostic of one checkpoint.}
+\caption{P1-HAR-CT-01 (exploratory, fixed checkpoint, designed after the P1-HAR-01 results): decomposition of the pooled S8 change of the HAR checkpoint, per test subject (subject means first; last row: equal-weight mean). With the official affine head $A$, $z_0=A(\overline{H_0})$ (C0 readout), $z_{\mathrm{end}}=A(\mathrm{mean}_kH_8[\mathrm{end}(k)])$ (S8 features at the 128 common time points), $z_{\mathrm{all}}=A(\overline{H_8})$ (S8 readout), and $z_{\mathrm{all}}-z_0=(z_{\mathrm{end}}-z_0)+(z_{\mathrm{all}}-z_{\mathrm{end}})$ per window exactly. Columns 2--4: per-window ratios $\|\Pi d\|_2/\|\Pi z_0\|_2$ of the class-centered terms (all / common-time / extra-sampling), averaged within subject and then over subjects, the same definition as the centered-logit distance of \cref{tab:har-effects}; 5: inner product of the two centered terms (logit$^2$; the norms are not shares and do not add); 6: mean relative change of the final features at the common end points; 7--9: cross-entropy of $z_0$, $z_{\mathrm{end}}$, $z_{\mathrm{all}}$; 10--11: fraction of windows whose predicted class differs from $z_0$. No interval and no test: a descriptive diagnostic of one checkpoint.}
 \label{tab:har-ct}
 \centering\small
 \setlength{\tabcolsep}{5pt}
@@ -1039,6 +1039,11 @@ subject & rel.\ all & rel.\ common & rel.\ extra & $\langle\cdot,\cdot\rangle$ &
         sa = CT["stage_A"]
         macros["HarCtFpSixteen"] = sci(max(sa["C0_max_abs_vs_stored_pooled"], sa.get("S8_all_max_abs_vs_stored_pooled", 0.0)))
         macros["HarCtFpSixtyFour"] = CT["fp64_check"]["status"].replace("_", r"\_")
+        macros["HarCtNormZzero"] = f"{m['c_norm_z0']:.1f}"
+        macros["HarCtRatioOfMeans"] = f"{m['c_norm_end'] / m['c_norm_z0']:.4f}"
+        HA1 = json.load(open(os.path.join(rdir, "P1-HAR-01", "aggregate.json")))["numerical_checks"]
+        pool_resid = max(HA1["C0_head_of_mean_vs_mean_of_token_logits_max_abs"], HA1["S8_head_of_mean_vs_mean_of_token_logits_max_abs"])
+        macros["HarCtResidualFold"] = f"{m['c_norm_end'] / pool_resid:,.0f}".replace(",", "{,}")
         macros["HarCtWall"] = f"{sum(r['wall_seconds'] for r in CL):.0f}"
         macros["HarCtCPU"] = f"{sum(r['cpu_seconds'] for r in CL):.0f}"
 
