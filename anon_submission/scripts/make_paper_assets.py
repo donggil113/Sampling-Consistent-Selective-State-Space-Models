@@ -988,6 +988,60 @@ cond. & tokens & nat.\ e2e & nat.\ fwd & res.\ e2e & res.\ fwd & nat.\ e2e CPU \
         macros["HarTotalWall"] = f"{sum(r['wall_seconds'] for r in HL):.0f}"
         macros["HarTotalCPU"] = f"{sum(r['cpu_seconds'] for r in HL):.0f}"
 
+    # ------------------------------------------------------------------ P1-HAR-CT-01 (common-time vs extra-sampling decomposition; exploratory, fixed checkpoint)
+    ctd = os.path.join(rdir, "P1-HAR-CT-01")
+    if os.path.exists(os.path.join(ctd, "summary.json")):
+        CT = json.load(open(os.path.join(ctd, "summary.json")))
+        CL = json.load(open(os.path.join(ctd, "cost_ledger.json")))
+        A["HAR_CT"] = {k: CT[k] for k in ("subject_equal_weight_mean", "subject_min", "subject_max", "stage_A", "stage_B_reproduction",
+                                          "identity_residual_max_abs_all_windows", "fp64_check", "wall_seconds", "cpu_seconds")}
+        m, lo, hi, ps = CT["subject_equal_weight_mean"], CT["subject_min"], CT["subject_max"], CT["per_subject"]
+        rows = []
+        for s_ in CT["subjects"]:
+            k = str(s_)
+            rows.append(f"{s_} & ${ps['c_rel_all'][k]:.4f}$ & ${ps['c_rel_end'][k]:.4f}$ & ${ps['c_rel_extra'][k]:.4f}$ & ${ps['c_inner_end_extra'][k]:+.3f}$ & "
+                        f"${ps['feat_per_endpoint_rel_change'][k]:.4f}$ & ${ps['ce_z0'][k]:.3f}$ & ${ps['ce_z_end'][k]:.3f}$ & ${ps['ce_z_all'][k]:.3f}$ & "
+                        f"${ps['flip_end_vs_z0'][k]:.3f}$ & ${ps['flip_all_vs_z0'][k]:.3f}$ \\\\")
+        rows.append(r"\midrule")
+        rows.append(f"mean & ${m['c_rel_all']:.4f}$ & ${m['c_rel_end']:.4f}$ & ${m['c_rel_extra']:.4f}$ & ${m['c_inner_end_extra']:+.3f}$ & ${m['feat_per_endpoint_rel_change']:.4f}$ & "
+                    f"${m['ce_z0']:.3f}$ & ${m['ce_z_end']:.3f}$ & ${m['ce_z_all']:.3f}$ & ${m['flip_end_vs_z0']:.3f}$ & ${m['flip_all_vs_z0']:.3f}$ \\\\")
+        write("tab_har_ct.tex", r"""\begin{table*}[t]
+\caption{P1-HAR-CT-01 (exploratory, fixed checkpoint, designed after the P1-HAR-01 results): decomposition of the pooled S8 change of the HAR checkpoint, per test subject (subject means first; last row: equal-weight mean). With the official affine head $A$, $z_0=A(\overline{H_0})$ (C0 readout), $z_{\mathrm{end}}=A(\mathrm{mean}_kH_8[\mathrm{end}(k)])$ (S8 features at the 128 common time points), $z_{\mathrm{all}}=A(\overline{H_8})$ (S8 readout), and $z_{\mathrm{all}}-z_0=(z_{\mathrm{end}}-z_0)+(z_{\mathrm{all}}-z_{\mathrm{end}})$ per window exactly. Columns 2--4: norms of the class-centered terms relative to $\|\Pi z_0\|$ (all / common-time / extra-sampling); 5: inner product of the two centered terms (logit$^2$; the norms are not shares); 6: mean relative change of the final features at the common end points; 7--9: cross-entropy of $z_0$, $z_{\mathrm{end}}$, $z_{\mathrm{all}}$; 10--11: fraction of windows whose predicted class differs from $z_0$. No interval and no test: a descriptive diagnostic of one checkpoint.}
+\label{tab:har-ct}
+\centering\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{rcccccccccc}
+\toprule
+subject & rel.\ all & rel.\ common & rel.\ extra & $\langle\cdot,\cdot\rangle$ & feat.\ end & CE $z_0$ & CE $z_{\mathrm{end}}$ & CE $z_{\mathrm{all}}$ & flip end & flip all \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}
+\end{table*}
+""")
+        macros["HarCtRelAll"] = f"{m['c_rel_all']:.4f}"
+        macros["HarCtRelEnd"] = f"{m['c_rel_end']:.4f}"
+        macros["HarCtRelEndMin"], macros["HarCtRelEndMax"] = f"{lo['c_rel_end']:.4f}", f"{hi['c_rel_end']:.4f}"
+        macros["HarCtRelExtra"] = f"{m['c_rel_extra']:.4f}"
+        macros["HarCtRelExtraMin"], macros["HarCtRelExtraMax"] = f"{lo['c_rel_extra']:.4f}", f"{hi['c_rel_extra']:.4f}"
+        macros["HarCtRatio"] = f"{m['c_rel_extra'] / m['c_rel_end']:.0f}"
+        macros["HarCtInner"] = f"{m['c_inner_end_extra']:+.3f}"
+        macros["HarCtInnerMin"], macros["HarCtInnerMax"] = f"{lo['c_inner_end_extra']:+.3f}", f"{hi['c_inner_end_extra']:+.3f}"
+        macros["HarCtNormEnd"], macros["HarCtNormExtra"], macros["HarCtNormAll"] = f"{m['c_norm_end']:.3f}", f"{m['c_norm_extra']:.3f}", f"{m['c_norm_all']:.3f}"
+        macros["HarCtFeatEnd"] = f"{m['feat_per_endpoint_rel_change']:.4f}"
+        macros["HarCtFeatEndMax"] = f"{hi['feat_per_endpoint_rel_change']:.4f}"
+        macros["HarCtCEzero"], macros["HarCtCEend"], macros["HarCtCEall"] = f"{m['ce_z0']:.3f}", f"{m['ce_z_end']:.3f}", f"{m['ce_z_all']:.3f}"
+        macros["HarCtTVend"], macros["HarCtTVall"] = f"{m['tv_end_vs_z0']:.4f}", f"{m['tv_all_vs_z0']:.4f}"
+        macros["HarCtFlipEnd"], macros["HarCtFlipAll"] = f"{m['flip_end_vs_z0']:.3f}", f"{m['flip_all_vs_z0']:.3f}"
+        macros["HarCtResid"] = sci(CT["identity_residual_max_abs_all_windows"]) if CT["identity_residual_max_abs_all_windows"] else "0"
+        rb = CT["stage_B_reproduction"]
+        macros["HarCtRepro"] = sci(max(rb.values())) if max(rb.values()) else "0"
+        sa = CT["stage_A"]
+        macros["HarCtFpSixteen"] = sci(max(sa["C0_max_abs_vs_stored_pooled"], sa.get("S8_all_max_abs_vs_stored_pooled", 0.0)))
+        macros["HarCtFpSixtyFour"] = CT["fp64_check"]["status"].replace("_", r"\_")
+        macros["HarCtWall"] = f"{sum(r['wall_seconds'] for r in CL):.0f}"
+        macros["HarCtCPU"] = f"{sum(r['cpu_seconds'] for r in CL):.0f}"
+
     # ------------------------------------------------------------------ macros + json
     lines = [f"\\newcommand{{\\{k}}}{{\\ensuremath{{{v}}}}}" for k, v in sorted(macros.items())]
     write("numbers.tex", "\n".join(lines) + "\n")

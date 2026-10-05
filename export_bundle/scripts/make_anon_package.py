@@ -51,6 +51,7 @@ INCLUDE = [
     "results/raw/P1-REAL-02/*/eval.jsonl", "results/raw/P1-REAL-02/*/eval_summary.json",
     "results/raw/P1-REAL-02/h8_decomposition/*",
     "results/raw/P1-HAR-01/*",
+    "results/raw/P1-HAR-CT-01/*",
     "run_manifest.json",
 ]
 EXCLUDE_NAMES = {"data_cache.json", "testset_cache.json", "check_paper.py", "check_pdf.py",

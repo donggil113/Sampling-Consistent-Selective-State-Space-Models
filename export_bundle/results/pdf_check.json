@@ -1,6 +1,6 @@
 {
   "pdf": "paper/main.pdf",
-  "pages_total": 17,
+  "pages_total": 18,
   "conclusion_heading_page": 8,
   "body_end_page": 8,
   "body_end_last_words": "training runs is open",
@@ -12,7 +12,7 @@
   "appendix_start_page": 10,
   "icml_limit": "8 pages of main body (counted to the page of its last sentence); references, impact statement and appendix do not count",
   "overfull_boxes": 0,
-  "underfull_boxes": 14,
+  "underfull_boxes": 15,
   "undefined_references_or_citations": 0,
   "multiply_defined_labels": 0,
   "unresolved_question_marks_in_text": 0,

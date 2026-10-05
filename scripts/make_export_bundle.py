@@ -31,7 +31,8 @@ INCLUDE = [
     "results/raw/P1-REAL-02/*/train.json", "results/raw/P1-REAL-02/*/train.log",
     "results/raw/P1-REAL-02/*/eval.jsonl", "results/raw/P1-REAL-02/*/eval_summary.json",
     "results/raw/P1-REAL-02/h8_decomposition/*",
-    "results/raw/P1-HAR-01/*", "results/anon_check.json",
+    "results/raw/P1-HAR-01/*",
+    "results/raw/P1-HAR-CT-01/*", "results/anon_check.json",
     "paper/anon_README.md", "notes/*.md",
     "run_manifest.json", "STATUS.md", "RESEARCH_PACKET.md", "RELATED_WORK.md",
 ]

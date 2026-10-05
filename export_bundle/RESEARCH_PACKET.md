@@ -1,6 +1,6 @@
 # Research packet: Sampling-grid dependence in selective SSMs (P1)
 
-Last updated: 2026-10-02 (sixth session). Branch: `claude/intelligent-maxwell-t1lcda`.
+Last updated: 2026-10-05 (seventh session). Branch: `claude/intelligent-maxwell-t1lcda`.
 
 Runs covered:
 
@@ -316,4 +316,10 @@ Setup:
 - **Answer, conditional on one checkpoint and nine test subjects.** Model coupling: yes (S8 changes class-centered logits by 0.029, 0.8 % flips; resampled arm identical to C0). Pooled weighting: yes, and again mostly the density-weighting identity (‖W‖ 7.44 of 7.69; model term 1.00; interval-end part 0.013). Task risk: the pre-registered primary D = +0.016 nats has a subject-level interval [−0.004, +0.032] that includes zero; 8 of 9 subjects positive. Accuracy unchanged in practice (0.904 → 0.905 / 0.903).
 - **Status words.** MEASURED; primary NOT ESTABLISHED; not evidence of equivalence; conditional on one seed; artificial refinement, not natural irregularity.
 - **Evidence.** `results/raw/P1-HAR-01/`, `configs/p1_har_01.json` (pre-registered, one documented pre-execution amendment), `run_manifest.json` entry; 388 s wall / 718 s CPU on 2 threads.
+
+## 13. Session 7: common-time vs extra-sampling (P1-HAR-CT-01) and manuscript v5.1
+
+- **Correction of interpretation.** The HAR pooled S8 change (0.029) compares a mean over 128 time points with a mean over 1024, so it is not a common-time (coupling) effect like the synthetic 32-time discrepancy. A fixed-checkpoint diagnostic gives the exact vector split z_all − z0 = (z_end − z0) + (z_all − z_end): common-time part 0.0018 relative, extra-sampling part 0.0284, inner product +0.091 logit².
+- **Status words.** EXPLORATORY_FIXED_CHECKPOINT (post hoc); PRIMARY_HAR_RISK_DIFFERENCE_NOT_ESTABLISHED kept.
+- **Evidence.** `results/raw/P1-HAR-CT-01/`, `configs/p1_har_ct_01.json`; 73.5 s wall / 115 s CPU.
 

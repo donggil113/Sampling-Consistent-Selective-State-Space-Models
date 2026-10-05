@@ -561,6 +561,80 @@
         "aggregate_rerun": "commit <commit> runner (adds provenance fields only; statistics byte-identical)"
       },
       "review": "four-lens pre-execution review (leakage, representation, statistics, engineering); dispositions in configs/p1_har_01.json amendment_log, commit messages and STATUS.md"
+    },
+    {
+      "run_id": "P1-HAR-CT-01",
+      "status": "COMPLETED; EXPLORATORY_FIXED_CHECKPOINT; design post hoc (after the P1-HAR-01 results); not an independent confirmation",
+      "authorization": "round-7 instruction (2026-10-05): reuse of existing HAR data/checkpoint/torch/TIDES/TeX and one frozen evaluation; caps 1200 s wall / 2400 s CPU, 2 threads",
+      "config": {
+        "path": "configs/p1_har_ct_01.json",
+        "sha256": "f9fc931f911deb33c1bc393e0b85b5f2a22e6ad26944fb0a9688b35d7b58edce",
+        "fixed_at_commit": "<commit>"
+      },
+      "inputs_verified": {
+        "checkpoint_sha256": "e3b414f5bdf55541d84a2f3abaf5a1c04faddfd6e2fdfd38dd79a20be049910d",
+        "p1_har_01_config_sha256": "e603cf75e6472a20547afe22b6056f8e940de93120bc9fd2e6f66806a7dc44fc",
+        "eval_jsonl": "results/raw/P1-HAR-01/eval.jsonl (2947 windows)",
+        "stored_token_logits": "C0 (git, float16) and S8 (local, float16): used only for the Stage-A reproduction record"
+      },
+      "runner_sha256": "036c9051d6fd3609d9d3ac01b2a9f486a1e07958e6b6339b4219341a0d25464e",
+      "git_head_at_run": "<commit>",
+      "git_dirty_at_run": true,
+      "stage_A_float16_reproduction_max_abs": {
+        "C0_max_abs_vs_stored_pooled": 0.007025718688964844,
+        "S8_all_max_abs_vs_stored_pooled": 0.0033306851983070374
+      },
+      "stage_B_reproduction_max_abs": {
+        "z0_max_abs_vs_stored_C0_native_mean": 0.0,
+        "z_all_max_abs_vs_stored_S8_native_mean": 0.0
+      },
+      "identity_residual_max_abs": 0.0,
+      "fp64_check": {
+        "trigger_rule": "the float64 check (model and inputs cast to float64, C0 and S8 of the 18 windows only) runs if the subject-mean relative common-time change ||Pi(z_end - z0)|| / ||Pi z0|| is below 1e-3 (within 100x of the ~1e-5 float32 pooling residual recorded by P1-HAR-01), or if any per-window identity residual exceeds 1e-4; otherwise it is recorded as NOT_NEEDED with the observed values",
+        "observed_subject_mean_c_rel_end": 0.0018135352590396485,
+        "observed_identity_residual_max": 0.0,
+        "status": "NOT_NEEDED"
+      },
+      "subject_equal_weight_means": {
+        "c_rel_all": 0.029045570038962618,
+        "c_rel_end": 0.0018135352590396485,
+        "c_rel_extra": 0.028413101555899403,
+        "c_inner_end_extra": 0.09089920414298164,
+        "feat_per_endpoint_rel_change": 0.002464114793806265,
+        "ce_z0": 0.2703604409027556,
+        "ce_z_end": 0.2705257089882933,
+        "ce_z_all": 0.260706222839085,
+        "tv_end_vs_z0": 0.0002349034722424539,
+        "tv_all_vs_z0": 0.008297668075887322,
+        "flip_end_vs_z0": 0.0,
+        "flip_all_vs_z0": 0.008388306679512526
+      },
+      "cost_ledger": [
+        {
+          "stage": "diagnostic",
+          "started_utc": "2026-10-05T06:28:39Z",
+          "finished_utc": "2026-10-05T06:29:53Z",
+          "wall_seconds": 73.493,
+          "cpu_seconds": 115.25,
+          "threads": 2,
+          "status": "COMPLETED",
+          "note": "timer started before importing torch and before hashing",
+          "fp64": "NOT_NEEDED"
+        }
+      ],
+      "totals": {
+        "wall_seconds": 73.493,
+        "process_cpu_seconds": 115.25,
+        "cap_wall": 1200,
+        "cap_cpu": 2400,
+        "note": "timer started before importing torch and before hashing; PDF/package builds not included"
+      },
+      "outputs_sha256": {
+        "cost_ledger.json": "bc27412dfde8871d180a2d4ada6cd5283877c6f3764721c14aee50f5b42f8207",
+        "per_window.jsonl": "fb75990482adba4375675511040003fbba2b051a80bbdeb5699001da157cb053",
+        "stageA_float16_reproduction.json": "7c355ea52a76fd05664adfb18aa861d279c1dcfbf1b11bb1d06a60fb36d50aa5",
+        "summary.json": "11ad45c05345a921899a3b32d90ce01fcae676db1ae5e01e73fdd41ef5c81856"
+      }
     }
   ]
 }

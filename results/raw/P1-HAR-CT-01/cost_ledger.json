@@ -1,0 +1,13 @@
+[
+  {
+    "stage": "diagnostic",
+    "started_utc": "2026-10-05T06:28:39Z",
+    "finished_utc": "2026-10-05T06:29:53Z",
+    "wall_seconds": 73.493,
+    "cpu_seconds": 115.25,
+    "threads": 2,
+    "status": "COMPLETED",
+    "note": "timer started before importing torch and before hashing",
+    "fp64": "NOT_NEEDED"
+  }
+]

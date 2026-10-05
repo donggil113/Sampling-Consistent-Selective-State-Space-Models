@@ -34,6 +34,7 @@ The separate anonymous review package is `anon_submission/` (built by `scripts/m
 | P1-REAL-01 | `results/raw/P1-REAL-01*` (no checkpoint) | DEVELOPMENT run: seed 0 on its own test set, plus the convention check, adapter check and exploratory layer diagnostic. |
 | P1-REAL-02 | `results/raw/P1-REAL-02/` | Fixed-protocol repetition: training seeds 1–4 plus the development row, on one new shared test set (ids 10000–10255). |
 | P1-HAR-01 | `results/raw/P1-HAR-01/` | Real-sensor evaluation (UCI HAR), one checkpoint (included, 116 KB, with sha256), per-window records, control, aggregate, cost ledger and the acquisition record. Data not included (gitignored `data/`). |
+| P1-HAR-CT-01 | `results/raw/P1-HAR-CT-01/` | Exploratory fixed-checkpoint diagnostic (post-hoc design; config `configs/p1_har_ct_01.json`): common-time vs extra-sampling decomposition of the pooled S8 change; 73.5 s wall. |
 | P1-REAL-02-H8DECOMP | `results/raw/P1-REAL-02/h8_decomposition/` | Derived signed decomposition of the H8 pooled change. Built from one frozen forward per existing checkpoint, because per-token outputs had not been stored. Per-token outputs are in gzip JSON. |
 
 The P1-REAL-02 files are:

@@ -20,6 +20,7 @@ This package supports the anonymous review of the manuscript. `MANIFEST.sha256` 
 | `results/raw/` | Raw records for the toy runs (`FR-*.jsonl`), the cascade check (`P1-COMP-01.jsonl`), the development run (`P1-REAL-01.jsonl`, `P1-REAL-01__summary.json`, `P1-REAL-01__convention_check.json`), the seed repetition (`results/raw/P1-REAL-02/seed{1..4}/eval.jsonl` plus summaries and training logs) and the H8 decomposition (`results/raw/P1-REAL-02/h8_decomposition/`, including per-token outputs as gzip JSON). |
 | `run_manifest.json` | Environment, data and test-set hashes, checkpoint sha256, and wall and CPU seconds of every run. |
 | `results/raw/P1-HAR-01/` | Real-sensor evaluation (UCI HAR): acquisition record with the official archive's sha256 and license statements, pre-registration outputs, per-window records (`eval.jsonl`), C0 token logits, the 116 KB checkpoint with its sha256, control, aggregate and the cost ledger. The HAR data themselves are NOT redistributed. |
+| `results/raw/P1-HAR-CT-01/` | Exploratory fixed-checkpoint diagnostic (common-time vs extra-sampling decomposition of the pooled S8 change): per-window terms, summary with subject-first means, float16 reproduction record, cost ledger; `configs/p1_har_ct_01.json` is its pre-execution (post-hoc design) configuration. |
 
 **Sanitization.** Commit identifiers of the authors' repository and absolute local paths were replaced by `<commit>` and `<repo>`/`<tmp>` in the text files. No numerical value was changed.
 
@@ -52,6 +53,7 @@ python3 scripts/run_p1_real_02.py --stage aggregate
 python3 scripts/derive_h8_decomposition.py     # one frozen forward per checkpoint
 # real-sensor run (needs data/har, see above): data -> smoke -> train -> eval -> control -> aggregate
 for st in data smoke train eval control aggregate; do python3 scripts/run_p1_har_01.py --stage $st; done
+python3 scripts/diagnose_har_common_time.py        # exploratory common-time diagnostic (one float32 forward of C0 and S8)
 ```
 
 Timing values depend on the machine.

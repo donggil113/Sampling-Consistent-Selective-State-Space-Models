@@ -1,6 +1,6 @@
 # STATUS — P1 Sampling-grid dependence in selective SSMs
 
-Last updated: 2026-10-02 (UTC), session 6 (round 6). Branch: `claude/intelligent-maxwell-t1lcda`.
+Last updated: 2026-10-05 (UTC), session 7 (round 7). Branch: `claude/intelligent-maxwell-t1lcda`.
 
 ## Standing decisions (preserved)
 
@@ -17,6 +17,41 @@ Last updated: 2026-10-02 (UTC), session 6 (round 6). Branch: `claude/intelligent
   - the development-checkpoint layer diagnostic;
   - the development run's fixed-estimated-margin analysis.
 - **P1-REAL-02 primary estimand** (H8 pooled-readout effect) was chosen after seeing the development run. It is not a blind choice.
+
+## Session 7 (round 7): what was done
+
+**Checkout.** HEAD at start 0e5cf3d (matched the report); clean tree; torch 2.14.0+cpu, pinned TIDES, TeX and the local HAR data/derived files still present. Hashes verified before use: `configs/p1_har_01.json` e603cf75…, `checkpoint.pt` e3b414f5…, runner 8d06bbd8….
+
+**Decision kept.** No second seed, no second dataset, no analysis aimed at the 8/9 sign pattern. PRIMARY_HAR_RISK_DIFFERENCE_NOT_ESTABLISHED (D = +0.016 nats, interval includes 0) unchanged.
+
+**P1-HAR-CT-01 (EXPLORATORY_FIXED_CHECKPOINT; post-hoc design, config and script committed before execution, f0f5506).**
+
+- Question: of the pooled S8 change of the HAR checkpoint, how much is a change of the outputs at the 128 common physical time points vs the readout's averaging over the 896 added points.
+- Stored raw first: per-token logits exist (C0 float16 in git; S8 float16 local). Their re-aggregation reproduces the stored float64 pooled logits only to 7.0e-3 / 3.3e-3 (float16), so one float32 streaming forward of C0 and S8 was run (batches of 256, eval mode, no intermediate tensors stored). It reproduces the stored C0 and S8 pooled logits exactly (0.0).
+- Endpoint map: S8 token 8k (1-based) ↔ C0 token k, verified against time stamps and base-interval indices.
+- Decomposition per window (exact, residual 0): z_all − z0 = (z_end − z0) + (z_all − z_end), with the official affine head; class centering Π applied to all terms alike.
+- Results (subject means first, equal weight over 9; no interval, no test):
+
+  | quantity | value |
+  |---|---|
+  | ‖Π(z_all − z0)‖ / ‖Π z0‖ (pooled S8 change) | 0.0291 |
+  | common-time part ‖Π(z_end − z0)‖ / ‖Π z0‖ | **0.0018** (subjects 0.0010–0.0036) |
+  | extra-sampling part ‖Π(z_all − z_end)‖ / ‖Π z0‖ | 0.0284 (subjects 0.0217–0.0324) |
+  | inner product of the two centered terms | +0.091 logit² (subjects −0.156 to +0.490) |
+  | final-feature change at the common end points | 0.0025 relative |
+  | CE z0 / z_end / z_all | 0.2704 / 0.2705 / 0.2607 |
+  | flips vs z0: z_end / z_all | 0.000 / 0.008 |
+
+- fp64 check: pre-specified trigger (common-time part < 1e-3 or residual > 1e-4) not met → NOT_NEEDED; the 18 hash-selected window ids are recorded.
+- Cost: 73.5 s wall / 115.2 s process CPU, 2 threads (timer before torch import and hashing); caps 1200 / 2400. Not measured: PDF/package builds, which are outside this budget.
+- Interpretation limits: the extra-sampling term involves the model path through the added tokens (not a pure quadrature error); the common-time term is not attributed to a layer; norms are not shares (the inner product is reported).
+
+**Manuscript v5.1 (PDF built; see pdf_check.json).**
+
+- §5.2: the pooled S8 change 0.029 is no longer called a coupling effect; it is linked to the new common-time result (0.0018). The affine-head identity is written as A(Σ w h) = Σ w A(h), Σ w = 1.
+- Abstract: one paragraph, 5 sentences, 215 words (tex count, math as one token), three numbers, non-significance kept; no "96.7 % explained" share.
+- §7: synthetic-evidence scope separated from the HAR scope. App. A: "no external data" limited to the synthetic stages. §G: HAR checkpoint included in the packages, synthetic checkpoints excluded (hashes + retrain command) — verified against the actual anonymous package contents.
+- Forbidden moves not made: no sign test as primary, no subject exclusion, no added seeds.
 
 ## Session 6 (round 6): what was done
 
@@ -244,9 +279,9 @@ Last updated: 2026-10-02 (UTC), session 6 (round 6). Branch: `claude/intelligent
 
 ## Next research decision (not run)
 
-**Session 6:** P1-HAR-01 has run once (one dataset, one checkpoint, one seed). The one decision for the owner is whether a **second model seed (or a second dataset) under the same frozen P1-HAR-01 protocol** is worth its budget to test whether the subject-level sign pattern (8 of 9) holds, or whether the project stops at the current scope. No further runs are assumed approved.
+**Session 7:** no further run is proposed by this session. The owner's open choice remains the one of session 6 (a second seed or dataset under the frozen P1-HAR-01 protocol, or stopping at the current scope); the common-time diagnostic does not change it.
 
-*Session 5 record (superseded):* the owner fixed UCI HAR for the first real-sensor comparison; the decision was the resource approval, which was given and used in session 6.
+*Session 6 record:* second seed / second dataset decision; nothing assumed approved.
 
 ## Session 3: what was done
 

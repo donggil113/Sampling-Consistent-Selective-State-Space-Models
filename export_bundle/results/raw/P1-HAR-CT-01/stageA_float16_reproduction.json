@@ -1,0 +1,8 @@
+{
+  "C0_token_logits": "results (float16)",
+  "S8_token_logits": "/home/user/Sampling-Consistent-Selective-State-Space-Models/data/har/derived/S8_token_logits.f16.npy",
+  "C0_max_abs_vs_stored_pooled": 0.007025718688964844,
+  "S8_all_max_abs_vs_stored_pooled": 0.0033306851983070374,
+  "S8_common_time_change_centered_rel_mean_window": 0.0018076724244544104,
+  "note": "float16 storage limits these to about 1e-3 absolute; Stage B (float32 forward) gives the reported values"
+}

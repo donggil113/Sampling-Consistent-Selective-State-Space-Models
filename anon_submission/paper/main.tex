@@ -70,16 +70,11 @@
 \printAffiliationsAndNotice{}
 
 \begin{abstract}
-A sequence model can change its output when only the time grid of the same physical input changes.
-We ask where this dependence enters a selective state-space model (SSM), separating interval splitting, which keeps the held input path, from new observations, which change the input reconstruction; operationally, an artifact is an output change under an unchanged held path.
-For one layer, standard conditions (a physical step, exact zero-order hold, coefficients that see only the held value) give split invariance; in a stack, later layers receive an internal signal that the refined grid samples differently, and for a scalar linear cascade we give an $O(\text{mesh})$ upper bound on the resulting error.
-In the tested single-layer toy ablation, the combined corrections reduced the readout artifact to rounding level, whereas no single correction did.
-On the official code of one selective SSM with a physical step (TIDES), trained with four seeds on one synthetic regression task, we separate three effects.
-Model coupling: eight-fold splitting of the held input changes the outputs by $\RtwoSeightMin$--$\RtwoSeightMax$ (relative $\ell_2$) in every seed.
-Pooled weighting: under a same-path density change the token-mean readout moves by $\DecDeltaMin$ to $\DecDeltaMax$ label units on average, of which $\DecWMin$ to $\DecWMax$ is the weighted-average identity $\tfrac{7}{18}(A-B)$ of the unchanged outputs rather than a property of the SSM; time weighting of the same outputs leaves a mean absolute change of $\DecQabsMin$--$\DecQabsMax$.
-Task risk: the native-versus-resampled loss contrast changes sign across seeds, while resampling is about ten times cheaper at eight-fold refinement.
-One checkpoint trained on a public activity-recognition dataset (UCI HAR, nine test subjects) shows the same pattern under an artificial refinement of its sensor windows: splitting changes the class-centered logits by $\HarCLSeightMean$ and the predicted class of $\HarFlipSeightMean$ of the windows, the token-mean effect of a density change is again mostly the weighting identity ($\HarDecW$ of $\HarDecDelta$ logit units), and the cross-entropy difference between token-mean and time-weighted pooling is $\HarD$ nats with a subject-level interval that includes zero.
-We propose no new architecture.
+A sequence model can change its output when only the time grid of the same physical input changes; we ask where this dependence enters a selective state-space model (SSM), separating interval splitting, which keeps the held input path, from new observations, which change it.
+For one layer, a physical step, exact zero-order hold and coefficients that see only the held value give split invariance; in a stack, later layers receive an internal signal that the refined grid samples differently.
+On one selective SSM with a physical step (the official TIDES code), trained with four seeds on one synthetic task, we separate a model-coupling change at common times, which replicates in every seed; a token-mean readout change under a density change, which is mostly the weighted-average identity of the readout; and a native-versus-resampled task-risk contrast, which changes sign across seeds.
+One checkpoint trained on a public activity-recognition dataset (UCI HAR, nine subjects) shows the same separation: of a pooled splitting change of $\HarCtRelAll$ in class-centered logits, only $\HarCtRelEnd$ is a change at the common time points; the rest is the readout's averaging over the added points.
+The pre-registered cross-entropy difference between token-mean and time-weighted pooling is $\HarD$ nats with a subject-level interval that includes zero, so no risk difference is established; we propose no new architecture.
 \end{abstract}
 
 %=====================================================================================
@@ -104,7 +99,7 @@ None is an architecture.
 \begin{enumerate}
   \item A protocol that separates splitting from new observations, with an exact path/artifact decomposition and explicit denominators (\cref{sec:setup}).
   \item Two different causes, stated with their assumptions: resampling of internal signals between layers, which changes a stack of exact-update layers under splitting although the held input is unchanged, with an $O(\text{mesh})$ upper bound for a scalar linear cascade (\cref{sec:coupling}), and sample-count readouts, which weight tokens instead of time (\cref{sec:readout-analysis}); toy checks in \cref{sec:toy}.
-  \item A fixed-protocol seed repetition on the official TIDES code that separates a model-coupling effect, a pooled-weighting effect and a task-risk effect, with cost; an exact signed decomposition shows that the token-mean readout effect is almost entirely a weighted-average identity (\cref{sec:real-syn}); and one pre-registered evaluation of a checkpoint trained on real sensor windows that shows the same separation (\cref{sec:har}).
+  \item A fixed-protocol seed repetition on the official TIDES code that separates a model-coupling effect, a pooled-weighting effect and a task-risk effect, with cost; an exact signed decomposition shows that the token-mean readout effect is almost entirely a weighted-average identity (\cref{sec:real-syn}); and one pre-registered evaluation of a checkpoint trained on real sensor windows, with a fixed-checkpoint diagnostic that separates the common-time output change from the readout's averaging over added time points (\cref{sec:har}).
   \item A check that the TIDES paper equations and the released code pair inputs with different intervals (\cref{sec:convention}).
 \end{enumerate}
 
@@ -232,14 +227,8 @@ If the first half of $[0,T]$ is split by $m$ and the second half is not, the tok
 \subsection{Interval conventions in the TIDES paper and code}
 \label{sec:convention}
 
-The TIDES paper writes $x_{k+1}=\bar\Lambda(\Delta_k)x_k+\bar B(\Delta_k)u_k$ with $\Delta_k=t_{k+1}-t_k$ and $y_k=Cx_k+Du_k$, i.e.\ $u_k$ is held forward on $[t_k,t_{k+1})$ and the state in $y_k$ does not yet contain $u_k$~\citep{soydan2026tides}.
-The pinned code scans $z_k=\bar\Lambda(t_k-t_{k-1})z_{k-1}+\bar B(t_k-t_{k-1})u_k$ with $y_k=\mathrm{Re}(Cz_k)+Du_k$, and its forecasting collate builds the step sequence $[t_0,t_1-t_0,\dots]$: $u_k$ is held backward on $(t_{k-1},t_k]$ and the state in $y_k$ contains it.
-Both are exact ZOH solutions, but of different input reconstructions.
-On a uniform grid every gap is equal, so $z_k=x_{k+1}$: the difference is a one-index shift of the state, which changes the alignment between the state part of $y_k$ and the feedthrough $Du_k$.
-On an irregular grid each value is paired with a different gap, so the difference is not a relabeling.
-With the pinned code, untrained weights and a fixed impulse input, the code equals the backward-hold recurrence to $\ConvCodeRight$; the one-index shift reproduces the paper form to $\ConvShiftUniform$ on a uniform grid but leaves $\ConvShiftIrregular$ on an irregular one.
-The released code, not the printed equations, defines the model behind TIDES' reported results, and it coincides with the right-endpoint convention used throughout this paper; our splitting protocol repeats the right-endpoint value accordingly.
-We make no claim that this affects TIDES' results.
+The TIDES paper holds $u_k$ forward on $[t_k,t_{k+1})$ with the state in $y_k$ not yet containing $u_k$, whereas the pinned code holds $u_k$ backward on $(t_{k-1},t_k]$ with the state in $y_k$ containing it; both are exact ZOH solutions of different input reconstructions, and on an irregular grid the difference is not a relabeling (checked with untrained weights: \cref{app:convention}).
+The released code coincides with the right-endpoint convention used throughout this paper, so our splitting protocol repeats the right-endpoint value accordingly; we make no claim that this affects TIDES' results.
 
 %=====================================================================================
 \section{Trained Official TIDES: Synthetic Seed Repetition and One Real-Sensor Evaluation}
@@ -255,7 +244,6 @@ We make no claim that this affects TIDES' results.
 A development run with seed 0 (\cref{app:pilot}) was used to choose the questions below.
 The repetition was then fixed in advance: training seeds 1--4, each seeding the parameter initialization and the minibatch order but not the data; the train and calibration data are hash-identical to the development run, and retraining seed 0 with the repetition code reproduces every tensor of the development checkpoint (maximum absolute difference $\RtwoEqMax$).
 All seeds share one new test set of 256 trajectories from the same generator, with identifiers disjoint from all earlier ones; no seed was replaced or added.
-This is a repetition on the same task, not a new task.
 
 \paragraph{Conditions, arms and estimands.}
 The held-path refinements are C0 (training grid), S2/S4/S8 (every interval split with the held value repeated) and H8 (only the first half split by 8, a density change on the same held path); J1 ($K$ random observation times) changes the observed path and is reported separately.
@@ -315,7 +303,7 @@ Because windows overlap, every quantity is averaged within a subject first and t
 The model is the official \texttt{TIDESClassifier} of the pinned code with the backbone setting of \cref{sec:real-syn} ($\HarParams$ parameters), nine input channels and the official head, a token mean of the features followed by a linear map to six classes.
 One model seed; Adam, batch 32, $\HarUpdatesRun$ updates; the state with the lowest calibration cross-entropy (every 100 updates) is frozen and hashed before any test window is read: update $\HarUpdate$, calibration cross-entropy $\HarCalCE$, accuracy $\HarCalAcc$.
 The same checkpoint is evaluated with three arms: the official token-mean readout on the condition's grid (\emph{native mean}); the same features pooled with weights $dt_j/T$ at the same location and passed through the same affine head (\emph{native time}, an inference-time ablation, not a trained baseline); and the official readout on the training grid rebuilt from the observed values (\emph{resampled}), which on S8 and H8 is the identity control (input difference $\HarResIdent$).
-Because the head is affine, the token mean of the features equals the mean of the per-token logits (checked, maximum difference $\HarPoolIdent$ on C0; the two native arms coincide on the uniform C0 grid to $\HarArmIdent$); softmax outputs are never averaged.
+Because the head $A(h)=Wh+b$ is affine and the weights sum to one, $A(\sum_jw_jh_j)=\sum_jw_jA(h_j)$ for both poolings (checked on C0: maximum difference $\HarPoolIdent$; the two native arms coincide on the uniform C0 grid to $\HarArmIdent$); softmax outputs are never averaged.
 The primary estimand, fixed before the run, is $d_s$, the mean over the windows of test subject $s$ of CE(native mean, H8) $-$ CE(native time, H8), and $D$, its equal-weight mean over the 9 subjects, with a subject-level paired percentile bootstrap (2000 draws); cross-entropy, accuracy, prediction flips, output distances and cost are secondary and reported separately.
 A control, time-weighted per-channel means and second moments with a multinomial linear classifier, only shows that a readout integrating over time is unchanged by the refinement; it is not a task ceiling or a capacity-matched baseline.
 
@@ -323,8 +311,12 @@ A control, time-weighted per-channel means and second moments with a multinomial
 \input{generated/tab_har_effects}
 
 \paragraph{Results (\cref{tab:har-subjects,tab:har-effects}).}
-\emph{Model coupling.}
-Splitting every held interval (S8) changes the class-centered logits by $\HarCLSeightMean$ (relative $\ell_2$, subject means from $\HarCLSeightMeanMin$ to $\HarCLSeightMeanMax$ in every subject), the class probabilities by a total variation of $\HarTVSeightMean$, and the predicted class of $\HarFlipSeightMean$ of the windows, while the resampled arm reproduces C0 exactly; the cross-entropy change is $\HarDCESeightMean$ nats with a subject-level interval of $[\HarDCESeightMeanlo,\HarDCESeightMeanhi]$, so no risk change is established at nine subjects.
+\emph{Pooled splitting change and its common-time part.}
+Splitting every held interval (S8) changes the class-centered pooled logits by $\HarCLSeightMean$ (relative $\ell_2$, subject means from $\HarCLSeightMeanMin$ to $\HarCLSeightMeanMax$), the class probabilities by a total variation of $\HarTVSeightMean$, and the predicted class of $\HarFlipSeightMean$ of the windows, while the resampled arm reproduces C0 exactly; the cross-entropy change is $\HarDCESeightMean$ nats with a subject-level interval of $[\HarDCESeightMeanlo,\HarDCESeightMeanhi]$, so no risk change is established at nine subjects.
+Unlike the synthetic discrepancy of \cref{sec:real-syn}, which compares outputs at the same 32 times, this pooled change compares a mean over 128 time points with a mean over 1024, so it is not by itself a common-time (model-coupling) effect: even an exact single layer with $h(t)=1-e^{-t}$ has a split-invariant end value $h(1)$ while $\mathrm{mean}_jh(j/8)\neq h(1)$.
+A fixed-checkpoint diagnostic designed after these results (\cref{tab:har-ct}, \cref{app:har}) separates the two with the official affine head $A$: $z_0=A(\overline{H_0})$, $z_{\mathrm{end}}=A(\mathrm{mean}_kH_8[\mathrm{end}(k)])$ from the S8 features at the 128 common time points, $z_{\mathrm{all}}=A(\overline{H_8})$, and exactly $z_{\mathrm{all}}-z_0=(z_{\mathrm{end}}-z_0)+(z_{\mathrm{all}}-z_{\mathrm{end}})$.
+The common-time change has relative norm $\HarCtRelEnd$, the extra-sampling change $\HarCtRelExtra$ (inner product $\HarCtInner$ logit$^2$); the final features at the common end points move by $\HarCtFeatEnd$ relative, and $z_{\mathrm{end}}$ flips no prediction (cross-entropy $\HarCtCEend$ against $\HarCtCEzero$ for $z_0$).
+The model's outputs at the common times therefore do change under splitting, but by an order of magnitude less than the pooled readout; the extra-sampling term involves the model path through the added tokens and is not a pure quadrature error, and neither term is attributed to a layer by this check.
 \emph{Pooled weighting.}
 Under H8 the token-mean readout moves the centered logits by $\HarCLHeightMean$, changes the predicted class of $\HarFlipHeightMean$ of the windows and the cross-entropy by $\HarDCEHeightMean$ $[\HarDCEHeightMeanlo,\HarDCEHeightMeanhi]$; time weighting of the same features reduces these to $\HarCLHeightTime$, $\HarFlipHeightTime$ and $\HarDCEHeightTime$ $[\HarDCEHeightTimelo,\HarDCEHeightTimehi]$.
 The logit decomposition of \cref{sec:real-syn} applies unchanged (norms in logit units, per window, then subject means): the token-mean change has norm $\HarDecDelta$, the density-weighting term from the C0 token logits alone $\HarDecW$, the model term $M$ $\HarDecM$, its part on the 128 interval-end tokens $\HarDecMend$, and the time-weighted change $Q$ $\HarDecQ$: as on the synthetic task, the large token-mean effect is mostly the weighted-average identity, and the change of the model outputs at the base times is two orders of magnitude smaller.
@@ -337,7 +329,7 @@ The control has identical features on C0, S8 and H8 (maximum difference $\HarCtl
 Native evaluation costs native\_S8\_end\_to\_end\,/\,resampled\_S8\_end\_to\_end $=\HarRatioSeight$ (forward-only $\HarFratioSeight$) and $\HarRatioHeight$ on H8 (\cref{tab:har-timing}).
 
 \paragraph{What this does not show.}
-One dataset, one checkpoint and one model seed give a result conditional on this checkpoint, not a statement about the population of training runs, other sensors, naturally irregular acquisitions or TIDES' benchmarks; nine overlapping-window subjects bound what the subject-level interval can resolve.
+One dataset, one checkpoint and one model seed give a result conditional on this checkpoint, not a statement about the population of training runs, other sensors, naturally irregular acquisitions or TIDES' benchmarks; nine overlapping-window subjects bound what the subject-level interval can resolve, and the common-time diagnostic is exploratory (post hoc) on the same checkpoint.
 
 %=====================================================================================
 \section{Controlled Toy Results}
@@ -350,7 +342,6 @@ The pre-registered FIRST\_RUN used \NunitsPrimary{} independent units (one param
 With $\Delta{=}dt\,g$ and exact ZOH the output is split-invariant to $\EoneZohMax$ and agrees with an independent RK4 reference to $\EoneRKmax$ (an engineering check of \cref{prop:split}).
 Euler-$B$ with the correct step converges at first order (median slope $\EoneEulerSlope$) but has a median base-step artifact of $\EoneEulerMone$ in this toy; the magnitude depends on the toy's $\Delta|\lambda|$ scale.
 Bilinear converges at second order ($\EoneBilinSlope$); with $\Delta{=}\tau g$ the artifact grows from $\EoneNodtMtwo$ to $\EoneNodtMeight$ (medians, $m{=}2\to8$), by construction (\cref{tab:split}, \cref{fig:convergence}a).
-In a stiff mode ($\lambda{=}-500$) the bilinear transition is $\NtwoAbar$ and Euler-$B$ has an artifact of $\NtwoEulerArt$ (\cref{app:toy}).
 
 \input{generated/fig_convergence}
 
@@ -373,7 +364,7 @@ For \eqref{eq:cascade} (P1-COMP-01; held input of FIRST\_RUN unit~0; \CompSecond
 \section{Limitations}
 \label{sec:limits}
 
-\emph{Trained evidence:} four training seeds and a development seed of one small two-block model (one selective SSM) on one synthetic task whose teacher is from the model's own family; no statement about other tasks, real data, the population of training runs, TIDES' benchmarks, Mamba, S4 or S5 is supported, and the accuracy contrast was not stable. \emph{Real-sensor evidence:} one dataset, one checkpoint, one seed, nine subjects, an artificial refinement of distributor-preprocessed windows (\cref{sec:har}).
+\emph{Synthetic evidence:} four training seeds and a development seed of one small two-block model (one selective SSM) on one synthetic task whose teacher is from the model's own family; it supports no statement about other tasks, the population of training runs, TIDES' benchmarks, Mamba, S4 or S5, and the accuracy contrast was not stable. \emph{Real-sensor evidence:} one dataset, one checkpoint, one seed, nine subjects, an artificial refinement of distributor-preprocessed windows (\cref{sec:har}).
 \emph{Margin:} the $\pm5\%$ equivalence margin is a convention, not an application-derived tolerance; all intervals are reported.
 \emph{Entry points not measured:} token-indexed convolution, normalization in training mode, and deeper or wider stacks.
 \emph{Analysis:} \cref{prop:split,prop:cascade} are standard; \cref{prop:cascade} is an upper bound for a linear time-invariant scalar cascade (\cref{rem:scope}) and gives no lower bound and no statement about deep selective networks; no global hold-error or Euler-$B$ bound is claimed.
@@ -386,7 +377,7 @@ For \eqref{eq:cascade} (P1-COMP-01; held input of FIRST\_RUN unit~0; \CompSecond
 
 Grid dependence in selective SSMs can enter through a step that counts samples, an inexact input-matrix discretization, sample-count readouts and, in stacks, the resampling of internal signals; the last is not caused by any change of the observed input.
 In the tested single-layer toy ablation the combined corrections reduced the readout artifact to rounding level while no single correction did, and the inter-layer resampling error remained, with an $O(\text{mesh})$ upper bound for a scalar linear cascade.
-On the official TIDES code, whose step is physical, splitting the held path changes the final outputs in all four training seeds of one synthetic task and in one checkpoint trained on real sensor windows; the larger readout effect of a same-path density change is, in both, almost entirely the weighted-average identity of token-mean pooling, which time weighting reduces to a small residual; and the loss consequence does not replicate across seeds, while on the sensor windows its subject-level interval includes zero, with resampling about ten times cheaper at eight-fold refinement.
+On the official TIDES code, whose step is physical, splitting the held path changes the outputs at common times in all four training seeds of one synthetic task; on real sensor windows (UCI HAR, one checkpoint) the pooled splitting change is mostly the readout's averaging over the added time points; the larger readout effect of a same-path density change is, in both, mostly the weighted-average identity of token-mean pooling, which time weighting reduces to a small residual; and the loss consequence does not replicate across seeds, while on the sensor windows its subject-level interval includes zero, with resampling about ten times cheaper at eight-fold refinement.
 Whether these effects matter for other selective SSMs, for naturally irregular acquisitions, and across training runs is open.\label{body-end}
 
 %=====================================================================================
@@ -432,7 +423,7 @@ P1-REAL-02 stored per-trajectory pooled values but not per-token outputs.
 A configuration fixed before execution specified one frozen native forward pass per existing checkpoint on C0 and H8 (no training, no timing, same test set), a check that it reproduces the stored pooled values (maximum absolute difference $\DecMismatch$), and the signed identities of \cref{tab:seeds-readout} (largest residual $\DecIdentity$).
 
 \paragraph{Compute.}
-All on CPU (2 threads for experiments), no GPU, no paid API, no external data; wall and process CPU seconds are distinguished where recorded.
+All on CPU (2 threads for experiments), no GPU, no paid API; the synthetic stages use no external data, and the only external data are the public UCI HAR windows of \cref{app:har}; wall and process CPU seconds are distinguished where recorded.
 FIRST\_RUN: two executions of about 21\,s, one partial execution and a smoke test of about 3\,s together.
 P1-COMP-01: \CompSeconds\,s.
 P1-REAL-01 (development): installation of a CPU tensor library (35\,s) and of a \LaTeX\ toolchain (66\,s); adapter check and timing smoke (${\approx}4$\,s; $\AdapterStep$\,s per batch-32 step); convention check (${\approx}2$\,s); training including label generation ($\RealTrainSec$\,s); evaluation ($\RealEvalSec$\,s); layer diagnostic (${\approx}11$\,s).
@@ -476,8 +467,24 @@ Its runtimes are forward-only model calls on prebuilt tensors (no warm-up, outsi
 \emph{Budget rule.} A 20-update smoke run (model discarded; run twice, before and after the pre-execution amendment, 16\,s and $\HarSmokeWall$\,s, both in the ledger) measured the per-update and per-token cost and projected the training and evaluation cost; the pre-registered rule allowed the planned 2000 updates. Ledger: training $\HarTrainWall$\,s wall ($\HarTrainCPU$\,s process CPU), evaluation $\HarEvalWall$\,s wall; all stages together $\HarTotalWall$\,s wall and $\HarTotalCPU$\,s process CPU on 2 threads, against a cap of 3600\,s / 7200\,s.
 \emph{Checks.} Eval mode enforced at calibration and test (no dropout, running batch statistics); all step scales positive; no padding or mask; the resampled input equals C0 on S8 and H8 to $\HarResIdent$; the identities of the logit decomposition hold to $\HarDecIdent$; $\HarExcluded$ windows excluded by the centered-logit rule.
 \emph{Timing (\cref{tab:har-timing}).} native\_S8\_end\_to\_end\,/\,resampled\_S8\_end\_to\_end $=\HarRatioSeight$; forward-only $\HarFratioSeight$; H8 end-to-end $\HarRatioHeight$.
+\emph{Common-time diagnostic (P1-HAR-CT-01; exploratory, fixed checkpoint, designed after the P1-HAR-01 results).} The stored per-token logits (float16) reproduce the stored pooled logits only to $\HarCtFpSixteen$, so one float32 streaming forward of C0 and S8 over the 2947 test windows was run (batches of 256, eval mode, no intermediate tensors stored); it reproduces the stored C0 and S8 pooled logits to $\HarCtRepro$. The 128 common end points are the S8 tokens $8k$ ($k=1..128$), verified against the time stamps. The vector identity holds per window to $\HarCtResid$; the class centering $\Pi=I-\mathbf{1}\mathbf{1}^{\top}/6$ is applied to every term alike. The pre-specified float64 check (18 hash-selected windows) was \texttt{\HarCtFpSixtyFour}, because the common-time change ($\HarCtRelEnd$) is far above the float32 pooling residual. Cost: $\HarCtWall$\,s wall, $\HarCtCPU$\,s process CPU on 2 threads (timer started before importing the framework). Norm sums and norm ratios are not contributions; the inner product is reported alongside.
+
+\input{generated/tab_har_ct}
 
 \input{generated/tab_har_timing}
+
+\FloatBarrier
+\section{Interval conventions in the TIDES paper and code: details}
+\label{app:convention}
+
+The TIDES paper writes $x_{k+1}=\bar\Lambda(\Delta_k)x_k+\bar B(\Delta_k)u_k$ with $\Delta_k=t_{k+1}-t_k$ and $y_k=Cx_k+Du_k$, i.e.\ $u_k$ is held forward on $[t_k,t_{k+1})$ and the state in $y_k$ does not yet contain $u_k$~\citep{soydan2026tides}.
+The pinned code scans $z_k=\bar\Lambda(t_k-t_{k-1})z_{k-1}+\bar B(t_k-t_{k-1})u_k$ with $y_k=\mathrm{Re}(Cz_k)+Du_k$, and its forecasting collate builds the step sequence $[t_0,t_1-t_0,\dots]$: $u_k$ is held backward on $(t_{k-1},t_k]$ and the state in $y_k$ contains it.
+Both are exact ZOH solutions, but of different input reconstructions.
+On a uniform grid every gap is equal, so $z_k=x_{k+1}$: the difference is a one-index shift of the state, which changes the alignment between the state part of $y_k$ and the feedthrough $Du_k$.
+On an irregular grid each value is paired with a different gap, so the difference is not a relabeling.
+With the pinned code, untrained weights and a fixed impulse input, the code equals the backward-hold recurrence to $\ConvCodeRight$; the one-index shift reproduces the paper form to $\ConvShiftUniform$ on a uniform grid but leaves $\ConvShiftIrregular$ on an irregular one.
+The released code, not the printed equations, defines the model behind TIDES' reported results, and it coincides with the right-endpoint convention used throughout this paper; our splitting protocol repeats the right-endpoint value accordingly.
+We make no claim that this affects TIDES' results.
 
 \FloatBarrier
 \section{Proof of \texorpdfstring{\cref{prop:cascade}}{Proposition 4.2}}
@@ -506,7 +513,7 @@ In emulated float32, split composition of one scalar mode drifts to $\NfourFloor
 \label{app:repro}
 
 The anonymized supplementary package contains the code (toy, RK4 references, cascade check, TIDES adapter, convention check, runners, diagnostics and the generator that produces every table, figure and number in this paper), the configurations, and the raw records from which the generator works, together with the sha256 of every checkpoint.
-It does not contain model checkpoints or the third-party TIDES code: the checkpoints are regenerated by the training command listed in the package (a retrain of the development seed reproduced every tensor), and TIDES is obtained at the pinned commit under its own license.
+It contains the 116\,KB UCI HAR checkpoint with its SHA-256, but not the synthetic-task checkpoints (their SHA-256 values are listed and they are regenerated by the training command in the package; a retrain of the development seed reproduced every tensor), not the HAR data (acquisition command and archive hash are given) and not the third-party TIDES code, which is obtained at the pinned commit under its own license.
 
 \FloatBarrier
 \section{Additional toy tables}
