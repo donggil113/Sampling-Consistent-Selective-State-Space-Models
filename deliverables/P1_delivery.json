@@ -1,0 +1,35 @@
+{
+  "project": "P1",
+  "manuscript_version": "v5.1",
+  "source_commit": "a4f7aac",
+  "pdf": "P1_v5.1_a4f7aac.pdf",
+  "sha256": "567975521d89695b156134da04779480fedaabf86d34d1ab06d1e25721eee27a",
+  "bytes": 380335,
+  "pages": 18,
+  "body_end_page": 8,
+  "pdf_signature": "%PDF-1.5",
+  "style": "official ICML 2026 kit (icml2026.zip sha256 8b29290f5828e176debb57ea9cc00252502973d55ea561a2f18a7f0a326bfc6c), anonymous review mode, unmodified; TARGET_YEAR=2027, TEMPLATE_YEAR=2026, SUBMISSION_READY=false",
+  "build_command": "scripts/build_paper.sh -> latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex (in paper/build/, no shell escape requested); built 2026-10-05 at commit a4f7aac; not rebuilt for this delivery (unchanged PDF)",
+  "visual_check": "pages 1, 6, 7, 8, 15 rendered at 96 dpi and inspected on 2026-10-05 (session 7); the other pages were checked by text extraction and the automated checks in results/pdf_check.json",
+  "checks": {
+    "overfull_boxes": 0,
+    "undefined_references_or_citations": 0,
+    "multiply_defined_labels": 0,
+    "anonymity_hits_in_pdf_text": [],
+    "metadata": {
+      "Title": "Where Sampling-Grid Dependence Enters Selective State-Space Models",
+      "Author": "Anonymous Authors",
+      "Subject": "Proceedings of the International Conference on Machine Learning 2026",
+      "Keywords": "state-space models, selective SSM, discretization, irregular sampling, zero-order hold",
+      "Creator": "LaTeX with hyperref",
+      "Producer": "pdfTeX-1.40.25"
+    }
+  },
+  "research_status": {
+    "ARCHITECTURE_CLAIM": "STOPPED",
+    "PRIMARY_HAR_RISK_DIFFERENCE": "NOT_ESTABLISHED (D=+0.016 nats, 9-subject interval includes 0)",
+    "P1-HAR-CT-01": "EXPLORATORY_FIXED_CHECKPOINT",
+    "human_review": "UNASSIGNED"
+  },
+  "delivered_utc": "2026-10-11T02:48:46Z"
+}
