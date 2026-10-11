@@ -1047,6 +1047,84 @@ subject & rel.\ all & rel.\ common & rel.\ extra & $\langle\cdot,\cdot\rangle$ &
         macros["HarCtWall"] = f"{sum(r['wall_seconds'] for r in CL):.0f}"
         macros["HarCtCPU"] = f"{sum(r['cpu_seconds'] for r in CL):.0f}"
 
+    # ------------------------------------------------------------------ R8-P1-HAR-REPLICATION (two extra model seeds; separate rows, never pooled)
+    r8d = os.path.join(rdir, "R8-P1-HAR-REPLICATION")
+    if os.path.exists(os.path.join(r8d, "aggregate.json")):
+        R8 = json.load(open(os.path.join(r8d, "aggregate.json")))
+        R8L = json.load(open(os.path.join(r8d, "cost_ledger.json")))
+        A["HAR_R8"] = {"runs": {k: {kk: v[kk] for kk in ("seed", "checkpoint_sha256", "selected_update", "selected_cal_ce", "selected_cal_acc")} for k, v in R8["runs"].items()},
+                       "ledger": R8L}
+        order8 = [("seed0_original", "0 (orig.)"), ("seed101", "101"), ("seed102", "102")]
+
+        def fci3(c):
+            return f"$[{c[0]:+.3f},\\,{c[1]:+.3f}]$"
+        rows = []
+        for k, lab in order8:
+            r = R8["runs"][k]
+            pd = r["primary_D"]
+            rows.append(f"{lab} & {r['selected_update']} & ${r['selected_cal_ce']:.3f}$ & ${r['ce']['C0/native_mean']['mean_over_subjects']:.3f}$ & ${r['accuracy']['C0/native_mean']['mean_over_subjects']:.3f}$ & "
+                        f"${pd['mean_over_subjects']:+.3f}$ {fci3(pd['ci95_subject_bootstrap'])} & {pd['n_positive']}/9 & "
+                        f"${r['risk_change_vs_C0']['S8/native_mean']['mean_over_subjects']:+.3f}$ & ${r['risk_change_vs_C0']['H8/native_mean']['mean_over_subjects']:+.3f}$ & ${r['risk_change_vs_C0']['H8/native_time']['mean_over_subjects']:+.3f}$ \\\\")
+        write("tab_har_r8_risk.tex", r"""\begin{table*}[t]
+\caption{Initialization sensitivity (R8-P1-HAR-REPLICATION): the frozen P1-HAR-01 protocol trained with two further model seeds (101, 102) on the same training data and evaluated on the SAME nine test subjects; the original run (seed 0) is repeated from \cref{tab:har-subjects,tab:har-effects}. Rows are separate runs and are never pooled (three runs on the same subjects are not 27 independent observations). step / calib.\ CE: selected update and its calibration cross-entropy. CE C0, acc.\ C0: subject-first means of the official readout on C0. $D$: primary difference CE(mean, H8) $-$ CE(time, H8), equal-weight mean over subjects, with the per-run subject-level paired bootstrap interval (2000 draws; coarse with 9 clusters) and the number of subjects with $d_s>0$. $\Delta$CE: cross-entropy change against C0 for S8 (token mean) and H8 (token mean / time-weighted).}
+\label{tab:har-r8-risk}
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccccccc}
+\toprule
+seed & step & calib.\ CE & CE C0 & acc.\ C0 & $D$ [95\% CI] & $d_s>0$ & $\Delta$CE S8 & $\Delta$CE H8, mean & $\Delta$CE H8, time \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}
+\end{table*}
+""")
+        rows = []
+        for k, lab in order8:
+            r = R8["runs"][k]
+            ct, dc = r["S8_common_time"], r["H8_logit_decomposition"]
+            rows.append(f"{lab} & ${r['centered_logit_rel_vs_C0']['S8/native_mean']['mean_over_subjects']:.4f}$ & ${ct['c_rel_end']['mean_over_subjects']:.4f}$ & ${ct['c_rel_extra']['mean_over_subjects']:.4f}$ & "
+                        f"${ct['c_inner_end_extra']['mean_over_subjects']:+.3f}$ & ${r['flip_vs_C0']['S8/native_mean']['mean_over_subjects']:.3f}$ & ${ct['flip_end_vs_z0']['mean_over_subjects']:.3f}$ & "
+                        f"${r['centered_logit_rel_vs_C0']['H8/native_mean']['mean_over_subjects']:.3f}$ & ${r['centered_logit_rel_vs_C0']['H8/native_time']['mean_over_subjects']:.3f}$ & "
+                        f"${dc['pmean_minus_pC0_norm']['mean_over_subjects']:.2f}$ & ${dc['W_norm']['mean_over_subjects']:.2f}$ & ${dc['M_norm']['mean_over_subjects']:.3f}$ & ${dc['M_end_norm']['mean_over_subjects']:.3f}$ & ${dc['Q_norm']['mean_over_subjects']:.3f}$ \\\\")
+        write("tab_har_r8_decomp.tex", r"""\begin{table*}[t]
+\caption{Initialization sensitivity of the decompositions (same three runs as \cref{tab:har-r8-risk}; subject-first means; no interval, no test). S8: class-centered relative change of the pooled logits (``all''), its common-time part $\|\Pi(z_{\mathrm{end}}-z_0)\|/\|\Pi z_0\|$ and extra-sampling part (per-window ratios, subject-first; not additive shares), the inner product of the two centered terms (logit$^2$), and the fraction of windows whose predicted class differs from C0 under $z_{\mathrm{all}}$ and under $z_{\mathrm{end}}$. H8: class-centered relative change of the token-mean and time-weighted readouts, and the norms (logit units) of the token-mean change, its density-weighting term $W$, the model term $M$, its interval-end part $M_{\mathrm{end}}$ and the time-weighted change $Q$.}
+\label{tab:har-r8-decomp}
+\centering\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccccccccccc}
+\toprule
+ & \multicolumn{6}{c}{S8} & \multicolumn{7}{c}{H8} \\
+\cmidrule(lr){2-7}\cmidrule(lr){8-14}
+seed & all & common & extra & $\langle\cdot,\cdot\rangle$ & flip all & flip end & mean & time & $\|\Delta\|$ & $\|W\|$ & $\|M\|$ & $\|M_{\mathrm{end}}\|$ & $\|Q\|$ \\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabular}
+\end{table*}
+""")
+        for k, tag in (("seed101", "A"), ("seed102", "B")):
+            r = R8["runs"][k]
+            pd = r["primary_D"]
+            macros[f"RviiiD{tag}"] = f"{pd['mean_over_subjects']:+.3f}"
+            macros[f"RviiiD{tag}lo"], macros[f"RviiiD{tag}hi"] = f"{pd['ci95_subject_bootstrap'][0]:+.3f}", f"{pd['ci95_subject_bootstrap'][1]:+.3f}"
+            macros[f"RviiiD{tag}pos"] = str(pd["n_positive"])
+            macros[f"RviiiStep{tag}"] = str(r["selected_update"])
+            macros[f"RviiiCalCE{tag}"] = f"{r['selected_cal_ce']:.3f}"
+            macros[f"RviiiAcc{tag}"] = f"{r['accuracy']['C0/native_mean']['mean_over_subjects']:.3f}"
+            macros[f"RviiiCLSeight{tag}"] = f"{r['centered_logit_rel_vs_C0']['S8/native_mean']['mean_over_subjects']:.4f}"
+            macros[f"RviiiCommon{tag}"] = f"{r['S8_common_time']['c_rel_end']['mean_over_subjects']:.4f}"
+            macros[f"RviiiExtra{tag}"] = f"{r['S8_common_time']['c_rel_extra']['mean_over_subjects']:.4f}"
+            macros[f"RviiiW{tag}"] = f"{r['H8_logit_decomposition']['W_norm']['mean_over_subjects']:.2f}"
+            macros[f"RviiiDelta{tag}"] = f"{r['H8_logit_decomposition']['pmean_minus_pC0_norm']['mean_over_subjects']:.2f}"
+            macros[f"RviiiM{tag}"] = f"{r['H8_logit_decomposition']['M_norm']['mean_over_subjects']:.3f}"
+            macros[f"RviiiDCEHeightMean{tag}"] = f"{r['risk_change_vs_C0']['H8/native_mean']['mean_over_subjects']:+.3f}"
+            macros[f"RviiiDCEHeightTime{tag}"] = f"{r['risk_change_vs_C0']['H8/native_time']['mean_over_subjects']:+.3f}"
+            macros[f"RviiiDCESeight{tag}"] = f"{r['risk_change_vs_C0']['S8/native_mean']['mean_over_subjects']:+.3f}"
+        stage_rows = [r for r in R8L if r["stage"] != "process"]
+        macros["RviiiWall"] = f"{sum(r['wall_seconds'] for r in stage_rows):.0f}"
+        macros["RviiiCPU"] = f"{sum(r['cpu_seconds'] for r in stage_rows):.0f}"
+
     # ------------------------------------------------------------------ macros + json
     lines = [f"\\newcommand{{\\{k}}}{{\\ensuremath{{{v}}}}}" for k, v in sorted(macros.items())]
     write("numbers.tex", "\n".join(lines) + "\n")

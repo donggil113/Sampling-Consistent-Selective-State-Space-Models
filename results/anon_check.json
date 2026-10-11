@@ -1,10 +1,10 @@
 {
   "package": "anon_submission/",
-  "n_files": 143,
-  "bytes": 27943783,
+  "n_files": 162,
+  "bytes": 43171301,
   "n_patterns_checked": 12,
   "pattern_hits_by_file": {},
-  "commit_hashes_redacted": 39,
+  "commit_hashes_redacted": 48,
   "files_with_local_paths_redacted": 2,
   "readme_listed_paths_missing": [],
   "generator_rerun_ok": true,

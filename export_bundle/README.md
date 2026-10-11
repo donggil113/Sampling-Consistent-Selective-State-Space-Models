@@ -35,6 +35,7 @@ The separate anonymous review package is `anon_submission/` (built by `scripts/m
 | P1-REAL-02 | `results/raw/P1-REAL-02/` | Fixed-protocol repetition: training seeds 1–4 plus the development row, on one new shared test set (ids 10000–10255). |
 | P1-HAR-01 | `results/raw/P1-HAR-01/` | Real-sensor evaluation (UCI HAR), one checkpoint (included, 116 KB, with sha256), per-window records, control, aggregate, cost ledger and the acquisition record. Data not included (gitignored `data/`). |
 | P1-HAR-CT-01 | `results/raw/P1-HAR-CT-01/` | Exploratory fixed-checkpoint diagnostic (post-hoc design; config `configs/p1_har_ct_01.json`): common-time vs extra-sampling decomposition of the pooled S8 change; 73.5 s wall. |
+| R8-P1-HAR-REPLICATION | `results/raw/R8-P1-HAR-REPLICATION/` | Two further model seeds (101, 102) of the frozen P1-HAR-01 protocol on the SAME nine test subjects (initialization/minibatch-order sensitivity, not an independent replication; contract `configs/auto_run_r8.json` committed before execution): per-seed `train.json`/`train.log`, checkpoint (116 KB, with sha256), per-window `eval.jsonl`, `eval_summary.json`; `aggregate.json` with the original seed-0 run as a separate row; `cost_ledger.json` (674 s wall / 1281 s CPU, 2 threads). |
 | P1-REAL-02-H8DECOMP | `results/raw/P1-REAL-02/h8_decomposition/` | Derived signed decomposition of the H8 pooled change. Built from one frozen forward per existing checkpoint, because per-token outputs had not been stored. Per-token outputs are in gzip JSON. |
 
 The P1-REAL-02 files are:
@@ -48,12 +49,12 @@ The P1-REAL-02 files are:
 
 | Excluded | Why | How to recover |
 |---|---|---|
-| Synthetic-task model checkpoints (`*.pt`, about 114 KB each; the HAR checkpoint is included) | Weights are not needed for review. | Their sha256 values are in `run_manifest.json`. Retrain with `python3 scripts/run_p1_real_02.py --stage train --seed s` (about 47 s per seed on 2 CPU threads). Determinism was checked only for seed 0: its retrain reproduced every tensor of the pilot checkpoint in this environment. |
+| Synthetic-task model checkpoints (`*.pt`, about 114 KB each; the three HAR checkpoints, seeds 0, 101 and 102, are included) | Weights are not needed for review. | Their sha256 values are in `run_manifest.json`. Retrain with `python3 scripts/run_p1_real_02.py --stage train --seed s` (about 47 s per seed on 2 CPU threads). Determinism was checked only for seed 0: its retrain reproduced every tensor of the pilot checkpoint in this environment. |
 | `results/raw/P1-REAL-02/data_cache.json`, `testset_cache.json` | These hold synthetic data from the fixed generator and are regenerable. | Run `python3 scripts/run_p1_real_02.py --stage data` and `--stage testset`. These commands rewrite `data_hash.json` and `testset_hash.json`, so compare the new sha256 values with the copies in this bundle; they do not compare them for you. Afterwards, every loader refuses a cache whose content does not match its recorded hash. |
 | `third_party/TIDES` | Third-party code, MIT license. It is not redistributed here, so no license notice is altered. | `git clone` the official TIDES repository and check out `4b51adce2060e7209e002a6a2fd6691a2f6fcc5e`. |
 | ICML style files, `paper/build/` | Style kit and build intermediates. | `scripts/build_paper.sh` fetches the official kit (or copies it from `$ICML_KIT_ZIP`) and verifies its sha256 (`8b29290f…`). |
 
-No patient, clinical or other sensitive data is used anywhere in this project; all data are synthetic.
+No patient, clinical or other sensitive data is used anywhere in this project; the only non-synthetic data are the public UCI HAR windows, which are not redistributed here.
 
 **Anonymity.** This bundle contains identifying material:
 
@@ -89,5 +90,6 @@ Rules for running:
 - **Seed 0 is the development run.** The primary estimand was chosen after seeing that run.
 - **The primary H8 effect is mostly a weighted-average identity.** The density-weighting term W = (7/18)(A − B) of the unchanged C0 outputs accounts for almost all of the token-mean change. The model term is small, and time weighting reduces the change but leaves a residual. This is not a selective-SSM-specific failure (derived, post hoc).
 - **P1-HAR-01 (UCI HAR) ran once** (one checkpoint, one seed, nine test subjects): coupling and weighting effects present; the primary cross-entropy difference +0.016 nats has a subject-level interval that includes zero (not established; not equivalence).
+- **R8-P1-HAR-REPLICATION (two further model seeds, same subjects)**: D = +0.050 [+0.023, +0.082] (seed 101) and +0.044 [+0.011, +0.077] (seed 102) nats, reported as separate rows next to the original +0.016 [−0.004, +0.032]; never pooled; the original primary verdict is unchanged; the common-time part of the pooled S8 change stays an order of magnitude below the extra-sampling part in every run (0.0018 / 0.0027 / 0.0034 vs 0.0284 / 0.0216 / 0.0451; not additive shares).
 - **The loss contrast is not stable across seeds**, and J1 depends on the test draw. Both are reported in the main text.
 - **The paper-vs-code interval convention** is a difference between the printed equations and the pinned implementation. It is not a claim that TIDES' benchmark results are affected.

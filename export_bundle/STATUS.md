@@ -18,6 +18,39 @@ Last updated: 2026-10-05 (UTC), session 7 (round 7). Branch: `claude/intelligent
   - the development run's fixed-estimated-margin analysis.
 - **P1-REAL-02 primary estimand** (H8 pooled-readout effect) was chosen after seeing the development run. It is not a blind choice.
 
+## Session 8 (round 8): what was done
+
+**PDF delivery first.** HEAD at start a4f7aac (v5.1), clean tree; `paper/main.pdf` signature `%PDF-1.5`, 18 pages, body end page 8, sha256 567975521d89695b156134da04779480fedaabf86d34d1ab06d1e25721eee27a (matches the hash quoted by the user). Copied byte-for-byte to `deliverables/P1_v5.1_a4f7aac.pdf` with `deliverables/P1_delivery.json` and attached before any new work (commit 5211955).
+
+**R8-P1-HAR-REPLICATION (COMPLETED; exactly the finite stage list; nothing further queued).**
+
+- Contract `configs/auto_run_r8.json` and the minimal runner `scripts/run_p1_har_r8.py` were committed before execution (5211955); the P1-HAR-01 config hash e603cf75…, the data hashes and the original checkpoint hash e3b414f5… were verified before every stage. Seeds 101 and 102 had never been used in this project. Model RNG (python/NumPy/torch seeded before construction) and minibatch-order RNG (`random.Random(seed)`) are separate; data, splits and normalization are fixed arrays. The SAME nine official test subjects (2947 windows) are reused.
+- Stages train:101 → eval:101 → train:102 → eval:102 → aggregate, each with a lock file, a hash-based skip rule and a pre-start budget guard (caps 1800 s wall / 3600 s process CPU, 2 threads). No stop condition fired (finite losses/logits; split and config hashes matched; no test window read before the checkpoint was frozen; resampled-arm input identical to C0, difference 0; identity checks ≤ 6.6e-5; 0 windows excluded).
+- Results (subject means first, equal weight over 9; separate rows; never pooled; the original primary is not retro-updated):
+
+  | run | step / calib. CE | CE C0 / acc. C0 | D = CE(mean,H8) − CE(time,H8) [subject bootstrap 95%] | d_s > 0 | ΔCE S8 / H8 mean / H8 time | S8 centered change: all / common-time / extra | inner | H8 norms ‖Δ‖ / ‖W‖ / ‖M‖ / ‖M_end‖ / ‖Q‖ |
+  |---|---|---|---|---|---|---|---|---|
+  | seed 0 (P1-HAR-01, unchanged) | 1200 / 0.092 | 0.270 / 0.904 | +0.016 [−0.004, +0.032] | 8/9 | −0.010 / +0.012 / −0.004 | 0.0290 / 0.0018 / 0.0284 | +0.091 | 7.69 / 7.44 / 0.997 / 0.013 / 0.565 |
+  | seed 101 | 1600 / 0.120 | 0.252 / 0.916 | +0.050 [+0.023, +0.082] | 8/9 | +0.005 / +0.052 / +0.002 | 0.0231 / 0.0027 / 0.0216 | +0.215 | 9.99 / 9.60 / 0.712 / 0.031 / 0.457 |
+  | seed 102 | 1600 / 0.083 | 0.252 / 0.923 | +0.044 [+0.011, +0.077] | 7/9 | −0.026 / +0.028 / −0.016 | 0.0445 / 0.0034 / 0.0451 | −0.142 | 5.92 / 5.77 / 1.366 / 0.016 / 0.771 |
+
+  z_end flips no prediction in any run; S8 flips vs C0: 0.008 / 0.003 / 0.006. Reading: the separation (common-time part an order of magnitude below the extra-sampling part; W dominating the H8 token-mean change) is the same in all three initializations; the pooled-readout risk direction is the same, its size varies about three-fold; the two new per-run intervals exclude zero but share subjects and data with the original run, so PRIMARY_HAR_RISK_DIFFERENCE_NOT_ESTABLISHED (original pre-registered primary) is kept and no pooled statement is made. Not an independent-dataset replication. ARCHITECTURE_CLAIM_STOP kept.
+- Cost ledger (`results/raw/R8-P1-HAR-REPLICATION/cost_ledger.json`): train:101 279.7 s wall / 522.0 s CPU; eval:101 81.1 / 149.5; train:102 232.6 / 459.9; eval:102 79.6 / 148.9; aggregate 1.1 / 0.9; process total 674.2 s wall / 1281.3 s CPU (caps 1800 / 3600; projection 550 / 1050). train:101 ran at 280 s against its 300 s allowance because bookkeeping commands (commit/push) ran concurrently on the same 2 threads; recorded, not re-run. PDF/package builds are outside this budget.
+- Not done (not approved / not queued): a third seed, any protocol change, a per-token or cancellation diagnostic, pooling of runs, another model or dataset.
+
+**Manuscript v5.2 (PDF built with `-halt-on-error -no-shell-escape`; see `results/pdf_check.json`).**
+
+- Added: abstract sentence 5 (two further seeds, unpooled sensitivity check), contribution 3, §5.2 paragraph "Initialization sensitivity (two further model seeds)", §7 real-sensor scope (one architecture, three seeds on the same nine subjects), §8 clause, App. D paragraph and Tables (R8 risk, R8 decompositions; three runs as separate rows).
+- Corrected: the App. D common-time sentence now says the common-time value is the change of the pooled readout over the 128 end points, not a per-token change, and that the per-token change was not computed; the "cancellation unlikely" speculation was removed (STATUS session 7 keeps the historical wording).
+- Layout: the first build with the two R8 tables in §5.2 failed (13-column spec for a 14-column table) and, once fixed, ended the body on page 9. Fixed without any font/margin change: the two R8 tables moved to App. D, the §5.2 paragraph compressed, duplicated statements removed from §7 (margin convention and float32 caveat remain in §5.1), the P1-COMP-01 "9–20 % of the bound" sentence moved from Remark 4.3 to App. G, the head-of-mean identity checks moved to App. D "Checks", small trims in §1–§6. Body end (last Conclusion sentence) on page 8; 0 overfull boxes; 0 undefined references; abstract 5 sentences, 233 words by a plain count.
+- Status words unchanged: ARCHITECTURE_CLAIM_STOP; PRIMARY_HAR_RISK_DIFFERENCE_NOT_ESTABLISHED; EXPLORATORY_FIXED_CHECKPOINT for P1-HAR-CT-01; SUBMISSION_READY=false; TARGET_YEAR=2027 on the unmodified 2026 kit.
+
+**Review round (session 8): one read-only reviewer, 10-minute cap, fixed commit 6a3dfe1, one fix pass.** REVIEW_PENDING (filled in below once the pass is done).
+
+**Packages and deliverables.** `scripts/make_export_bundle.py` and `scripts/make_anon_package.py` now include `results/raw/R8-P1-HAR-REPLICATION/` (both 116 KB checkpoints included, like the seed-0 HAR checkpoint); READMEs updated to the actual contents. `deliverables/P1_v5.2_<commit7>.pdf`, `P1_source.zip`, `P1_delivery.json` are written by `scripts/make_deliverables.py` after the final commit (DELIVERY_PENDING until filled in below).
+
+**Next research decision (recorded, not queued).** The next informative step is one further architecture (a selective SSM with a content-dependent step, e.g. a Mamba-style block under the same protocol) or one naturally irregular dataset, because all HAR evidence so far is three initializations of one architecture on the same nine subjects; this is a decision for the user, and no experiment is queued.
+
 ## Session 7 (round 7): what was done
 
 **Checkout.** HEAD at start 0e5cf3d (matched the report); clean tree; torch 2.14.0+cpu, pinned TIDES, TeX and the local HAR data/derived files still present. Hashes verified before use: `configs/p1_har_01.json` e603cf75…, `checkpoint.pt` e3b414f5…, runner 8d06bbd8….

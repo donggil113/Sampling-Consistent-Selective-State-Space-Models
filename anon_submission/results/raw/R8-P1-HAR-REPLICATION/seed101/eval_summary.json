@@ -1,0 +1,49 @@
+{
+  "status": "COMPLETED",
+  "seed": 101,
+  "checkpoint_sha256": "c818a788936094d19312d6d3d164c135d7346adf7e880460a5c267abced2c6a8",
+  "selected_update": 1600,
+  "n_test_windows": 2947,
+  "test_subjects": [
+    2,
+    4,
+    9,
+    10,
+    12,
+    13,
+    18,
+    20,
+    24
+  ],
+  "test_subjects_reused_from_P1_HAR_01": true,
+  "eval_mode_checks": {
+    "all_modules_eval": true,
+    "dropout_p": [
+      0.0
+    ],
+    "batchnorm_running_stats": true,
+    "n_batchnorm": 2
+  },
+  "identity_checks": {
+    "H8_pmean_minus_pC0_vs_W_plus_M_max_abs": 4.0964947773169946e-05,
+    "H8_ptime_minus_pC0_vs_Q_max_abs": 6.55241310596466e-05,
+    "S8_native_mean_vs_native_time_max_abs": 1.52587890625e-05,
+    "resampled_input_vs_C0_max_abs": {
+      "S8": 0.0,
+      "H8": 0.0
+    }
+  },
+  "excluded_windows_centered_logit": 0,
+  "resampled_arm": "input identical to C0 on S8 and H8 (max abs diff above); logits taken as the C0 logits (P1-HAR-01 verified bit-identical outputs for identical input); no separate forward",
+  "timing": "not re-measured (P1-HAR-01 timing applies)",
+  "threads": 2,
+  "provenance": {
+    "git_head": "<commit>",
+    "git_dirty": true,
+    "runner_sha256": "61e47bcd415e4603812793c339fbb54c81639988945c9ea0590603f91b1362cf",
+    "auto_run_config_sha256": "b6bb4850914e7f593fdba197964019ce0df1a0e3ea93a4ee551c59ca0a1fc86f",
+    "p1_har_01_config_sha256": "e603cf75e6472a20547afe22b6056f8e940de93120bc9fd2e6f66806a7dc44fc"
+  },
+  "eval_wall_seconds": 81.121,
+  "eval_cpu_seconds": 149.465
+}

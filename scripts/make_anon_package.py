@@ -52,6 +52,7 @@ INCLUDE = [
     "results/raw/P1-REAL-02/h8_decomposition/*",
     "results/raw/P1-HAR-01/*",
     "results/raw/P1-HAR-CT-01/*",
+    "results/raw/R8-P1-HAR-REPLICATION/*.json", "results/raw/R8-P1-HAR-REPLICATION/seed*/*",
     "run_manifest.json",
 ]
 EXCLUDE_NAMES = {"data_cache.json", "testset_cache.json", "check_paper.py", "check_pdf.py",
@@ -104,7 +105,7 @@ def main():
     for pat in INCLUDE:
         for src in sorted(glob.glob(os.path.join(ROOT, pat))):
             rel = os.path.relpath(src, ROOT)
-            if os.path.basename(rel) in EXCLUDE_NAMES or (rel.endswith(".pt") and "P1-HAR-01" not in rel) or "__pycache__" in rel or rel in files:
+            if os.path.basename(rel) in EXCLUDE_NAMES or (rel.endswith(".pt") and "P1-HAR" not in rel) or "__pycache__" in rel or rel in files:
                 continue
             dst = os.path.join(OUT, rel)
             os.makedirs(os.path.dirname(dst), exist_ok=True)

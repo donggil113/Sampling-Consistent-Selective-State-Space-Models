@@ -22,6 +22,6 @@ rm -rf "$B/generated"
 cp -r "$ROOT/paper/generated" "$B/generated"
 cp "$ROOT/paper/main.tex" "$ROOT/paper/references.bib" "$B/"
 cd "$B"
-latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex > latexmk.out 2>&1 || { tail -40 latexmk.out; exit 1; }
+latexmk -pdf -interaction=nonstopmode -halt-on-error -pdflatex='pdflatex -no-shell-escape %O %S' main.tex > latexmk.out 2>&1 || { tail -40 latexmk.out; exit 1; }
 cp main.pdf "$ROOT/paper/main.pdf"
 echo "built $ROOT/paper/main.pdf"
