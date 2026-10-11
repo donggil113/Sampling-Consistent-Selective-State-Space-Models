@@ -1,0 +1,65 @@
+[
+  {
+    "stage": "train:101",
+    "started_utc": "2026-10-11T02:53:46Z",
+    "finished_utc": "2026-10-11T02:58:26Z",
+    "wall_seconds": 279.681,
+    "cpu_seconds": 521.995,
+    "threads": 2,
+    "status": "COMPLETED",
+    "note": "timer from stage start; the process-level timer (before torch import) is reported by the 'process' row",
+    "selected_update": 1600,
+    "updates_run": 2000
+  },
+  {
+    "stage": "eval:101",
+    "started_utc": "2026-10-11T02:58:26Z",
+    "finished_utc": "2026-10-11T02:59:47Z",
+    "wall_seconds": 81.121,
+    "cpu_seconds": 149.465,
+    "threads": 2,
+    "status": "COMPLETED",
+    "note": "timer from stage start; the process-level timer (before torch import) is reported by the 'process' row"
+  },
+  {
+    "stage": "train:102",
+    "started_utc": "2026-10-11T02:59:47Z",
+    "finished_utc": "2026-10-11T03:03:39Z",
+    "wall_seconds": 232.606,
+    "cpu_seconds": 459.949,
+    "threads": 2,
+    "status": "COMPLETED",
+    "note": "timer from stage start; the process-level timer (before torch import) is reported by the 'process' row",
+    "selected_update": 1600,
+    "updates_run": 2000
+  },
+  {
+    "stage": "eval:102",
+    "started_utc": "2026-10-11T03:03:39Z",
+    "finished_utc": "2026-10-11T03:04:59Z",
+    "wall_seconds": 79.629,
+    "cpu_seconds": 148.945,
+    "threads": 2,
+    "status": "COMPLETED",
+    "note": "timer from stage start; the process-level timer (before torch import) is reported by the 'process' row"
+  },
+  {
+    "stage": "aggregate",
+    "started_utc": "2026-10-11T03:04:59Z",
+    "finished_utc": "2026-10-11T03:05:00Z",
+    "wall_seconds": 1.106,
+    "cpu_seconds": 0.865,
+    "threads": 2,
+    "status": "COMPLETED",
+    "note": "timer from stage start; the process-level timer (before torch import) is reported by the 'process' row"
+  },
+  {
+    "stage": "process",
+    "started_utc": "2026-10-11T02:53:46Z",
+    "finished_utc": "2026-10-11T03:05:00Z",
+    "wall_seconds": 674.243,
+    "cpu_seconds": 1281.275,
+    "threads": 2,
+    "status": "process total for stages ['train:101', 'eval:101', 'train:102', 'eval:102', 'aggregate'] (timer before torch import; overlaps the stage rows, not additive)"
+  }
+]

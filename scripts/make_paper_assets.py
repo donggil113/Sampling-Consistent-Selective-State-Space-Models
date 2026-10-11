@@ -1069,9 +1069,10 @@ subject & rel.\ all & rel.\ common & rel.\ extra & $\langle\cdot,\cdot\rangle$ &
 \caption{Initialization sensitivity (R8-P1-HAR-REPLICATION): the frozen P1-HAR-01 protocol trained with two further model seeds (101, 102) on the same training data and evaluated on the SAME nine test subjects; the original run (seed 0) is repeated from \cref{tab:har-subjects,tab:har-effects}. Rows are separate runs and are never pooled (three runs on the same subjects are not 27 independent observations). step / calib.\ CE: selected update and its calibration cross-entropy. CE C0, acc.\ C0: subject-first means of the official readout on C0. $D$: primary difference CE(mean, H8) $-$ CE(time, H8), equal-weight mean over subjects, with the per-run subject-level paired bootstrap interval (2000 draws; coarse with 9 clusters) and the number of subjects with $d_s>0$. $\Delta$CE: cross-entropy change against C0 for S8 (token mean) and H8 (token mean / time-weighted).}
 \label{tab:har-r8-risk}
 \centering\small
-\begin{tabular}{lcccccccccc}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccccccc}
 \toprule
-seed & step & calib.\ CE & CE C0 & acc.\ C0 & $D$ [95\% CI] & $d_s>0$ & $\Delta$CE S8 & $\Delta$CE H8 mean & $\Delta$CE H8 time \\
+seed & step & calib.\ CE & CE C0 & acc.\ C0 & $D$ [95\% CI] & $d_s>0$ & $\Delta$CE S8 & $\Delta$CE H8, mean & $\Delta$CE H8, time \\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
@@ -1091,7 +1092,7 @@ seed & step & calib.\ CE & CE C0 & acc.\ C0 & $D$ [95\% CI] & $d_s>0$ & $\Delta$
 \label{tab:har-r8-decomp}
 \centering\small
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{lcccccccccccc}
+\begin{tabular}{lccccccccccccc}
 \toprule
  & \multicolumn{6}{c}{S8} & \multicolumn{7}{c}{H8} \\
 \cmidrule(lr){2-7}\cmidrule(lr){8-14}

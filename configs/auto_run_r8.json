@@ -1,6 +1,6 @@
 {
   "run_id": "R8-P1-HAR-REPLICATION",
-  "status": "FIXED BEFORE EXECUTION (no R8 training or evaluation had run when this file was committed)",
+  "status": "COMPLETED (completed_stages and next_command were filled in after execution; everything else is the pre-execution content)",
   "created_utc": "2026-10-11",
   "authorization": {
     "scope_quoted": "round-8 instruction (delivered directly by the user): R8-P1-HAR-REPLICATION only; reuse the existing HAR data / TIDES / torch / checkpoint contract; exactly two new trainings with seeds 101 and 102 (or the first two unused integers >= 101); research cap wall 1800 s, process CPU 3600 s, threads <= 2, RAM <= 16 GiB; installation and PDF builds under the separate common limit; no new data, model, architecture, hyper-parameter or extra diagnostic sweep",
@@ -8,28 +8,72 @@
   },
   "question": "How sensitive are the P1-HAR-01 decomposition and risk results (primary H8 CE(mean) - CE(time); C0/S8/H8 secondaries; the S8 common-endpoint pooled decomposition) to the model initialization and minibatch order, with the data, subjects, splits, normalization and protocol held fixed?",
   "not_a_replication_of": "an independent dataset (the training data and the 9 test subjects are reused) or a general training-run effect (two extra seeds of one architecture)",
-  "preserved_verdicts": ["ARCHITECTURE_CLAIM_STOP", "PRIMARY_HAR_RISK_DIFFERENCE_NOT_ESTABLISHED (the original P1-HAR-01 primary is not retro-updated or pooled with the new runs)"],
-  "allowed_stages": ["train:101", "eval:101", "train:102", "eval:102", "aggregate"],
+  "preserved_verdicts": [
+    "ARCHITECTURE_CLAIM_STOP",
+    "PRIMARY_HAR_RISK_DIFFERENCE_NOT_ESTABLISHED (the original P1-HAR-01 primary is not retro-updated or pooled with the new runs)"
+  ],
+  "allowed_stages": [
+    "train:101",
+    "eval:101",
+    "train:102",
+    "eval:102",
+    "aggregate"
+  ],
   "seeds": {
-    "requested": [101, 102],
+    "requested": [
+      101,
+      102
+    ],
     "used_before_in_this_project": "HAR model seed 0 (P1-HAR-01); synthetic model seeds 0-4 (P1-REAL-01/02); toy unit seeds 0-31 and 999 (FIRST_RUN); 101 and 102 were never used, so they are used as requested",
     "rng_separation": "seed s is set in python random, numpy's global RNG (TIDES initialization draws from it) and torch immediately before model construction (model RNG); the minibatch sampler is a separate random.Random(s) instance (order RNG); the data, splits and normalization statistics are fixed arrays from P1-HAR-01 and involve no RNG; the subject bootstrap uses random.Random(0) through scssm.real.stats.draws, as in P1-HAR-01",
     "test_subjects": "the SAME 9 official test subjects (2947 windows) as P1-HAR-01 are reused; this is stated wherever the results are reported"
   },
   "inputs_and_hashes": {
-    "p1_har_01_config": {"path": "configs/p1_har_01.json", "sha256": "e603cf75e6472a20547afe22b6056f8e940de93120bc9fd2e6f66806a7dc44fc", "verified_before_each_stage": true},
-    "data_arrays": {"path": "data/har/derived/cache.npz (local, gitignored)", "hashes_recorded_in": "results/raw/P1-HAR-01/data_hash.json", "verified_before_each_stage": true},
-    "original_checkpoint_for_the_comparison_table": {"path": "results/raw/P1-HAR-01/checkpoint.pt", "sha256": "e3b414f5bdf55541d84a2f3abaf5a1c04faddfd6e2fdfd38dd79a20be049910d", "not_retrained": true},
+    "p1_har_01_config": {
+      "path": "configs/p1_har_01.json",
+      "sha256": "e603cf75e6472a20547afe22b6056f8e940de93120bc9fd2e6f66806a7dc44fc",
+      "verified_before_each_stage": true
+    },
+    "data_arrays": {
+      "path": "data/har/derived/cache.npz (local, gitignored)",
+      "hashes_recorded_in": "results/raw/P1-HAR-01/data_hash.json",
+      "verified_before_each_stage": true
+    },
+    "original_checkpoint_for_the_comparison_table": {
+      "path": "results/raw/P1-HAR-01/checkpoint.pt",
+      "sha256": "e3b414f5bdf55541d84a2f3abaf5a1c04faddfd6e2fdfd38dd79a20be049910d",
+      "not_retrained": true
+    },
     "runner": "scripts/run_p1_har_r8.py (a minimal extension that imports the P1-HAR-01 helpers unchanged: grid, native_batch, locf_resample, build, setup, load_cache, train_loop, eval_mode_checks)",
     "model_and_protocol": "identical to configs/p1_har_01.json: TIDESClassifier with the pilot backbone kwargs (23,786 parameters), 9 channels, 6 classes; Adam lr 0.003, batch 32, 2000 updates; calibration subjects 7, 15, 17, 19 every 100 updates, lowest calibration cross-entropy kept (earliest on ties); fit-only normalization; 128 held intervals of 1/50 s; eval mode, float32, 2 threads"
   },
   "runs": [
-    {"seed": 101, "stages": ["train", "eval"]},
-    {"seed": 102, "stages": ["train", "eval"]}
+    {
+      "seed": 101,
+      "stages": [
+        "train",
+        "eval"
+      ]
+    },
+    {
+      "seed": 102,
+      "stages": [
+        "train",
+        "eval"
+      ]
+    }
   ],
   "evaluation_per_checkpoint": {
-    "conditions": ["C0", "S8", "H8"],
-    "arms": {"native_mean": "official readout (head of the token-mean features)", "native_time": "head of the dt_j/T-weighted features (inference ablation)", "resampled": "LOCF onto the training grid; its input equals the C0 input exactly on S8 and H8 (checked; P1-HAR-01 showed bit-identical logits for identical input), so its logits are the C0 logits and no separate forward is spent"},
+    "conditions": [
+      "C0",
+      "S8",
+      "H8"
+    ],
+    "arms": {
+      "native_mean": "official readout (head of the token-mean features)",
+      "native_time": "head of the dt_j/T-weighted features (inference ablation)",
+      "resampled": "LOCF onto the training grid; its input equals the C0 input exactly on S8 and H8 (checked; P1-HAR-01 showed bit-identical logits for identical input), so its logits are the C0 logits and no separate forward is spent"
+    },
     "one_forward_per_condition": "C0, S8 and H8 are each run once in batches of 256 windows; the common-end-point outputs (S8 end tokens 8k) and the H8 per-token logits are taken from the same forward passes and stored in float64 pooled form; no forward is repeated and no timing block is run (cost was measured in P1-HAR-01)",
     "primary": "d_s = mean over windows of subject s of [CE(native_mean, H8) - CE(native_time, H8)]; D = equal-weight mean over the 9 subjects; subject-level paired percentile bootstrap (2000 draws, seed 0) per run",
     "secondary": "per arm and condition: CE, accuracy, prediction flips vs C0, total variation vs C0, class-centered relative logit distance vs C0 (exclusion rule ||ztilde_C0|| < 1e-6 as before); H8 logit decomposition W, M, M_end, Q (norms, subject-first); S8 common-end-point decomposition z_all - z0 = (z_end - z0) + (z_all - z_end) with class-centered relative norms (per-window ratios, subject-first), inner product, and CE/flip of z_end (the same definitions as P1-HAR-CT-01)",
@@ -42,13 +86,22 @@
     "engineering_bug": "one minimal fix that does not change the contract plus one re-run of the affected stage; the original attempt is kept as INVALID with its scope"
   },
   "budget": {
-    "cpu_threads": 2, "ram_gib": 16, "wall_seconds_total": 1800, "process_cpu_seconds_total": 3600,
+    "cpu_threads": 2,
+    "ram_gib": 16,
+    "wall_seconds_total": 1800,
+    "process_cpu_seconds_total": 3600,
     "projection_from_P1_HAR_01": "train 183 s wall / 354 s CPU per seed; eval without the timing block about 90 s wall / 170 s CPU per seed; two seeds about 550 s wall / 1050 s CPU",
     "ledger": "results/raw/R8-P1-HAR-REPLICATION/cost_ledger.json; the timer starts before importing torch; wall and process CPU separately; a stage refuses to start if the ledger plus its projection would exceed a cap; no duplicate process of the same run is started (a lock file per stage)"
   },
   "skip_rule": "a stage whose outputs exist with the recorded config/runner/data hashes and a COMPLETED status is skipped and its evidence hash is listed under completed_stages",
-  "completed_stages": {},
-  "next_command": "python3 scripts/run_p1_har_r8.py --stage all   (runs train:101, eval:101, train:102, eval:102, aggregate in order, skipping completed stages)",
+  "completed_stages": {
+    "train:101": "1ba34d97ef33ac89af3ae5a53ddb0fcb00b0fc34318a8d3f76e976335aaf338e",
+    "train:102": "23d1417e2298fa9c0d4d38b3ce44eb24e2318f0defc283efaf23591371839fa0",
+    "eval:101": "aaff1c796c15eabb20b2f6579eac9a0234ee9c9d8fa8de6609dc45f77abaad5d",
+    "eval:102": "90ae1c950976c5ce0a9750c7a85a82ee714e93cc049cd5677a596af5877fb710",
+    "aggregate": "b92b8388181ed1738376a43149261a45c87c219b1fcbe2ca0d7391fc070dc26f"
+  },
+  "next_command": "none: the finite stage list is complete; no further stage is queued",
   "outputs": "results/raw/R8-P1-HAR-REPLICATION/seed{101,102}/{train.json, train.log, checkpoint.pt (+ .sha256), eval.jsonl, eval_summary.json}, aggregate.json, cost_ledger.json",
   "manuscript": "v5.2: a three-run table (original seed 0 from P1-HAR-01/P1-HAR-CT-01, seeds 101 and 102) with subject-first values and per-run subject intervals; the limitation that only one architecture and the same subjects were used is kept; the next research decision (another model or dataset) is recorded as one sentence and not queued"
 }

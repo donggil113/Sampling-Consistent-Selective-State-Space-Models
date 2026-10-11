@@ -655,6 +655,173 @@
           "config 'about 30 KB' checkpoint estimate (actual 116 KB), noted in session 6"
         ]
       }
+    },
+    {
+      "run_id": "R8-P1-HAR-REPLICATION",
+      "status": "COMPLETED (initialization sensitivity; separate rows; not pooled; the P1-HAR-01 primary verdict unchanged)",
+      "authorization": "round-8 instruction delivered directly by the user (2026-10-11): two new trainings (seeds 101, 102) under the frozen P1-HAR-01 contract; caps 1800 s wall / 3600 s CPU, 2 threads",
+      "config": {
+        "path": "configs/auto_run_r8.json",
+        "pre_execution_commit": "5211955facb20db8dfeb5ee3717fd99afdb7e0ab",
+        "note": "completed_stages and next_command were filled in by the aggregate stage after execution; the pre-execution content is the committed version 5211955"
+      },
+      "inputs_verified": {
+        "p1_har_01_config_sha256": "e603cf75e6472a20547afe22b6056f8e940de93120bc9fd2e6f66806a7dc44fc",
+        "data": "results/raw/P1-HAR-01/data_hash.json arrays (train hashes verified before training; test hashes before evaluation)",
+        "test_subjects_reused": [
+          2,
+          4,
+          9,
+          10,
+          12,
+          13,
+          18,
+          20,
+          24
+        ]
+      },
+      "runs": {
+        "seed0_original": {
+          "seed": 0,
+          "checkpoint_sha256": "e3b414f5bdf55541d84a2f3abaf5a1c04faddfd6e2fdfd38dd79a20be049910d",
+          "selected_update": 1200,
+          "selected_cal_ce": 0.09187260270118713,
+          "selected_cal_acc": 0.9743402004241943
+        },
+        "seed101": {
+          "seed": 101,
+          "checkpoint_sha256": "c818a788936094d19312d6d3d164c135d7346adf7e880460a5c267abced2c6a8",
+          "selected_update": 1600,
+          "selected_cal_ce": 0.12039626389741898,
+          "selected_cal_acc": 0.9596773982048035
+        },
+        "seed102": {
+          "seed": 102,
+          "checkpoint_sha256": "c2b50a14f4dbaf31824a38b26058ebaf05ca674d4429eeeabf94780777e921c1",
+          "selected_update": 1600,
+          "selected_cal_ce": 0.0828627347946167,
+          "selected_cal_acc": 0.9721407890319824
+        }
+      },
+      "primary_per_run": {
+        "seed0_original": {
+          "D": 0.016308530924014495,
+          "ci95_subject": [
+            -0.004167634545312573,
+            0.03231500688302716
+          ],
+          "n_positive_of_9": 8
+        },
+        "seed101": {
+          "D": 0.05008653526481175,
+          "ci95_subject": [
+            0.022557179748359343,
+            0.08246359359496072
+          ],
+          "n_positive_of_9": 8
+        },
+        "seed102": {
+          "D": 0.04409954893800379,
+          "ci95_subject": [
+            0.011031218291588643,
+            0.07710113185460887
+          ],
+          "n_positive_of_9": 7
+        }
+      },
+      "cost_ledger": [
+        {
+          "stage": "train:101",
+          "started_utc": "2026-10-11T02:53:46Z",
+          "finished_utc": "2026-10-11T02:58:26Z",
+          "wall_seconds": 279.681,
+          "cpu_seconds": 521.995,
+          "threads": 2,
+          "status": "COMPLETED",
+          "note": "timer from stage start; the process-level timer (before torch import) is reported by the 'process' row",
+          "selected_update": 1600,
+          "updates_run": 2000
+        },
+        {
+          "stage": "eval:101",
+          "started_utc": "2026-10-11T02:58:26Z",
+          "finished_utc": "2026-10-11T02:59:47Z",
+          "wall_seconds": 81.121,
+          "cpu_seconds": 149.465,
+          "threads": 2,
+          "status": "COMPLETED",
+          "note": "timer from stage start; the process-level timer (before torch import) is reported by the 'process' row"
+        },
+        {
+          "stage": "train:102",
+          "started_utc": "2026-10-11T02:59:47Z",
+          "finished_utc": "2026-10-11T03:03:39Z",
+          "wall_seconds": 232.606,
+          "cpu_seconds": 459.949,
+          "threads": 2,
+          "status": "COMPLETED",
+          "note": "timer from stage start; the process-level timer (before torch import) is reported by the 'process' row",
+          "selected_update": 1600,
+          "updates_run": 2000
+        },
+        {
+          "stage": "eval:102",
+          "started_utc": "2026-10-11T03:03:39Z",
+          "finished_utc": "2026-10-11T03:04:59Z",
+          "wall_seconds": 79.629,
+          "cpu_seconds": 148.945,
+          "threads": 2,
+          "status": "COMPLETED",
+          "note": "timer from stage start; the process-level timer (before torch import) is reported by the 'process' row"
+        },
+        {
+          "stage": "aggregate",
+          "started_utc": "2026-10-11T03:04:59Z",
+          "finished_utc": "2026-10-11T03:05:00Z",
+          "wall_seconds": 1.106,
+          "cpu_seconds": 0.865,
+          "threads": 2,
+          "status": "COMPLETED",
+          "note": "timer from stage start; the process-level timer (before torch import) is reported by the 'process' row"
+        },
+        {
+          "stage": "process",
+          "started_utc": "2026-10-11T02:53:46Z",
+          "finished_utc": "2026-10-11T03:05:00Z",
+          "wall_seconds": 674.243,
+          "cpu_seconds": 1281.275,
+          "threads": 2,
+          "status": "process total for stages ['train:101', 'eval:101', 'train:102', 'eval:102', 'aggregate'] (timer before torch import; overlaps the stage rows, not additive)"
+        }
+      ],
+      "totals": {
+        "stage_wall_seconds": 674.143,
+        "stage_process_cpu_seconds": 1281.219,
+        "process_wall_seconds": 674.243,
+        "process_cpu_seconds": 1281.275,
+        "cap_wall": 1800,
+        "cap_cpu": 3600,
+        "note": "train:101 ran at 279.7 s wall (allowance 300 s) under concurrent CPU load from a commit/push issued during training; PDF and package builds are outside this budget"
+      },
+      "outputs_sha256": {
+        "aggregate.json": "b92b8388181ed1738376a43149261a45c87c219b1fcbe2ca0d7391fc070dc26f",
+        "cost_ledger.json": "1454ae92d159e33ed2cda88e48c3c62a3c4fd1c2c590c17804602b26773f9100",
+        "seed102/checkpoint.pt.sha256": "5fcf0afd2f88545655ef2e2da33ff2fe796ecdcc6b8f5002aa6ebc4b91256330",
+        "seed102/eval.jsonl": "efc7374115c59f886871405b9a8725404096ef114aa166391935069d3d5f851a",
+        "seed102/eval_summary.json": "90ae1c950976c5ce0a9750c7a85a82ee714e93cc049cd5677a596af5877fb710",
+        "seed102/train.json": "23d1417e2298fa9c0d4d38b3ce44eb24e2318f0defc283efaf23591371839fa0",
+        "seed102/train.log": "32c4c56a720aee13c8b87b54aae14587588e9f8218a360a0c744f52046b114ae",
+        "seed101/checkpoint.pt.sha256": "f7897b0e57053cc02bb0f8f7b4e7b8dcaf13b5c127b1147f77639b917eb1a336",
+        "seed101/eval.jsonl": "c8f43083d31a89c023f94a44c71671a8beafea1e2a5ab401ae3e9b9c3ef5810f",
+        "seed101/eval_summary.json": "aaff1c796c15eabb20b2f6579eac9a0234ee9c9d8fa8de6609dc45f77abaad5d",
+        "seed101/train.json": "1ba34d97ef33ac89af3ae5a53ddb0fcb00b0fc34318a8d3f76e976335aaf338e",
+        "seed101/train.log": "7e0781a2aabc47e2e9fe5eb54022fb07e6ee828399e18461d3df35073472a548"
+      },
+      "checkpoints_sha256": {
+        "seed0_original": "e3b414f5bdf55541d84a2f3abaf5a1c04faddfd6e2fdfd38dd79a20be049910d",
+        "seed101": "c818a788936094d19312d6d3d164c135d7346adf7e880460a5c267abced2c6a8",
+        "seed102": "c2b50a14f4dbaf31824a38b26058ebaf05ca674d4429eeeabf94780777e921c1"
+      }
     }
   ]
 }
